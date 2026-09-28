@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3 uid="uid://csvl4g0yb3iy7"]
+
+[ext_resource type="Script" uid="uid://bxv2gm5hx3d6i" path="res://SCRIPTS/Enemy/EnemyDefinition.cs" id="1_43br7"]
+
+[resource]
+script = ExtResource("1_43br7")
+DisplayName = "Rebel Skirmisher"
+Faction = 2
+metadata/_custom_type_script = "uid://bxv2gm5hx3d6i"

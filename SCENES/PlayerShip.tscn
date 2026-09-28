@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bbbhwq6t3wsf7" path="res://SCRIPTS/Player/PlayerShip.cs" id="1_d2dyu"]
 [ext_resource type="Script" uid="uid://cmbhciihetpg7" path="res://SCRIPTS/Weapon/WeaponMount.cs" id="2_5lrhm"]
-[ext_resource type="Resource" uid="uid://duk6me74e1i1y" path="res://RESOURCES/minigun.tres" id="3_faoyc"]
+[ext_resource type="Resource" uid="uid://duk6me74e1i1y" path="res://RESOURCES/Weapons/minigun.tres" id="3_faoyc"]
 [ext_resource type="Script" uid="uid://crafoydkr28bx" path="res://SCRIPTS/Player/PlayerWeaponInput.cs" id="4_faoyc"]
 
 [node name="PlayerShip" type="CharacterBody3D" unique_id=1589947766]
