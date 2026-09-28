@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="WeaponDefinition" format=3 uid="uid://duk6me74e1i1y"]
 
 [ext_resource type="PackedScene" uid="uid://bykb33nirbctc" path="res://SCENES/Projectile.tscn" id="1_mvctm"]
-[ext_resource type="Script" uid="uid://dk13qlucl75kd" path="res://SCRIPTS/WeaponDefinition.cs" id="1_pea7r"]
+[ext_resource type="Script" uid="uid://dk13qlucl75kd" path="res://SCRIPTS/Weapon/WeaponDefinition.cs" id="1_pea7r"]
 
 [resource]
 script = ExtResource("1_pea7r")

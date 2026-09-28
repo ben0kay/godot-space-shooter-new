@@ -1,8 +1,9 @@
 [gd_scene format=3 uid="uid://cqt3qu6fub14m"]
 
-[ext_resource type="Script" uid="uid://bbbhwq6t3wsf7" path="res://SCRIPTS/PlayerShip.cs" id="1_d2dyu"]
-[ext_resource type="Script" uid="uid://cmbhciihetpg7" path="res://SCRIPTS/WeaponMount.cs" id="2_5lrhm"]
+[ext_resource type="Script" uid="uid://bbbhwq6t3wsf7" path="res://SCRIPTS/Player/PlayerShip.cs" id="1_d2dyu"]
+[ext_resource type="Script" uid="uid://cmbhciihetpg7" path="res://SCRIPTS/Weapon/WeaponMount.cs" id="2_5lrhm"]
 [ext_resource type="Resource" uid="uid://duk6me74e1i1y" path="res://RESOURCES/minigun.tres" id="3_faoyc"]
+[ext_resource type="Script" uid="uid://crafoydkr28bx" path="res://SCRIPTS/Player/PlayerWeaponInput.cs" id="4_faoyc"]
 
 [node name="PlayerShip" type="CharacterBody3D" unique_id=1589947766]
 script = ExtResource("1_d2dyu")
@@ -16,3 +17,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.8, 0, -2.4)
 
 [node name="RightMuzzle" type="Marker3D" parent="PrimaryWeapon" unique_id=1616554921]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8, 0, -2.4)
+
+[node name="PlayerWeaponMount" type="Node" parent="." unique_id=1068048311 node_paths=PackedStringArray("PrimaryWeapon")]
+script = ExtResource("4_faoyc")
+PrimaryWeapon = NodePath("../PrimaryWeapon")

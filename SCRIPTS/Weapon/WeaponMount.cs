@@ -6,7 +6,6 @@ public partial class WeaponMount : Node3D
 	#region Settings
 
 	[Export] public WeaponDefinition Weapon;
-	[Export] public MouseButton FireButton = MouseButton.Left;
 
 	#endregion
 
@@ -16,15 +15,16 @@ public partial class WeaponMount : Node3D
 	private CharacterBody3D _ship;
 	private int _muzzleIndex;
 	private float _cooldown;
+	private bool _configured;
 
 	#endregion
 
 	#region Godot Events
 
-	// Caches the ship and this mount's muzzle markers once.
+	// Caches the firing ship and the muzzle markers in their scene-tree order.
 	public override void _Ready()
 	{
-		_ship = GetParent<CharacterBody3D>();
+		_ship = GetParent() as CharacterBody3D;
 
 		foreach (Node child in GetChildren())
 		{
@@ -34,35 +34,48 @@ public partial class WeaponMount : Node3D
 			}
 		}
 
-		if (Weapon == null || Weapon.ProjectileScene == null || _muzzles.Count == 0)
+		_configured =
+			_ship != null
+			&& Weapon != null
+			&& Weapon.ProjectileScene != null
+			&& _muzzles.Count > 0;
+
+		if (!_configured)
 		{
-			GD.PushError("WeaponMount needs a weapon definition, projectile scene, and muzzle markers.");
+			GD.PushError(
+				"WeaponMount needs a CharacterBody3D parent, weapon definition, " +
+                "projectile scene, and at least one muzzle marker."
+			);
+
 			SetPhysicsProcess(false);
 		}
 	}
 
-	// Fires at the weapon's configured rate while its mouse button is held.
+	// Counts down the time until another shot is allowed.
 	public override void _PhysicsProcess(double delta)
 	{
 		_cooldown = Mathf.Max(0.0f, _cooldown - (float)delta);
-
-		if (Input.MouseMode != Input.MouseModeEnum.Captured
-			|| !Input.IsMouseButtonPressed(FireButton)
-			|| _cooldown > 0.0f)
-		{
-			return;
-		}
-
-		FireShot();
-
-		_cooldown = Mathf.Max(0.01f, Weapon.SecondsBetweenShots);
 	}
 
 	#endregion
 
 	#region Firing
 
-	// Spawns one bullet at the current muzzle, then selects the next muzzle.
+	// Attempts one shot and reports whether it actually fired.
+	public bool TryFire()
+	{
+		if (!_configured || _cooldown > 0.0f)
+		{
+			return false;
+		}
+
+		FireShot();
+		_cooldown = Mathf.Max(0.01f, Weapon.SecondsBetweenShots);
+
+		return true;
+	}
+
+	// Spawns one projectile, then advances to the next muzzle.
 	private void FireShot()
 	{
 		Marker3D muzzle = _muzzles[_muzzleIndex];
