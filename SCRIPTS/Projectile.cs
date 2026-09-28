@@ -7,21 +7,25 @@ public partial class Projectile : Area3D
 	private Vector3 _velocity;
 	private float _lifeRemaining;
 	private CollisionObject3D _source;
+	private Faction _sourceFaction;
 	private WeaponDefinition _definition;
+	private bool _hit;
 
 	#endregion
 
 	#region Setup
 
-	// Receives weapon data and ship velocity after the projectile is positioned.
+	// Receives the weapon, source, faction, and inherited ship velocity.
 	public void Configure(
 		WeaponDefinition definition,
 		CollisionObject3D source,
+		Faction sourceFaction,
 		Vector3 sourceVelocity
 	)
 	{
 		_definition = definition;
 		_source = source;
+		_sourceFaction = sourceFaction;
 		_lifeRemaining = definition.ProjectileLifetime;
 
 		_velocity =
@@ -32,7 +36,7 @@ public partial class Projectile : Area3D
 		CreateCollision();
 	}
 
-	// Connects the collision event for this projectile.
+	// Connects overlap detection for bodies touching the projectile.
 	public override void _Ready()
 	{
 		BodyEntered += OnBodyEntered;
@@ -40,14 +44,37 @@ public partial class Projectile : Area3D
 
 	#endregion
 
-	#region Flight
+	#region Flight And Impact
 
-	// Moves the projectile and removes it when its lifetime expires.
+	// Checks the flight path, moves the projectile, and expires old shots.
 	public override void _PhysicsProcess(double delta)
 	{
-		float seconds = (float)delta;
+		if (_hit)
+		{
+			return;
+		}
 
-		GlobalPosition += _velocity * seconds;
+		float seconds = (float)delta;
+		Vector3 destination = GlobalPosition + _velocity * seconds;
+
+		PhysicsRayQueryParameters3D query =
+			PhysicsRayQueryParameters3D.Create(GlobalPosition, destination);
+
+		query.Exclude = new Godot.Collections.Array<Rid>
+		{
+			_source.GetRid()
+		};
+
+		var result = GetWorld3D().DirectSpaceState.IntersectRay(query);
+
+		if (result.Count > 0)
+		{
+			GlobalPosition = result["position"].AsVector3();
+			ResolveHit(result["collider"].AsGodotObject() as Node3D);
+			return;
+		}
+
+		GlobalPosition = destination;
 		_lifeRemaining -= seconds;
 
 		if (_lifeRemaining <= 0.0f)
@@ -56,12 +83,31 @@ public partial class Projectile : Area3D
 		}
 	}
 
-	// Removes the projectile when it hits a body other than the firing ship.
+	// Handles an overlap found by the Area3D collision shape.
 	private void OnBodyEntered(Node3D body)
 	{
-		if (body == _source)
+		ResolveHit(body);
+	}
+
+	// Sends damage to damageable targets and removes the projectile.
+	private void ResolveHit(Node3D body)
+	{
+		if (_hit || body == null || body == _source)
 		{
 			return;
+		}
+
+		_hit = true;
+
+		if (body is IDamageable target)
+		{
+			DamageInfo damage = new DamageInfo(
+				_definition.Damage,
+				_source,
+				_sourceFaction
+			);
+
+			target.ApplyDamage(damage);
 		}
 
 		QueueFree();
@@ -71,7 +117,7 @@ public partial class Projectile : Area3D
 
 	#region Appearance
 
-	// Creates the small visible bullet from the weapon's projectile settings.
+	// Creates the visible bullet using the weapon definition.
 	private void CreateVisual()
 	{
 		SphereMesh mesh = new SphereMesh();
@@ -92,7 +138,7 @@ public partial class Projectile : Area3D
 		AddChild(visual);
 	}
 
-	// Creates a collision sphere matching the visible bullet.
+	// Creates the bullet's matching collision sphere.
 	private void CreateCollision()
 	{
 		SphereShape3D shape = new SphereShape3D();

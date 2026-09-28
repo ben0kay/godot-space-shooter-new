@@ -12,6 +12,7 @@ public partial class WeaponDefinition : Resource
 
 	#region Projectile
 
+	[Export] public float Damage = 3.0f;
 	[Export] public float ProjectileSpeed = 90.0f;
 	[Export] public float ProjectileLifetime = 3.0f;
 	[Export] public float ProjectileRadius = 0.12f;

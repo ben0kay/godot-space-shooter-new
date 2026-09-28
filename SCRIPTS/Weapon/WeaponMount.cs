@@ -6,6 +6,7 @@ public partial class WeaponMount : Node3D
 	#region Settings
 
 	[Export] public WeaponDefinition Weapon;
+	[Export] public Faction ShooterFaction = Faction.Player;
 
 	#endregion
 
@@ -21,7 +22,7 @@ public partial class WeaponMount : Node3D
 
 	#region Godot Events
 
-	// Caches the firing ship and the muzzle markers in their scene-tree order.
+	// Caches the firing ship and its muzzle markers in scene-tree order.
 	public override void _Ready()
 	{
 		_ship = GetParent() as CharacterBody3D;
@@ -61,7 +62,7 @@ public partial class WeaponMount : Node3D
 
 	#region Firing
 
-	// Attempts one shot and reports whether it actually fired.
+	// Attempts one shot and returns whether it fired.
 	public bool TryFire()
 	{
 		if (!_configured || _cooldown > 0.0f)
@@ -75,7 +76,7 @@ public partial class WeaponMount : Node3D
 		return true;
 	}
 
-	// Spawns one projectile, then advances to the next muzzle.
+	// Spawns one projectile and advances to the next muzzle.
 	private void FireShot()
 	{
 		Marker3D muzzle = _muzzles[_muzzleIndex];
@@ -86,7 +87,7 @@ public partial class WeaponMount : Node3D
 		GetTree().CurrentScene.AddChild(projectile);
 
 		projectile.GlobalTransform = muzzle.GlobalTransform;
-		projectile.Configure(Weapon, _ship, _ship.Velocity);
+		projectile.Configure(Weapon, _ship, ShooterFaction, _ship.Velocity);
 	}
 
 	#endregion

@@ -1,21 +1,25 @@
 using Godot;
 
-public partial class Asteroid : StaticBody3D
+public partial class Asteroid : StaticBody3D, IDamageable
 {
 	#region Shape Settings
 
+	[Export] public float HealthPerRadius = 3.0f;
+
 	private float _radius = 3.0f;
 	private ulong _shapeSeed = 1;
+	private float _health;
 
 	#endregion
 
 	#region Setup
 
-	// Receives the size and shape seed before this asteroid enters the scene tree.
+	// Receives the asteroid's size and shape seed, then sets health based on size.
 	public void Configure(float radius, ulong shapeSeed)
 	{
 		_radius = radius;
 		_shapeSeed = shapeSeed;
+		_health = radius * HealthPerRadius;
 	}
 
 	// Builds this asteroid's visual mesh and matching collision when it spawns.
@@ -32,6 +36,26 @@ public partial class Asteroid : StaticBody3D
 		collision.Name = "Collision";
 		collision.Shape = mesh.CreateConvexShape();
 		AddChild(collision);
+	}
+
+	#endregion
+
+	#region Damage
+
+	// Reduces health when hit and removes the asteroid when health reaches zero.
+	public void ApplyDamage(DamageInfo damage)
+	{
+		if (damage.Amount <= 0.0f || IsQueuedForDeletion())
+		{
+			return;
+		}
+
+		_health -= damage.Amount;
+
+		if (_health <= 0.0f)
+		{
+			QueueFree();
+		}
 	}
 
 	#endregion
