@@ -4,3 +4,6 @@
 
 [node name="Node3D" type="Node3D" unique_id=1526637451]
 script = ExtResource("1_h5ewn")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1008970321]
+transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 18, 28)

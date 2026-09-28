@@ -3,25 +3,19 @@ using Godot;
 public partial class Sandbox : Node3D
 {
 	public override void _Ready()
-	{
-		CreateBox("Floor", new Vector3(0, -0.5f, 0), new Vector3(80, 1, 80), Colors.DarkSlateGray);
-		CreateBox("NorthWall", new Vector3(0, 4, -40), new Vector3(80, 8, 1), Colors.DimGray);
-		CreateBox("SouthWall", new Vector3(0, 4, 40), new Vector3(80, 8, 1), Colors.DimGray);
-		CreateBox("WestWall", new Vector3(-40, 4, 0), new Vector3(1, 8, 80), Colors.DimGray);
-		CreateBox("EastWall", new Vector3(40, 4, 0), new Vector3(1, 8, 80), Colors.DimGray);
+{
+	CreateBox("Floor", new Vector3(0, -0.5f, 0), new Vector3(80, 1, 80), Colors.DarkSlateGray);
+	CreateBox("NorthWall", new Vector3(0, 4, -40), new Vector3(80, 8, 1), Colors.DimGray);
+	CreateBox("SouthWall", new Vector3(0, 4, 40), new Vector3(80, 8, 1), Colors.DimGray);
+	CreateBox("WestWall", new Vector3(-40, 4, 0), new Vector3(1, 8, 80), Colors.DimGray);
+	CreateBox("EastWall", new Vector3(40, 4, 0), new Vector3(1, 8, 80), Colors.DimGray);
 
-		CreateBox("ReferenceBlock", new Vector3(0, 1, -12), new Vector3(2, 2, 2), Colors.OrangeRed);
+	CreateBox("ReferenceBlock", new Vector3(0, 1, -12), new Vector3(2, 2, 2), Colors.OrangeRed);
 
-		DirectionalLight3D light = new DirectionalLight3D();
-		light.RotationDegrees = new Vector3(-45, -30, 0);
-		AddChild(light);
-
-		Camera3D camera = new Camera3D();
-		camera.Position = new Vector3(0, 18, 28);
-		AddChild(camera);
-		camera.LookAt(new Vector3(0, 0, 0));
-		camera.Current = true;
-	}
+	DirectionalLight3D light = new DirectionalLight3D();
+	light.RotationDegrees = new Vector3(-45, -30, 0);
+	AddChild(light);
+}
 
 	private void CreateBox(string name, Vector3 position, Vector3 size, Color color)
 	{
