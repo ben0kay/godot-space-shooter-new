@@ -2,9 +2,11 @@
 
 [ext_resource type="Script" uid="uid://pccivx55timo" path="res://SCRIPTS/Sandbox.cs" id="1_h5ewn"]
 [ext_resource type="PackedScene" uid="uid://cqt3qu6fub14m" path="res://SCENES/PlayerShip.tscn" id="2_bc7gk"]
+[ext_resource type="PackedScene" uid="uid://2pswi1yg6tyh" path="res://SCENES/Asteroid.tscn" id="2_owkoa"]
 
-[node name="Node3D" type="Node3D" unique_id=1526637451]
+[node name="Sandbox" type="Node3D" unique_id=1526637451]
 script = ExtResource("1_h5ewn")
+AsteroidScene = ExtResource("2_owkoa")
 
 [node name="PlayerShip" parent="." unique_id=799486836 instance=ExtResource("2_bc7gk")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)

@@ -29,7 +29,7 @@ public partial class PlayerShip : CharacterBody3D
 	[Export] public float Acceleration = 24.0f;
 	[Export] public float Deceleration = 18.0f;
 
-	[Export] public float RollSpeed = 150.0f;
+	[Export] public float RollSpeed = 75.0f;
 	[Export] public float MousePitchSensitivity = 0.0008f;
 	[Export] public float MouseYawSensitivity = 0.0008f;
 

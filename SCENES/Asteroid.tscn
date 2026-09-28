@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://2pswi1yg6tyh"]
+
+[ext_resource type="Script" uid="uid://wag0js1sa126" path="res://SCRIPTS/Asteroid.cs" id="1_erqry"]
+
+[node name="Asteroid" type="StaticBody3D" unique_id=448151738]
+script = ExtResource("1_erqry")
