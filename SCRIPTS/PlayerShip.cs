@@ -4,9 +4,12 @@ public partial class PlayerShip : CharacterBody3D
 {
 	[Export] public float ForwardSpeed = 18.0f;
 	[Export] public float ReverseSpeed = 8.0f;
+	[Export] public float VerticalSpeed = 10.0f;
 	[Export] public float Acceleration = 24.0f;
 	[Export] public float Deceleration = 18.0f;
 	[Export] public float TurnSpeed = 120.0f;
+
+	private bool _rightCtrlHeld;
 
 	public override void _Ready()
 	{
@@ -20,6 +23,25 @@ public partial class PlayerShip : CharacterBody3D
 		collision.Name = "Collision";
 		collision.Shape = shape;
 		AddChild(collision);
+	}
+
+	public override void _Input(InputEvent inputEvent)
+	{
+		if (inputEvent is InputEventKey key
+			&& key.Keycode == Key.Ctrl
+			&& key.Location == KeyLocation.Right
+			&& !key.Echo)
+		{
+			_rightCtrlHeld = key.Pressed;
+		}
+	}
+
+	public override void _Notification(int what)
+	{
+		if (what == NotificationApplicationFocusOut)
+		{
+			_rightCtrlHeld = false;
+		}
 	}
 
 	public override void _PhysicsProcess(double delta)
@@ -47,10 +69,21 @@ public partial class PlayerShip : CharacterBody3D
 		if (Input.IsPhysicalKeyPressed(Key.Up)) thrust += 1.0f;
 		if (Input.IsPhysicalKeyPressed(Key.Down)) thrust -= 1.0f;
 
-		float speed = thrust >= 0.0f ? ForwardSpeed : ReverseSpeed;
-		Vector3 targetVelocity = -GlobalBasis.Z * thrust * speed;
+		float rise = 0.0f;
 
-		float response = thrust == 0.0f ? Deceleration : Acceleration;
+		if (Input.IsMouseButtonPressed(MouseButton.Right)) rise += 1.0f;
+		if (_rightCtrlHeld) rise -= 1.0f;
+
+		float speed = thrust >= 0.0f ? ForwardSpeed : ReverseSpeed;
+
+		Vector3 forwardVelocity = -GlobalBasis.Z * thrust * speed;
+		Vector3 verticalVelocity = Vector3.Up * rise * VerticalSpeed;
+		Vector3 targetVelocity = forwardVelocity + verticalVelocity;
+
+		float response = targetVelocity == Vector3.Zero
+			? Deceleration
+			: Acceleration;
+
 		Velocity = Velocity.MoveToward(targetVelocity, response * seconds);
 
 		MoveAndSlide();
