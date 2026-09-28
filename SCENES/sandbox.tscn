@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cs4o21cfcqi2x"]
+
+[ext_resource type="Script" uid="uid://pccivx55timo" path="res://SCENES/Sandbox.cs" id="1_h5ewn"]
+
+[node name="Node3D" type="Node3D" unique_id=1526637451]
+script = ExtResource("1_h5ewn")
