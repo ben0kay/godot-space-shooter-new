@@ -1,16 +1,5 @@
 using Godot;
 
-public enum Faction
-{
-	Neutral,
-	Player,
-	Rebel,
-	Corporation,
-	Simulant,
-	Alien,
-	Automated
-}
-
 public readonly struct DamageInfo
 {
 	public readonly float Amount;
@@ -26,7 +15,7 @@ public readonly struct DamageInfo
 	}
 }
 
-// Any ship, asteroid, or structure that receives projectile damage implements this.
+// Any ship, asteroid, or structure that receives damage implements this.
 public interface IDamageable
 {
 	void ApplyDamage(DamageInfo damage);
