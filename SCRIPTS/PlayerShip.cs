@@ -1,4 +1,3 @@
-
 using Godot;
 
 public partial class PlayerShip : CharacterBody3D
@@ -7,9 +6,8 @@ public partial class PlayerShip : CharacterBody3D
 
 	private const Key KEY_FORWARD = Key.Up;
 	private const Key KEY_REVERSE = Key.Down;
-
-	private const Key KEY_YAW_LEFT = Key.Left;
-	private const Key KEY_YAW_RIGHT = Key.Right;
+	private const Key KEY_STRAFE_LEFT = Key.Left;
+	private const Key KEY_STRAFE_RIGHT = Key.Right;
 
 	private const Key KEY_ROLL_LEFT = Key.X;
 	private const Key KEY_ROLL_RIGHT = Key.Z;
@@ -26,14 +24,14 @@ public partial class PlayerShip : CharacterBody3D
 
 	[Export] public float ForwardSpeed = 18.0f;
 	[Export] public float ReverseSpeed = 8.0f;
+	[Export] public float StrafeSpeed = 12.0f;
 	[Export] public float VerticalSpeed = 10.0f;
 	[Export] public float Acceleration = 24.0f;
 	[Export] public float Deceleration = 18.0f;
 
-	[Export] public float TurnSpeed = 120.0f;
 	[Export] public float RollSpeed = 150.0f;
-	[Export] public float MousePitchSensitivity = 0.0025f;
-	[Export] public float MouseYawSensitivity = 0.0025f;
+	[Export] public float MousePitchSensitivity = 0.0008f;
+	[Export] public float MouseYawSensitivity = 0.0008f;
 
 	#endregion
 
@@ -124,21 +122,13 @@ public partial class PlayerShip : CharacterBody3D
 
 	private void UpdateRotation(float seconds)
 	{
-		float keyboardYaw = 0.0f;
 		float keyboardRoll = 0.0f;
-
-		if (Input.IsPhysicalKeyPressed(KEY_YAW_LEFT)) keyboardYaw -= 1.0f;
-		if (Input.IsPhysicalKeyPressed(KEY_YAW_RIGHT)) keyboardYaw += 1.0f;
 
 		if (Input.IsPhysicalKeyPressed(KEY_ROLL_LEFT)) keyboardRoll -= 1.0f;
 		if (Input.IsPhysicalKeyPressed(KEY_ROLL_RIGHT)) keyboardRoll += 1.0f;
 
 		float pitch = _mouseMovement.Y * MousePitchSensitivity;
-
-		float yaw =
-			-_mouseMovement.X * MouseYawSensitivity
-			-Mathf.DegToRad(keyboardYaw * TurnSpeed * seconds);
-
+		float yaw = -_mouseMovement.X * MouseYawSensitivity;
 		float roll = Mathf.DegToRad(keyboardRoll * RollSpeed * seconds);
 
 		RotateObjectLocal(Vector3.Right, pitch);
@@ -151,20 +141,26 @@ public partial class PlayerShip : CharacterBody3D
 	private void UpdateMovement(float seconds)
 	{
 		float thrust = 0.0f;
+		float strafe = 0.0f;
+		float rise = 0.0f;
 
 		if (Input.IsPhysicalKeyPressed(KEY_FORWARD)) thrust += 1.0f;
 		if (Input.IsPhysicalKeyPressed(KEY_REVERSE)) thrust -= 1.0f;
 
-		float rise = 0.0f;
+		if (Input.IsPhysicalKeyPressed(KEY_STRAFE_LEFT)) strafe -= 1.0f;
+		if (Input.IsPhysicalKeyPressed(KEY_STRAFE_RIGHT)) strafe += 1.0f;
 
 		if (Input.IsMouseButtonPressed(MOUSE_ASCEND)) rise += 1.0f;
 		if (_rightCtrlHeld) rise -= 1.0f;
 
-		float speed = thrust >= 0.0f ? ForwardSpeed : ReverseSpeed;
+		float forwardSpeed = thrust >= 0.0f ? ForwardSpeed : ReverseSpeed;
 
-		Vector3 forwardVelocity = -GlobalBasis.Z * thrust * speed;
+		Vector3 forwardVelocity = -GlobalBasis.Z * thrust * forwardSpeed;
+		Vector3 strafeVelocity = GlobalBasis.X * strafe * StrafeSpeed;
 		Vector3 verticalVelocity = GlobalBasis.Y * rise * VerticalSpeed;
-		Vector3 targetVelocity = forwardVelocity + verticalVelocity;
+
+		Vector3 targetVelocity =
+			forwardVelocity + strafeVelocity + verticalVelocity;
 
 		float response = targetVelocity == Vector3.Zero
 			? Deceleration
