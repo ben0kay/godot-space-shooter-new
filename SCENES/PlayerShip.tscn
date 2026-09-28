@@ -1,6 +1,18 @@
 [gd_scene format=3 uid="uid://cqt3qu6fub14m"]
 
 [ext_resource type="Script" uid="uid://bbbhwq6t3wsf7" path="res://SCRIPTS/PlayerShip.cs" id="1_d2dyu"]
+[ext_resource type="Script" uid="uid://cmbhciihetpg7" path="res://SCRIPTS/WeaponMount.cs" id="2_5lrhm"]
+[ext_resource type="Resource" uid="uid://duk6me74e1i1y" path="res://RESOURCES/minigun.tres" id="3_faoyc"]
 
 [node name="PlayerShip" type="CharacterBody3D" unique_id=1589947766]
 script = ExtResource("1_d2dyu")
+
+[node name="PrimaryWeapon" type="Node3D" parent="." unique_id=384299454]
+script = ExtResource("2_5lrhm")
+Weapon = ExtResource("3_faoyc")
+
+[node name="LeftMuzzle" type="Marker3D" parent="PrimaryWeapon" unique_id=1688840903]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.8, 0, -2.4)
+
+[node name="RightMuzzle" type="Marker3D" parent="PrimaryWeapon" unique_id=1616554921]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8, 0, -2.4)
