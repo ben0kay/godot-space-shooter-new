@@ -1,9 +1,13 @@
 [gd_scene format=3 uid="uid://cs4o21cfcqi2x"]
 
-[ext_resource type="Script" uid="uid://pccivx55timo" path="res://SCENES/Sandbox.cs" id="1_h5ewn"]
+[ext_resource type="Script" uid="uid://pccivx55timo" path="res://SCRIPTS/Sandbox.cs" id="1_h5ewn"]
+[ext_resource type="PackedScene" uid="uid://cqt3qu6fub14m" path="res://SCENES/PlayerShip.tscn" id="2_bc7gk"]
 
 [node name="Node3D" type="Node3D" unique_id=1526637451]
 script = ExtResource("1_h5ewn")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1008970321]
-transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 18, 28)
+transform = Transform3D(1, 0, 0, 0, 0.83867055, 0.54463905, 0, -0.54463905, 0.83867055, 0, 18, 28)
+
+[node name="PlayerShip" parent="." unique_id=799486836 instance=ExtResource("2_bc7gk")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
