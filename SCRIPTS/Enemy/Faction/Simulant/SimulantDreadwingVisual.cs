@@ -2,217 +2,256 @@ using Godot;
 
 public partial class SimulantDreadwingVisual : Node3D
 {
-	#region Colours
+	private readonly Color _dark = new("#100d1d");
+	private readonly Color _hull = new("#29213d");
+	private readonly Color _armour = new("#463461");
+	private readonly Color _highlight = new("#7656a0");
+	private readonly Color _energy = new("#a34dff");
+	private readonly Color _core = new("#e8d5ff");
+	[Export(PropertyHint.Range, "0.25,4.0,0.05")]
+public float VisualScale = 1.0f;
 
-	private readonly Color _hull = new Color(0.11f, 0.09f, 0.18f);
-	private readonly Color _armour = new Color(0.24f, 0.17f, 0.36f);
-	private readonly Color _edge = new Color(0.37f, 0.28f, 0.53f);
-	private readonly Color _energy = new Color(0.63f, 0.24f, 1.0f);
-	private readonly Color _core = new Color(0.86f, 0.60f, 1.0f);
-
-	#endregion
-
-	#region Setup
-
-	// Builds the temporary 3D Dreadwing entirely from mesh primitives.
 	public override void _Ready()
 	{
+		Scale = Vector3.One * VisualScale;
 		CreateBody();
 		CreateWings();
+		CreateFins();
 		CreateWeapons();
 		CreateCore();
 		CreateEngines();
 	}
 
-	#endregion
-
-	#region Parts
-
-	// Creates the central spine and pointed forward section.
 	private void CreateBody()
 	{
-		AddBox(
-			"CentralHull",
-			new Vector3(0, 0, 0),
-			new Vector3(2.6f, 0.9f, 5.2f),
-			_hull
-		);
+		// A deep underside gives the ship mass when seen from the side.
+		AddBox("Lower Keel", new Vector3(0, -0.65f, 0.15f),
+			new Vector3(2.5f, 1.4f, 5.6f), _dark);
 
-		AddBox(
-			"UpperArmour",
-			new Vector3(0, 0.55f, -0.2f),
-			new Vector3(1.8f, 0.35f, 3.4f),
-			_armour
-		);
+		AddBox("Main Hull", new Vector3(0, 0.15f, 0),
+			new Vector3(2.8f, 0.9f, 5.2f), _hull);
 
-		AddBox(
-			"ForwardSpine",
-			new Vector3(0, 0.15f, -2.5f),
-			new Vector3(0.8f, 0.5f, 2.0f),
-			_edge
-		);
+		AddBox("Upper Deck", new Vector3(0, 0.85f, -0.35f),
+			new Vector3(2.0f, 0.55f, 3.8f), _armour);
 
-		AddBox(
-			"EnergyTrench",
-			new Vector3(0, 0.76f, -0.65f),
-			new Vector3(0.12f, 0.05f, 2.4f),
-			_energy,
-			true
-		);
+		AddBox("Raised Bridge", new Vector3(0, 1.35f, -0.75f),
+			new Vector3(1.35f, 0.75f, 2.3f), _hull);
+
+		AddBox("Dorsal Spine", new Vector3(0, 1.85f, -0.75f),
+			new Vector3(0.55f, 0.45f, 2.8f), _highlight);
+
+		AddBox("Armoured Nose", new Vector3(0, 0.4f, -2.65f),
+			new Vector3(1.25f, 0.65f, 1.65f), _armour);
+
+		AddBox("Nose Blade", new Vector3(0, 0.65f, -3.15f),
+			new Vector3(0.4f, 0.22f, 0.85f), _highlight);
+
+		foreach (int side in new[] { -1, 1 })
+		{
+			AddBox("Lower Hull Rib", new Vector3(side * 1.15f, -0.55f, 0.1f),
+				new Vector3(0.35f, 1.0f, 4.4f), _armour);
+
+			AddBox("Upper Hull Rib", new Vector3(side * 1.05f, 1.0f, -0.4f),
+				new Vector3(0.28f, 0.35f, 3.2f), _highlight);
+		}
 	}
 
-	// Forms a broad swept silhouette on both sides.
 	private void CreateWings()
 	{
-		for (int side = -1; side <= 1; side += 2)
+		foreach (int side in new[] { -1, 1 })
 		{
-			AddBox(
-				side < 0 ? "LeftInnerWing" : "RightInnerWing",
-				new Vector3(side * 2.5f, 0.05f, 0.1f),
-				new Vector3(3.5f, 0.42f, 2.8f),
-				_armour,
-				false,
-				side * 15.0f
-			);
+			AddBox("Inner Wing", new Vector3(side * 2.45f, 0.05f, 0.2f),
+				new Vector3(3.5f, 0.7f, 2.75f), _hull,
+				yaw: side * 15f);
 
-			AddBox(
-				side < 0 ? "LeftOuterBlade" : "RightOuterBlade",
-				new Vector3(side * 5.05f, 0.16f, -0.1f),
-				new Vector3(2.8f, 0.26f, 1.25f),
-				_hull,
-				false,
-				side * 27.0f
-			);
+			AddBox("Lower Wing Armour", new Vector3(side * 2.9f, -0.5f, 0.35f),
+				new Vector3(3.5f, 0.45f, 1.9f), _dark,
+				yaw: side * 15f);
 
-			AddBox(
-				side < 0 ? "LeftEnergyChannel" : "RightEnergyChannel",
-				new Vector3(side * 3.3f, 0.33f, -0.6f),
-				new Vector3(2.5f, 0.06f, 0.12f),
-				_energy,
-				true,
-				side * 15.0f
-			);
+			AddBox("Outer Wing Blade", new Vector3(side * 5.0f, 0.15f, 0.65f),
+				new Vector3(2.7f, 0.4f, 1.25f), _armour,
+				yaw: side * 27f);
+
+			// The shoulder rises well above the wing instead of lying flat.
+			AddBox("Shoulder Base", new Vector3(side * 1.95f, 0.85f, -0.1f),
+				new Vector3(1.45f, 1.05f, 2.25f), _armour,
+				yaw: side * 12f);
+
+			AddBox("Shoulder Crest", new Vector3(side * 2.15f, 1.48f, -0.25f),
+				new Vector3(1.0f, 0.35f, 1.75f), _highlight,
+				yaw: side * 12f);
+
+			AddBox("Raised Wing Plate", new Vector3(side * 3.35f, 0.85f, 0.2f),
+				new Vector3(2.35f, 0.23f, 1.55f), _armour,
+				yaw: side * 15f,
+				roll: side * 10f);
+
+			AddBox("Wing Energy Seam", new Vector3(side * 4.0f, 0.78f, 0.65f),
+				new Vector3(1.7f, 0.08f, 0.14f), _energy,
+				glowing: true,
+				yaw: side * 20f);
 		}
 	}
 
-	// Shows the positions of four cannons and the central beam.
+	private void CreateFins()
+	{
+		foreach (int side in new[] { -1, 1 })
+		{
+			// These are the main vertical silhouette from a side or rear view.
+			AddBox("Tall Shoulder Fin", new Vector3(side * 2.45f, 2.25f, 0.15f),
+				new Vector3(0.24f, 2.35f, 1.65f), _dark,
+				roll: side * 16f);
+
+			AddBox("Shoulder Fin Edge", new Vector3(side * 2.54f, 2.35f, -0.55f),
+				new Vector3(0.1f, 1.8f, 0.12f), _energy,
+				glowing: true,
+				roll: side * 16f);
+
+			AddBox("Outer Wing Fin", new Vector3(side * 5.25f, 1.45f, 0.75f),
+				new Vector3(0.19f, 1.75f, 1.2f), _hull,
+				roll: side * 22f);
+
+			AddBox("Outer Fin Tip", new Vector3(side * 5.45f, 2.25f, 0.75f),
+				new Vector3(0.12f, 0.55f, 0.85f), _highlight,
+				roll: side * 22f);
+		}
+
+		AddBox("Central Spine Fin", new Vector3(0, 2.35f, 0.65f),
+			new Vector3(0.22f, 1.4f, 1.25f), _dark);
+
+		AddBox("Spine Fin Edge", new Vector3(0, 2.45f, 0.03f),
+			new Vector3(0.09f, 0.9f, 0.12f), _energy,
+			glowing: true);
+	}
+
 	private void CreateWeapons()
 	{
-		float[] cannonX = { -4.4f, -1.45f, 1.45f, 4.4f };
-
-		for (int index = 0; index < cannonX.Length; index++)
+		foreach (int side in new[] { -1, 1 })
 		{
-			AddBox(
-				$"CannonHousing_{index}",
-				new Vector3(cannonX[index], 0.45f, -1.15f),
-				new Vector3(0.65f, 0.45f, 1.3f),
-				_edge
-			);
+			AddBox("Inner Weapon Mount", new Vector3(side * 1.4f, 1.35f, -1.55f),
+				new Vector3(0.75f, 0.65f, 1.1f), _dark);
 
-			AddBox(
-				$"CannonBarrel_{index}",
-				new Vector3(cannonX[index], 0.45f, -2.05f),
-				new Vector3(0.24f, 0.24f, 0.9f),
-				_hull
-			);
+			AddBox("Inner Cannon", new Vector3(side * 1.4f, 1.38f, -2.35f),
+				new Vector3(0.26f, 0.26f, 1.15f), _highlight);
+
+			AddBox("Outer Weapon Mount", new Vector3(side * 4.35f, 0.85f, -0.35f),
+				new Vector3(0.85f, 0.6f, 1.15f), _dark);
+
+			AddBox("Outer Cannon", new Vector3(side * 4.35f, 0.85f, -1.2f),
+				new Vector3(0.3f, 0.3f, 1.2f), _highlight);
 		}
-
-		AddBox(
-			"CentreBeamEmitter",
-			new Vector3(0, 0.35f, -3.55f),
-			new Vector3(0.42f, 0.42f, 0.25f),
-			_energy,
-			true
-		);
 	}
 
-	// Places the purple seeker-core glow on the upper rear body.
 	private void CreateCore()
 	{
-		SphereMesh mesh = new SphereMesh();
-		mesh.Radius = 0.48f;
-		mesh.Height = 0.96f;
-		mesh.RadialSegments = 16;
-		mesh.Rings = 8;
+		AddCylinder("Core Socket", new Vector3(0, 1.65f, 0.55f),
+			0.78f, 0.32f, _dark);
 
-		StandardMaterial3D material = CreateMaterial(_core, true);
-		mesh.Material = material;
+		AddSphere("Energy Core", new Vector3(0, 1.94f, 0.55f),
+			0.43f, _core, glowing: true);
 
-		MeshInstance3D visual = new MeshInstance3D();
-		visual.Name = "SeekerCore";
-		visual.Position = new Vector3(0, 0.85f, 0.6f);
-		visual.Mesh = mesh;
-		AddChild(visual);
-	}
-
-	// Adds four visible purple exhaust ports at the back.
-	private void CreateEngines()
-	{
-		float[] engineX = { -4.2f, -1.2f, 1.2f, 4.2f };
-
-		for (int index = 0; index < engineX.Length; index++)
+		foreach (int side in new[] { -1, 1 })
 		{
-			AddBox(
-				$"EngineHousing_{index}",
-				new Vector3(engineX[index], 0, 1.45f),
-				new Vector3(0.65f, 0.55f, 1.25f),
-				_hull
-			);
-
-			AddBox(
-				$"EngineGlow_{index}",
-				new Vector3(engineX[index], 0, 2.13f),
-				new Vector3(0.38f, 0.33f, 0.08f),
-				_energy,
-				true
-			);
+			AddBox("Core Clamp", new Vector3(side * 0.62f, 1.93f, 0.55f),
+				new Vector3(0.22f, 0.48f, 0.85f), _highlight);
 		}
 	}
 
-	#endregion
+	private void CreateEngines()
+	{
+		foreach (float x in new[] { -4.0f, -1.1f, 1.1f, 4.0f })
+		{
+			AddBox("Engine Housing", new Vector3(x, -0.1f, 1.65f),
+				new Vector3(0.85f, 0.85f, 1.35f), _dark);
 
-	#region Mesh Helpers
+			AddBox("Engine Exhaust", new Vector3(x, -0.1f, 2.37f),
+				new Vector3(0.55f, 0.5f, 0.12f), _energy,
+				glowing: true);
+		}
+	}
 
-	// Adds one visual box, optionally angled and emissive.
 	private void AddBox(
 		string name,
 		Vector3 position,
 		Vector3 size,
 		Color color,
 		bool glowing = false,
-		float yRotation = 0.0f
-	)
+		float yaw = 0f,
+		float roll = 0f)
 	{
-		BoxMesh mesh = new BoxMesh();
-		mesh.Size = size;
-		mesh.Material = CreateMaterial(color, glowing);
+		var mesh = new MeshInstance3D
+		{
+			Name = name,
+			Mesh = new BoxMesh { Size = size },
+			MaterialOverride = CreateMaterial(color, glowing),
+			Position = position,
+			RotationDegrees = new Vector3(0, yaw, roll)
+		};
 
-		MeshInstance3D visual = new MeshInstance3D();
-		visual.Name = name;
-		visual.Position = position;
-		visual.RotationDegrees = new Vector3(0, yRotation, 0);
-		visual.Mesh = mesh;
-
-		AddChild(visual);
+		AddChild(mesh);
 	}
 
-	// Creates the material used by the temporary primitives.
+	private void AddSphere(
+		string name,
+		Vector3 position,
+		float radius,
+		Color color,
+		bool glowing = false)
+	{
+		var mesh = new MeshInstance3D
+		{
+			Name = name,
+			Mesh = new SphereMesh
+			{
+				Radius = radius,
+				Height = radius * 2f
+			},
+			MaterialOverride = CreateMaterial(color, glowing),
+			Position = position
+		};
+
+		AddChild(mesh);
+	}
+
+	private void AddCylinder(
+		string name,
+		Vector3 position,
+		float radius,
+		float height,
+		Color color)
+	{
+		var mesh = new MeshInstance3D
+		{
+			Name = name,
+			Mesh = new CylinderMesh
+			{
+				TopRadius = radius,
+				BottomRadius = radius,
+				Height = height
+			},
+			MaterialOverride = CreateMaterial(color, false),
+			Position = position
+		};
+
+		AddChild(mesh);
+	}
+
 	private StandardMaterial3D CreateMaterial(Color color, bool glowing)
 	{
-		StandardMaterial3D material = new StandardMaterial3D();
-		material.AlbedoColor = color;
-		material.Metallic = glowing ? 0.0f : 0.65f;
-		material.Roughness = glowing ? 0.3f : 0.32f;
+		var material = new StandardMaterial3D
+		{
+			AlbedoColor = color,
+			Metallic = 0.45f,
+			Roughness = 0.38f
+		};
 
 		if (glowing)
 		{
 			material.EmissionEnabled = true;
 			material.Emission = color;
-			material.EmissionEnergyMultiplier = 2.5f;
+			material.EmissionEnergyMultiplier = 3.0f;
 		}
 
 		return material;
 	}
-
-	#endregion
 }

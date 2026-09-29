@@ -4,3 +4,4 @@
 
 [node name="SimulantDreadwingVisual" type="Node3D" unique_id=33209402]
 script = ExtResource("1_rel0o")
+VisualScale = 1.5

@@ -5,6 +5,7 @@
 
 [resource]
 script = ExtResource("1_m5jen")
+DisplayName = "Simulant Dreadwing"
 Faction = 4
 Class = 3
 Rank = 2
