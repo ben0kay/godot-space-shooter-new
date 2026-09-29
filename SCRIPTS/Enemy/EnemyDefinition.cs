@@ -13,9 +13,16 @@ public partial class EnemyDefinition : Resource
 
 	#endregion
 
-	#region Hull
+	#region Defence
 
-	[Export] public float MaxHealth = 24.0f;
+	[Export] public float MaxShield = 0.0f;
+	[Export] public float MaxArmour = 0.0f;
+	[Export] public float MaxHull = 24.0f;
+
+	#endregion
+
+	#region Shape
+
 	[Export] public Vector3 HullSize = new Vector3(2.0f, 0.7f, 4.0f);
 	[Export] public Vector3 WingSize = new Vector3(2.2f, 0.25f, 1.6f);
 	[Export] public Vector3 CollisionSize = new Vector3(5.8f, 0.9f, 4.3f);

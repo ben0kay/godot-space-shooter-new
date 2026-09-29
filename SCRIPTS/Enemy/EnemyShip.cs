@@ -10,13 +10,15 @@ public partial class EnemyShip : CharacterBody3D, IDamageable
 
 	#region Runtime
 
-	private float _health;
+	private ShipDefence _defence;
+
+	public ShipDefence Defence => _defence;
 
 	#endregion
 
 	#region Setup
 
-	// Reads this ship's definition and creates its temporary visual and collision.
+	// Reads the definition and creates this ship's runtime defence and shape.
 	public override void _Ready()
 	{
 		if (Definition == null)
@@ -25,7 +27,11 @@ public partial class EnemyShip : CharacterBody3D, IDamageable
 			return;
 		}
 
-		_health = Definition.MaxHealth;
+		_defence = new ShipDefence(
+			Definition.MaxShield,
+			Definition.MaxArmour,
+			Definition.MaxHull
+		);
 
 		CreateVisuals();
 		CreateCollision();
@@ -35,17 +41,19 @@ public partial class EnemyShip : CharacterBody3D, IDamageable
 
 	#region Damage
 
-	// Applies a hit and removes this ship when its health reaches zero.
+	// Passes projectile damage through the ship's three defence layers.
 	public void ApplyDamage(DamageInfo damage)
 	{
-		if (Definition == null || damage.Amount <= 0.0f || IsQueuedForDeletion())
+		if (_defence == null
+			|| damage.Amount <= 0.0f
+			|| IsQueuedForDeletion())
 		{
 			return;
 		}
 
-		_health -= damage.Amount;
+		_defence.ApplyDamage(damage.Amount);
 
-		if (_health <= 0.0f)
+		if (_defence.Destroyed)
 		{
 			QueueFree();
 		}
@@ -103,7 +111,7 @@ public partial class EnemyShip : CharacterBody3D, IDamageable
 		);
 	}
 
-	// Creates one collision shape covering the ship's temporary body.
+	// Creates one collision shape covering the temporary ship body.
 	private void CreateCollision()
 	{
 		BoxShape3D shape = new BoxShape3D();

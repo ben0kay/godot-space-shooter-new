@@ -226,5 +226,31 @@ private void SpawnAsteroids()
 }
 
 
+private float GetAsteroidRadius(RandomNumberGenerator random, int index)
+{
+	if (index < LargeAsteroidCount)
+	{
+		return random.RandfRange(
+			LargeAsteroidMinRadius,
+			LargeAsteroidMaxRadius
+		);
+	}
+
+	if (index < LargeAsteroidCount + MediumAsteroidCount)
+	{
+		return random.RandfRange(
+			MediumAsteroidMinRadius,
+			MediumAsteroidMaxRadius
+		);
+	}
+
+	return random.RandfRange(
+		SmallAsteroidMinRadius,
+		SmallAsteroidMaxRadius
+	);
+}
+
+
+
 	#endregion
 }
