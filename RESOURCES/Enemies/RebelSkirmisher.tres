@@ -6,4 +6,6 @@
 script = ExtResource("1_43br7")
 DisplayName = "Rebel Skirmisher"
 Faction = 2
+MaxArmour = 60.0
+MaxHull = 42.0
 metadata/_custom_type_script = "uid://bxv2gm5hx3d6i"
