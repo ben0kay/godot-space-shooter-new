@@ -21,6 +21,13 @@ public partial class EnemyDefinition : Resource
 
 	#endregion
 
+	#region Flight And Awareness
+
+	[Export] public EnemyHandlingStats Handling;
+	[Export] public EnemyRangeStats Ranges;
+
+	#endregion
+
 	#region Shape
 
 	[Export] public PackedScene VisualScene;

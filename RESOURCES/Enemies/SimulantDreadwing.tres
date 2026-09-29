@@ -1,7 +1,23 @@
 [gd_resource type="Resource" script_class="EnemyDefinition" format=3 uid="uid://tkfi5asftg5d"]
 
-[ext_resource type="PackedScene" uid="uid://bohf7i01xknix" path="res://SCENES/SimulantDreadwingVisual.tscn" id="1_5sfy2"]
+[ext_resource type="Script" uid="uid://daovfp0cngp6i" path="res://SCRIPTS/Enemy/EnemyHandlingStats.cs" id="1_fv2d8"]
 [ext_resource type="Script" uid="uid://bxv2gm5hx3d6i" path="res://SCRIPTS/Enemy/EnemyDefinition.cs" id="1_m5jen"]
+[ext_resource type="Script" uid="uid://ccwbsekbqw5ln" path="res://SCRIPTS/Enemy/EnemyRangeStats.cs" id="2_b8h0j"]
+
+[sub_resource type="Resource" id="Resource_xhs40"]
+script = ExtResource("1_fv2d8")
+MaxSpeed = 10.0
+Acceleration = 4.0
+Braking = 6.0
+TurnSpeedDegrees = 45.0
+metadata/_custom_type_script = "uid://daovfp0cngp6i"
+
+[sub_resource type="Resource" id="Resource_k1wv1"]
+script = ExtResource("2_b8h0j")
+Detection = 110.0
+BackAway = 30.0
+Forget = 140.0
+metadata/_custom_type_script = "uid://ccwbsekbqw5ln"
 
 [resource]
 script = ExtResource("1_m5jen")
@@ -9,9 +25,7 @@ DisplayName = "Simulant Dreadwing"
 Faction = 4
 Class = 3
 Rank = 2
-MaxShield = 180.0
-MaxArmour = 600.0
-MaxHull = 250.0
-VisualScene = ExtResource("1_5sfy2")
-CollisionSize = Vector3(13, 2, 7)
+Handling = SubResource("Resource_xhs40")
+Ranges = SubResource("Resource_k1wv1")
+CollisionSize = Vector3(13, 6, 8)
 metadata/_custom_type_script = "uid://bxv2gm5hx3d6i"

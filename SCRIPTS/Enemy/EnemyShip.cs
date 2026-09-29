@@ -123,16 +123,28 @@ public override void _Ready()
 
 	// Creates one collision shape covering the temporary ship body.
 	private void CreateCollision()
+{
+	Vector3 size = Definition.CollisionSize;
+	Node3D visual = GetNodeOrNull<Node3D>("Visual");
+
+	if (visual != null)
 	{
-		BoxShape3D shape = new BoxShape3D();
-		shape.Size = Definition.CollisionSize;
-
-		CollisionShape3D collision = new CollisionShape3D();
-		collision.Name = "Collision";
-		collision.Shape = shape;
-
-		AddChild(collision);
+		size *= visual.Scale;
 	}
+
+	BoxShape3D shape = new BoxShape3D
+	{
+		Size = size
+	};
+
+	CollisionShape3D collision = new CollisionShape3D
+	{
+		Name = "Collision",
+		Shape = shape
+	};
+
+	AddChild(collision);
+}
 
 	// Adds one decorative box with an optional glowing material.
 	private void AddBox(
