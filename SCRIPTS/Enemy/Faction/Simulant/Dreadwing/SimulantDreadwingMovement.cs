@@ -2,19 +2,27 @@ using Godot;
 
 public partial class SimulantDreadwingMovement : EnemyMovementController
 {
-	private PlayerShip _target;
-	private float _targetSearchTimer;
+	private const float LOS_CHECK_INTERVAL = 0.2f;
+	private const float FLANK_CLEARANCE = 8.0f;
+
+	private float _losTimer;
+	private bool _lineOfSightClear = true;
+	private Vector3 _flankPoint;
+	private Asteroid _blockingAsteroid;
+	private int _flankSide;
 
 	protected override Vector3 GetDesiredVelocity(float seconds)
 	{
-		UpdateTarget(seconds);
+		Node3D target = Ship.Targeting?.Target;
 
-		if (_target == null || Ship.Definition.Ranges == null)
+		if (!GodotObject.IsInstanceValid(target)
+			|| Ship.Definition.Ranges == null)
 		{
+			_blockingAsteroid = null;
 			return Vector3.Zero;
 		}
 
-		Vector3 toTarget = _target.GlobalPosition - Ship.GlobalPosition;
+		Vector3 toTarget = target.GlobalPosition - Ship.GlobalPosition;
 		float distance = toTarget.Length();
 
 		if (distance < 0.001f)
@@ -24,6 +32,34 @@ public partial class SimulantDreadwingMovement : EnemyMovementController
 
 		EnemyRangeStats ranges = Ship.Definition.Ranges;
 		float speed = Ship.Definition.Handling.MaxSpeed;
+
+		_losTimer -= seconds;
+
+		if (_losTimer <= 0.0f)
+		{
+			_losTimer = LOS_CHECK_INTERVAL;
+			UpdateLineOfSight(target);
+		}
+
+		// A blocked shot needs movement even inside combat range.
+		if (!_lineOfSightClear
+			&& GodotObject.IsInstanceValid(_blockingAsteroid))
+		{
+			Vector3 toFlank = _flankPoint - Ship.GlobalPosition;
+
+			if (toFlank.LengthSquared() > 1.0f)
+			{
+				return toFlank.Normalized() * speed;
+			}
+
+			// Keep moving around the obstruction if the first flank
+			// position does not yet provide a clear shot.
+			Vector3 tangent = (
+				_flankPoint - _blockingAsteroid.GlobalPosition
+			).Normalized();
+
+			return tangent * speed * 0.5f;
+		}
 
 		if (distance > ranges.Combat)
 		{
@@ -40,51 +76,121 @@ public partial class SimulantDreadwingMovement : EnemyMovementController
 
 	protected override Vector3 GetFacingDirection()
 	{
-		return _target == null
-			? Vector3.Zero
-			: _target.GlobalPosition - Ship.GlobalPosition;
+		Node3D target = Ship.Targeting?.Target;
+
+		return GodotObject.IsInstanceValid(target)
+			? target.GlobalPosition - Ship.GlobalPosition
+			: Vector3.Zero;
 	}
 
-	private void UpdateTarget(float seconds)
+	private void UpdateLineOfSight(Node3D target)
 	{
-		EnemyRangeStats ranges = Ship.Definition.Ranges;
+		Asteroid blocker = FindBlockingAsteroid(
+			Ship.GlobalPosition,
+			target.GlobalPosition
+		);
 
-		if (IsTargetValid(_target)
-			&& Ship.GlobalPosition.DistanceTo(_target.GlobalPosition) <= ranges.Forget)
+		_lineOfSightClear = blocker == null;
+
+		if (blocker == null)
 		{
+			_blockingAsteroid = null;
 			return;
 		}
 
-		_target = null;
-		_targetSearchTimer -= seconds;
-
-		if (_targetSearchTimer > 0.0f)
+		if (blocker != _blockingAsteroid)
 		{
-			return;
+			_blockingAsteroid = blocker;
+			_flankSide = 0;
 		}
 
-		_targetSearchTimer = EnemyUpdateConfig.TargetSearchInterval;
+		Vector3 towardTarget =
+			(target.GlobalPosition - Ship.GlobalPosition).Normalized();
 
-		foreach (Node node in GetTree().GetNodesInGroup("player_ship"))
+		Vector3 side = towardTarget.Cross(Vector3.Up).Normalized();
+
+		// Directly above or below the target, choose another axis.
+		if (side.LengthSquared() < 0.001f)
 		{
-			if (node is not PlayerShip player || !IsTargetValid(player))
-			{
-				continue;
-			}
+			side = towardTarget.Cross(Vector3.Right).Normalized();
+		}
 
-			if (Ship.GlobalPosition.DistanceTo(player.GlobalPosition) <= ranges.Detection)
+		float asteroidRadius = GetAsteroidRadius(blocker);
+		float shipHalfWidth = Ship.Definition.CollisionSize.X * 0.5f;
+
+		Node3D visual = Ship.GetNodeOrNull<Node3D>("Visual");
+
+		if (visual != null)
+		{
+			shipHalfWidth *= visual.Scale.X;
+		}
+
+		float offset = asteroidRadius + shipHalfWidth + FLANK_CLEARANCE;
+
+		Vector3 left = blocker.GlobalPosition - side * offset;
+		Vector3 right = blocker.GlobalPosition + side * offset;
+
+		if (_flankSide == 0)
+		{
+			bool leftClear =
+				FindBlockingAsteroid(left, target.GlobalPosition) == null;
+
+			bool rightClear =
+				FindBlockingAsteroid(right, target.GlobalPosition) == null;
+
+			if (leftClear != rightClear)
 			{
-				_target = player;
-				return;
+				_flankSide = leftClear ? -1 : 1;
+			}
+			else
+			{
+				float leftDistance =
+					Ship.GlobalPosition.DistanceSquaredTo(left);
+
+				float rightDistance =
+					Ship.GlobalPosition.DistanceSquaredTo(right);
+
+				_flankSide = leftDistance <= rightDistance ? -1 : 1;
 			}
 		}
+
+		_flankPoint = _flankSide < 0 ? left : right;
 	}
 
-	private bool IsTargetValid(PlayerShip player)
+	private Asteroid FindBlockingAsteroid(Vector3 start, Vector3 end)
 	{
-		return GodotObject.IsInstanceValid(player)
-			&& !player.IsQueuedForDeletion()
-			&& player.Defence != null
-			&& !player.Defence.Destroyed;
+		PhysicsRayQueryParameters3D query =
+			PhysicsRayQueryParameters3D.Create(start, end);
+
+		query.Exclude = new Godot.Collections.Array<Rid>
+		{
+			Ship.GetRid()
+		};
+
+		var hit = Ship.GetWorld3D().DirectSpaceState.IntersectRay(query);
+
+		return hit.Count > 0
+			? hit["collider"].AsGodotObject() as Asteroid
+			: null;
 	}
+
+private float GetAsteroidRadius(Asteroid asteroid)
+{
+	MeshInstance3D mesh =
+		asteroid.GetNodeOrNull<MeshInstance3D>("Visual");
+
+	if (mesh?.Mesh == null)
+	{
+		return 5.0f;
+	}
+
+	Vector3 scale = asteroid.GlobalBasis.Scale;
+	float largestScale = Mathf.Max(
+		scale.X,
+		Mathf.Max(scale.Y, scale.Z)
+	);
+
+	return mesh.Mesh.GetAabb().Size.Length()
+		* 0.5f
+		* largestScale;
 }

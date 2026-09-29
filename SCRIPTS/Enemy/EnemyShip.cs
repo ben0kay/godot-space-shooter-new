@@ -1,6 +1,6 @@
 using Godot;
 
-public partial class EnemyShip : CharacterBody3D, IDamageable
+public partial class EnemyShip : CharacterBody3D, IDamageable, ICombatTarget
 {
 	#region Definition
 
@@ -11,8 +11,14 @@ public partial class EnemyShip : CharacterBody3D, IDamageable
 	#region Runtime
 
 	private ShipDefence _defence;
-
 	public ShipDefence Defence => _defence;
+	public EnemyTargeting Targeting { get; private set; }
+	public Faction CombatFaction => Definition?.Faction ?? Faction.Neutral;
+	public bool IsCombatTargetable =>
+		Definition != null
+		&& _defence != null
+		&& !_defence.Destroyed
+		&& !IsQueuedForDeletion();
 
 	#endregion
 
@@ -33,6 +39,8 @@ public override void _Ready()
 		Definition.MaxHull
 	);
 
+	AddToGroup("combat_targets");
+
 	if (Definition.VisualScene != null)
 	{
 		Node3D visual = Definition.VisualScene.Instantiate<Node3D>();
@@ -45,6 +53,14 @@ public override void _Ready()
 	}
 
 	CreateCollision();
+
+	if (Definition.Ranges != null)
+	{
+		Targeting = new EnemyTargeting();
+		Targeting.Name = "Targeting";
+		Targeting.Initialize(this);
+		AddChild(Targeting);
+	}
 
 	if (Definition.MovementControllerScene == null)
 	{

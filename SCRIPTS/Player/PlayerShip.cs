@@ -1,7 +1,7 @@
 using System;
 using Godot;
 
-public partial class PlayerShip : CharacterBody3D, IDamageable
+public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 {
 	#region Definition
 
@@ -50,6 +50,12 @@ public partial class PlayerShip : CharacterBody3D, IDamageable
 
 	public ShipDefence Defence { get; private set; }
 	public event Action DefenceChanged;
+	public Faction CombatFaction => Faction.Player;
+
+	public bool IsCombatTargetable =>
+		Defence != null
+		&& !_destroyed
+		&& !IsQueuedForDeletion();
 
 	#endregion
 
@@ -59,6 +65,7 @@ public partial class PlayerShip : CharacterBody3D, IDamageable
 	public override void _Ready()
 	{
 		AddToGroup("player_ship");
+		AddToGroup("combat_targets");
 		BoxShape3D shape = new BoxShape3D();
 		shape.Size = new Vector3(3.8f, 1.0f, 3.8f);
 
