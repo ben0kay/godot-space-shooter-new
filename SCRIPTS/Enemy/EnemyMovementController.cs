@@ -127,30 +127,32 @@ public partial class EnemyMovementController : Node
 	// Tilts the visual model vertically based on climbing or descending.
 	// Banks the model during turns without rotating the ship's physics body.
 	private void TiltVisual(Vector3 facingDirection, float seconds)
+{
+	if (Visual == null)
 	{
-		if (Visual == null)
-		{
-			return;
-		}
+		return;
+	}
 
-		EnemyHandlingStats handling = Ship.Definition.Handling;
-		Vector3 velocity = Ship.Velocity;
+	EnemyHandlingStats handling = Ship.Definition.Handling;
 
-		float horizontalSpeed = new Vector2(velocity.X, velocity.Z).Length();
-		float targetPitch = 0.0f;
+	float horizontalDistance = new Vector2(
+		facingDirection.X,
+		facingDirection.Z
+	).Length();
 
-		if (horizontalSpeed > 0.1f)
-		{
-			targetPitch = Mathf.Clamp(
-				Mathf.Atan2(velocity.Y, horizontalSpeed),
-				-Mathf.DegToRad(handling.MaxPitchDegrees),
-				Mathf.DegToRad(handling.MaxPitchDegrees)
-			);
-		}
+	float targetPitch = 0.0f;
+	float targetBank = 0.0f;
 
-		float targetBank = 0.0f;
+	if (facingDirection.LengthSquared() > 0.001f)
+	{
+		// Positive pitch raises the nose of a ship facing local -Z.
+		targetPitch = Mathf.Clamp(
+			Mathf.Atan2(facingDirection.Y, horizontalDistance),
+			-Mathf.DegToRad(handling.MaxPitchDegrees),
+			Mathf.DegToRad(handling.MaxPitchDegrees)
+		);
 
-		if (new Vector2(facingDirection.X, facingDirection.Z).LengthSquared() > 0.001f)
+		if (horizontalDistance > 0.001f)
 		{
 			float desiredYaw = Mathf.Atan2(
 				-facingDirection.X,
@@ -169,23 +171,24 @@ public partial class EnemyMovementController : Node
 				Mathf.DegToRad(handling.MaxBankDegrees)
 			);
 		}
-
-		Vector3 rotation = Visual.Rotation;
-
-		rotation.X = Mathf.MoveToward(
-			rotation.X,
-			targetPitch,
-			Mathf.DegToRad(handling.PitchSpeedDegrees) * seconds
-		);
-
-		rotation.Z = Mathf.MoveToward(
-			rotation.Z,
-			targetBank,
-			handling.BankResponse * seconds
-		);
-
-		Visual.Rotation = rotation;
 	}
+
+	Vector3 rotation = Visual.Rotation;
+
+	rotation.X = Mathf.MoveToward(
+		rotation.X,
+		targetPitch,
+		Mathf.DegToRad(handling.PitchSpeedDegrees) * seconds
+	);
+
+	rotation.Z = Mathf.MoveToward(
+		rotation.Z,
+		targetBank,
+		handling.BankResponse * seconds
+	);
+
+	Visual.Rotation = rotation;
+}
 
 	#endregion
 }

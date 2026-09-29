@@ -12,6 +12,7 @@ MaxSpeed = 10.0
 Acceleration = 4.0
 Braking = 6.0
 TurnSpeedDegrees = 45.0
+MaxPitchDegrees = 35.0
 metadata/_custom_type_script = "uid://daovfp0cngp6i"
 
 [sub_resource type="Resource" id="Resource_k1wv1"]
