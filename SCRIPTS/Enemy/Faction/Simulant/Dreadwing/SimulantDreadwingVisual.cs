@@ -2,25 +2,34 @@ using Godot;
 
 public partial class SimulantDreadwingVisual : Node3D
 {
-	private readonly Color _dark = new("#100d1d");
-	private readonly Color _hull = new("#29213d");
-	private readonly Color _armour = new("#463461");
-	private readonly Color _highlight = new("#7656a0");
-	private readonly Color _energy = new("#a34dff");
-	private readonly Color _core = new("#e8d5ff");
+	private FactionPalette _palette;
+
+	private Color _dark => _palette.HullDark;
+	private Color _hull => _palette.HullMid;
+	private Color _armour => _palette.HullLight;
+	private Color _highlight => _palette.Metal;
+	private Color _energy => _palette.Energy;
+	private Color _core => _palette.Core;
 	[Export(PropertyHint.Range, "0.25,4.0,0.05")]
 public float VisualScale = 1.0f;
 
 	public override void _Ready()
-	{
-		Scale = Vector3.One * VisualScale;
-		CreateBody();
-		CreateWings();
-		CreateFins();
-		CreateWeapons();
-		CreateCore();
-		CreateEngines();
-	}
+{
+	Faction faction = GetParent() is ICombatTarget owner
+		? owner.CombatFaction
+		: Faction.Simulant;
+
+	_palette = FactionPalettes.Get(faction);
+
+	Scale = Vector3.One * VisualScale;
+
+	CreateBody();
+	CreateWings();
+	CreateFins();
+	CreateWeapons();
+	CreateCore();
+	CreateEngines();
+}
 
 	private void CreateBody()
 	{
@@ -158,17 +167,25 @@ public float VisualScale = 1.0f;
 	}
 
 	private void CreateEngines()
+{
+	foreach (float x in new[] { -4.0f, -1.1f, 1.1f, 4.0f })
 	{
-		foreach (float x in new[] { -4.0f, -1.1f, 1.1f, 4.0f })
-		{
-			AddBox("Engine Housing", new Vector3(x, -0.1f, 1.65f),
-				new Vector3(0.85f, 0.85f, 1.35f), _dark);
+		AddBox(
+			"Engine Housing",
+			new Vector3(x, -0.1f, 1.65f),
+			new Vector3(0.85f, 0.85f, 1.35f),
+			_dark
+		);
 
-			AddBox("Engine Exhaust", new Vector3(x, -0.1f, 2.37f),
-				new Vector3(0.55f, 0.5f, 0.12f), _energy,
-				glowing: true);
-		}
+		AddBox(
+			"Engine Exhaust",
+			new Vector3(x, -0.1f, 2.37f),
+			new Vector3(0.55f, 0.5f, 0.12f),
+			_palette.Thruster,
+			glowing: true
+		);
 	}
+}
 
 	private void AddBox(
 		string name,

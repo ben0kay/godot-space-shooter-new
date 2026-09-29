@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="FactionPalette" format=3 uid="uid://cotpw4suol56y"]
+
+[ext_resource type="Script" uid="uid://wiwlig41xmw3" path="res://SCRIPTS/Factions/FactionPalette.cs" id="1_dmlbd"]
+
+[resource]
+script = ExtResource("1_dmlbd")
+metadata/_custom_type_script = "uid://wiwlig41xmw3"

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="FactionPalette" format=3 uid="uid://d0s1krc5s4ne"]
+
+[ext_resource type="Script" uid="uid://wiwlig41xmw3" path="res://SCRIPTS/Factions/FactionPalette.cs" id="1_q1c7k"]
+
+[resource]
+script = ExtResource("1_q1c7k")
+HullDark = Color(0.050980393, 0.039215688, 0.078431375, 1)
+HullMid = Color(0.10980392, 0.09019608, 0.15686275, 1)
+HullLight = Color(0.21960784, 0.18431373, 0.29803923, 1)
+Metal = Color(0.4862745, 0.4392157, 0.5882353, 1)
+Accent = Color(0.59038335, 0.44183832, 1, 1)
+Energy = Color(0.72156864, 0.36862746, 1, 1)
+Core = Color(0.9529412, 0.8784314, 1, 1)
+Glow = Color(0.41568628, 0.16470589, 0.8784314, 1)
+Thruster = Color(0.72156864, 0.36862746, 1, 1)
+Particle = Color(0.7901603, 0.56364375, 1, 1)
+metadata/_custom_type_script = "uid://wiwlig41xmw3"
