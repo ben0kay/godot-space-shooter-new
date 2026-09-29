@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bhcalgt0dkuwm"]
 
-[ext_resource type="PackedScene" uid="uid://cu278g8fet35q" path="res://RESOURCES/Enemies/SIMULANTS/DREADWING/Simulant_Dreadwing_PulseCannon.glb" id="1_g5kdb"]
+[ext_resource type="PackedScene" uid="uid://cu278g8fet35q" path="res://RESOURCES/Enemies/SIMULANTS/Simulant_PulseCannon.glb" id="1_g5kdb"]
 
 [node name="SimulantPulseCannon" type="Node3D" unique_id=411003694]
 

@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://bohf7i01xknix"]
+
+[ext_resource type="PackedScene" uid="uid://bhcalgt0dkuwm" path="res://SCENES/Enemy/SIMULANT/WEAPONS/SimulantPulseCannon.tscn" id="1_365ka"]
+[ext_resource type="PackedScene" uid="uid://dxxlyf3m8qccd" path="res://RESOURCES/Enemies/SIMULANTS/DREADWING/Simulant_Dreadwing_Hull.glb" id="2_q2h1j"]
+
+[node name="SimulantDreadwingVisual" type="Node3D" unique_id=687124649]
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0, 0)
+
+[node name="CannonOuterLeft" parent="." unique_id=411003694 instance=ExtResource("1_365ka")]
+
+[node name="Hull" parent="." unique_id=1905829790 instance=ExtResource("2_q2h1j")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0031369529, -0.02109496, -0.02376779)
