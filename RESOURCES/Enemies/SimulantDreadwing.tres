@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://bxv2gm5hx3d6i" path="res://SCRIPTS/Enemy/EnemyDefinition.cs" id="1_m5jen"]
 [ext_resource type="Script" uid="uid://ccwbsekbqw5ln" path="res://SCRIPTS/Enemy/EnemyRangeStats.cs" id="2_b8h0j"]
 [ext_resource type="PackedScene" uid="uid://df3088rujgyds" path="res://SCENES/Enemy/SimulantDreadwingMovement.tscn" id="2_fevsa"]
+[ext_resource type="PackedScene" uid="uid://bohf7i01xknix" path="res://SCENES/Enemy/SimulantDreadwingVisual.tscn" id="4_fevsa"]
 
 [sub_resource type="Resource" id="Resource_xhs40"]
 script = ExtResource("1_fv2d8")
@@ -26,8 +27,12 @@ DisplayName = "Simulant Dreadwing"
 Faction = 4
 Class = 3
 Rank = 2
+MaxShield = 180.0
+MaxArmour = 600.0
+MaxHull = 250.0
 Handling = SubResource("Resource_xhs40")
 Ranges = SubResource("Resource_k1wv1")
 MovementControllerScene = ExtResource("2_fevsa")
+VisualScene = ExtResource("4_fevsa")
 CollisionSize = Vector3(13, 6, 8)
 metadata/_custom_type_script = "uid://bxv2gm5hx3d6i"

@@ -58,6 +58,7 @@ public partial class PlayerShip : CharacterBody3D, IDamageable
 	// Creates collision and initializes this ship's defence and HUD.
 	public override void _Ready()
 	{
+		AddToGroup("player_ship");
 		BoxShape3D shape = new BoxShape3D();
 		shape.Size = new Vector3(3.8f, 1.0f, 3.8f);
 
