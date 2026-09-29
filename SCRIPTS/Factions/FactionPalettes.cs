@@ -37,7 +37,7 @@ public static class FactionPalettes
 			}
 		}
 
-		_fallback ??= new FactionPalette();ffffff
+		_fallback ??= new FactionPalette();
 		palette ??= _fallback;
 
 		_cache[faction] = palette;

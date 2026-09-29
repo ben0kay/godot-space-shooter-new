@@ -19,13 +19,13 @@ public partial class EnemyShip : CharacterBody3D, IDamageable, ICombatTarget
 		&& _defence != null
 		&& !_defence.Destroyed
 		&& !IsQueuedForDeletion();
-
+	public System.Collections.Generic.List<EnemyHardpoint> Hardpoints { get; } = new();
 	#endregion
 
 	#region Setup
 
 	// Reads the definition and creates this ship's defence, visual, and collision.
-public override void _Ready()
+	public override void _Ready()
 {
 	if (Definition == null)
 	{
@@ -38,6 +38,74 @@ public override void _Ready()
 		Definition.MaxArmour,
 		Definition.MaxHull
 	);
+
+	AddToGroup("combat_targets");
+
+	if (Definition.VisualScene != null)
+	{
+		Node3D visual = Definition.VisualScene.Instantiate<Node3D>();
+		visual.Name = "Visual";
+		AddChild(visual);
+	}
+	else
+	{
+		CreateVisuals();
+	}
+
+	CreateCollision();
+
+	if (Definition.Ranges != null)
+	{
+		Targeting = new EnemyTargeting();
+		Targeting.Name = "Targeting";
+		Targeting.Initialize(this);
+		AddChild(Targeting);
+	}
+
+	CreateHardpoints();
+
+	if (Definition.MovementControllerScene == null)
+	{
+		return;
+	}
+
+	if (Definition.Handling == null || Definition.Ranges == null)
+	{
+		GD.PushError($"{Name} needs Handling and Ranges for movement.");
+		return;
+	}
+
+	EnemyMovementController controller =
+		Definition.MovementControllerScene.Instantiate<EnemyMovementController>();
+
+	controller.Name = "MovementController";
+	controller.Initialize(this);
+	AddChild(controller);
+}
+
+private void CreateHardpoints()
+{
+	if (Definition.Hardpoints == null)
+	{
+		return;
+	}
+
+	Node3D mountParent = GetNodeOrNull<Node3D>("Visual") ?? this;
+
+	foreach (HardpointDefinition definition in Definition.Hardpoints)
+	{
+		if (definition == null)
+		{
+			continue;
+		}
+
+		EnemyHardpoint hardpoint = new();
+		hardpoint.Initialize(this, definition);
+
+		mountParent.AddChild(hardpoint);
+		Hardpoints.Add(hardpoint);
+	}
+}
 
 	AddToGroup("combat_targets");
 

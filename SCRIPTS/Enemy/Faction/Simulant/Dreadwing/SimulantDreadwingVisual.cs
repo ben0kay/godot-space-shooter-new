@@ -134,22 +134,24 @@ public float VisualScale = 1.0f;
 	}
 
 	private void CreateWeapons()
+{
+	foreach (int side in new[] { -1, 1 })
 	{
-		foreach (int side in new[] { -1, 1 })
-		{
-			AddBox("Inner Weapon Mount", new Vector3(side * 1.4f, 1.35f, -1.55f),
-				new Vector3(0.75f, 0.65f, 1.1f), _dark);
+		AddBox(
+			"Inner Weapon Mount",
+			new Vector3(side * 1.4f, 1.35f, -1.55f),
+			new Vector3(0.75f, 0.65f, 1.1f),
+			_dark
+		);
 
-			AddBox("Inner Cannon", new Vector3(side * 1.4f, 1.38f, -2.35f),
-				new Vector3(0.26f, 0.26f, 1.15f), _highlight);
-
-			AddBox("Outer Weapon Mount", new Vector3(side * 4.35f, 0.85f, -0.35f),
-				new Vector3(0.85f, 0.6f, 1.15f), _dark);
-
-			AddBox("Outer Cannon", new Vector3(side * 4.35f, 0.85f, -1.2f),
-				new Vector3(0.3f, 0.3f, 1.2f), _highlight);
-		}
+		AddBox(
+			"Outer Weapon Mount",
+			new Vector3(side * 4.35f, 0.85f, -0.35f),
+			new Vector3(0.85f, 0.6f, 1.15f),
+			_dark
+		);
 	}
+}
 
 	private void CreateCore()
 	{

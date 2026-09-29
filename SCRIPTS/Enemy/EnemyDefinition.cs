@@ -47,4 +47,11 @@ public partial class EnemyDefinition : Resource
 	[Export] public Color EngineColor = new Color(1.0f, 0.56f, 0.15f);
 
 	#endregion
+	
+	#region Hardpoints
+
+	[Export]
+	public Godot.Collections.Array<HardpointDefinition> Hardpoints = new();
+
+	#endregion
 }
