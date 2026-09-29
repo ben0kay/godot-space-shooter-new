@@ -3,13 +3,34 @@ using Godot;
 
 public partial class Sandbox : Node3D
 {
-	#region Settings
+	
+#region Settings
 
-	[Export] public PackedScene AsteroidScene;
-	[Export] public int AsteroidCount = 100;
-	[Export] public ulong AsteroidSeed = 12345;
+[Export] public PackedScene AsteroidScene;
+[Export] public int AsteroidCount = 100;
+[Export] public ulong AsteroidSeed = 12345;
 
-	#endregion
+// Room dimensions
+[Export] public float RoomWidth = 1600.0f;
+[Export] public float RoomHeight = 600.0f;
+[Export] public float RoomDepth = 1600.0f;
+
+// Asteroid sizes
+[Export] public float SmallAsteroidMinRadius = 2.0f;
+[Export] public float SmallAsteroidMaxRadius = 7.0f;
+
+[Export] public float MediumAsteroidMinRadius = 9.0f;
+[Export] public float MediumAsteroidMaxRadius = 24.0f;
+
+[Export] public float LargeAsteroidMinRadius = 40.0f;
+[Export] public float LargeAsteroidMaxRadius = 75.0f;
+
+// Number of special-sized asteroids
+[Export] public int MediumAsteroidCount = 22;
+[Export] public int LargeAsteroidCount = 8;
+
+#endregion
+
 
 	#region Godot Events
 
@@ -26,16 +47,56 @@ public partial class Sandbox : Node3D
 	#region Room
 
 	// Creates the six collidable boundaries of the large test room.
-	private void CreateRoom()
-	{
-		CreateBox("Floor", new Vector3(0, -100.5f, 0), new Vector3(500, 1, 500), Colors.DarkSlateGray);
-		CreateBox("Ceiling", new Vector3(0, 100.5f, 0), new Vector3(500, 1, 500), Colors.DarkSlateGray);
+	
+private void CreateRoom()
+{
+	float halfWidth = RoomWidth * 0.5f;
+	float halfHeight = RoomHeight * 0.5f;
+	float halfDepth = RoomDepth * 0.5f;
 
-		CreateBox("NorthWall", new Vector3(0, 0, -250.5f), new Vector3(500, 200, 1), Colors.DimGray);
-		CreateBox("SouthWall", new Vector3(0, 0, 250.5f), new Vector3(500, 200, 1), Colors.DimGray);
-		CreateBox("WestWall", new Vector3(-250.5f, 0, 0), new Vector3(1, 200, 500), Colors.DimGray);
-		CreateBox("EastWall", new Vector3(250.5f, 0, 0), new Vector3(1, 200, 500), Colors.DimGray);
-	}
+	CreateBox(
+		"Floor",
+		new Vector3(0, -halfHeight - 0.5f, 0),
+		new Vector3(RoomWidth, 1, RoomDepth),
+		Colors.DarkSlateGray
+	);
+
+	CreateBox(
+		"Ceiling",
+		new Vector3(0, halfHeight + 0.5f, 0),
+		new Vector3(RoomWidth, 1, RoomDepth),
+		Colors.DarkSlateGray
+	);
+
+	CreateBox(
+		"NorthWall",
+		new Vector3(0, 0, -halfDepth - 0.5f),
+		new Vector3(RoomWidth, RoomHeight, 1),
+		Colors.DimGray
+	);
+
+	CreateBox(
+		"SouthWall",
+		new Vector3(0, 0, halfDepth + 0.5f),
+		new Vector3(RoomWidth, RoomHeight, 1),
+		Colors.DimGray
+	);
+
+	CreateBox(
+		"WestWall",
+		new Vector3(-halfWidth - 0.5f, 0, 0),
+		new Vector3(1, RoomHeight, RoomDepth),
+		Colors.DimGray
+	);
+
+	CreateBox(
+		"EastWall",
+		new Vector3(halfWidth + 0.5f, 0, 0),
+		new Vector3(1, RoomHeight, RoomDepth),
+		Colors.DimGray
+	);
+}
+
 
 	// Adds a light so the room and asteroids are visible.
 	private void CreateLighting()
@@ -77,71 +138,93 @@ public partial class Sandbox : Node3D
 	#region Asteroid Spawning
 
 	// Places asteroid scene instances while keeping the spawn area clear and avoiding overlaps.
-	private void SpawnAsteroids()
+	
+private void SpawnAsteroids()
+{
+	if (AsteroidScene == null)
 	{
-		if (AsteroidScene == null)
+		GD.PushError("Assign Asteroid.tscn to Sandbox's Asteroid Scene field.");
+		return;
+	}
+
+	RandomNumberGenerator random = new RandomNumberGenerator();
+	random.Seed = AsteroidSeed;
+
+	List<(Vector3 Position, float Radius)> placed = new();
+
+	// Allow room for the largest deformed asteroids near walls.
+	float clearance = LargeAsteroidMaxRadius * 1.8f + 15.0f;
+
+	float spawnX = RoomWidth * 0.5f - clearance;
+	float spawnY = RoomHeight * 0.5f - clearance;
+	float spawnZ = RoomDepth * 0.5f - clearance;
+
+	if (spawnX <= 0 || spawnY <= 0 || spawnZ <= 0)
+	{
+		GD.PushError("Room dimensions are too small for the largest asteroids.");
+		return;
+	}
+
+	for (int index = 0; index < AsteroidCount; index++)
+	{
+		bool foundPosition = false;
+
+		for (int attempt = 0; attempt < 100; attempt++)
 		{
-			GD.PushError("Assign Asteroid.tscn to Sandbox's Asteroid Scene field.");
-			return;
+			float radius = GetAsteroidRadius(random, index);
+
+			Vector3 position = new Vector3(
+				random.RandfRange(-spawnX, spawnX),
+				random.RandfRange(-spawnY, spawnY),
+				random.RandfRange(-spawnZ, spawnZ)
+			);
+
+			float safeRadius = radius * 1.8f;
+
+			// Keep the player's starting location clear.
+			if (position.DistanceTo(new Vector3(0, 2, 0)) < 30.0f + safeRadius)
+			{
+				continue;
+			}
+
+			bool overlaps = false;
+
+			foreach (var other in placed)
+			{
+				float minimumDistance =
+					safeRadius + other.Radius * 1.8f + 5.0f;
+
+				if (position.DistanceTo(other.Position) < minimumDistance)
+				{
+					overlaps = true;
+					break;
+				}
+			}
+
+			if (overlaps)
+			{
+				continue;
+			}
+
+			Asteroid asteroid = AsteroidScene.Instantiate<Asteroid>();
+			asteroid.Name = $"Asteroid_{index:000}";
+			asteroid.Configure(radius, random.Randi());
+			asteroid.Position = position;
+
+			AddChild(asteroid);
+
+			placed.Add((position, radius));
+			foundPosition = true;
+			break;
 		}
 
-		RandomNumberGenerator random = new RandomNumberGenerator();
-		random.Seed = AsteroidSeed;
-
-		List<(Vector3 Position, float Radius)> placed = new();
-
-		for (int index = 0; index < AsteroidCount; index++)
+		if (!foundPosition)
 		{
-			bool foundPosition = false;
-
-			for (int attempt = 0; attempt < 100; attempt++)
-			{
-				float radius = random.RandfRange(2.0f, 6.0f);
-
-				Vector3 position = new Vector3(
-					random.RandfRange(-190.0f, 190.0f),
-					random.RandfRange(-75.0f, 75.0f),
-					random.RandfRange(-190.0f, 190.0f)
-				);
-
-				if (position.DistanceTo(new Vector3(0, 2, 0)) < 25.0f + radius)
-				{
-					continue;
-				}
-
-				bool overlaps = false;
-
-				foreach (var other in placed)
-				{
-					if (position.DistanceTo(other.Position) < radius + other.Radius + 4.0f)
-					{
-						overlaps = true;
-						break;
-					}
-				}
-
-				if (overlaps)
-				{
-					continue;
-				}
-
-				Asteroid asteroid = AsteroidScene.Instantiate<Asteroid>();
-				asteroid.Name = $"Asteroid_{index:000}";
-				asteroid.Configure(radius, random.Randi());
-				asteroid.Position = position;
-				AddChild(asteroid);
-
-				placed.Add((position, radius));
-				foundPosition = true;
-				break;
-			}
-
-			if (!foundPosition)
-			{
-				GD.PushWarning($"Could not place asteroid {index}.");
-			}
+			GD.PushWarning($"Could not place asteroid {index}.");
 		}
 	}
+}
+
 
 	#endregion
 }

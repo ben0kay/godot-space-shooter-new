@@ -19,7 +19,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 
 [node name="Camera3D" type="Camera3D" parent="PlayerShip" unique_id=1008970321]
 transform = Transform3D(1, 0, 0, 0, 0.9781476, 0.2079117, 0, -0.2079117, 0.9781476, 0, 3, 9)
-far = 1000.0
+far = 2500.0
 
 [node name="EnemyShip" parent="." unique_id=1459070871 instance=ExtResource("3_owkoa")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -45)
