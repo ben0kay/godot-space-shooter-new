@@ -17,7 +17,7 @@ TurnSpeedDegrees = 45.0
 MaxPitchDegrees = 35.0
 metadata/_custom_type_script = "uid://daovfp0cngp6i"
 
-[sub_resource type="Resource" id="Resource_kf4jm"]
+[sub_resource type="Resource" id="Resource_thxfd"]
 script = ExtResource("3_0kdpd")
 
 [sub_resource type="Resource" id="Resource_tmcrp"]

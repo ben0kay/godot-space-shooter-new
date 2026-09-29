@@ -3,5 +3,6 @@
 [ext_resource type="Script" uid="uid://bu2ka31xvnpea" path="res://SCRIPTS/Enemy/Faction/Simulant/Dreadwing/SimulantDreadwingVisual.cs" id="1_rel0o"]
 
 [node name="SimulantDreadwingVisual" type="Node3D" unique_id=33209402]
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0, 0)
 script = ExtResource("1_rel0o")
 VisualScale = 1.5
