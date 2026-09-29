@@ -16,6 +16,7 @@ script = ExtResource("1_h5ewn")
 AsteroidScene = ExtResource("2_owkoa")
 
 [node name="EnemyShip2" parent="." unique_id=1459070871 instance=ExtResource("3_b0b5h")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 29.087894, -151.03702)
 
 [node name="PlayerShip" parent="." unique_id=799486836 instance=ExtResource("2_bc7gk")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
