@@ -25,6 +25,7 @@ public partial class EnemyDefinition : Resource
 
 	[Export] public EnemyHandlingStats Handling;
 	[Export] public EnemyRangeStats Ranges;
+	[Export] public PackedScene MovementControllerScene;
 
 	#endregion
 

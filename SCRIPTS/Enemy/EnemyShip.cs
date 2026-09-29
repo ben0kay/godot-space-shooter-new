@@ -45,6 +45,24 @@ public override void _Ready()
 	}
 
 	CreateCollision();
+
+	if (Definition.MovementControllerScene == null)
+	{
+		return;
+	}
+
+	if (Definition.Handling == null || Definition.Ranges == null)
+	{
+		GD.PushError($"{Name} needs Handling and Ranges for movement.");
+		return;
+	}
+
+	EnemyMovementController controller =
+		Definition.MovementControllerScene.Instantiate<EnemyMovementController>();
+
+	controller.Name = "MovementController";
+	controller.Initialize(this);
+	AddChild(controller);
 }
 
 	#endregion

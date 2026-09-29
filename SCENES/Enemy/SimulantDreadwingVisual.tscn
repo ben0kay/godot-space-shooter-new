@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bohf7i01xknix"]
 
-[ext_resource type="Script" uid="uid://bu2ka31xvnpea" path="res://SCRIPTS/Enemy/Faction/Simulant/SimulantDreadwingVisual.cs" id="1_rel0o"]
+[ext_resource type="Script" uid="uid://bu2ka31xvnpea" path="res://SCRIPTS/Enemy/Faction/Simulant/Dreadwing/SimulantDreadwingVisual.cs" id="1_rel0o"]
 
 [node name="SimulantDreadwingVisual" type="Node3D" unique_id=33209402]
 script = ExtResource("1_rel0o")
