@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://pccivx55timo" path="res://SCRIPTS/Sandbox.cs" id="1_h5ewn"]
 [ext_resource type="PackedScene" uid="uid://cqt3qu6fub14m" path="res://SCENES/PlayerShip.tscn" id="2_bc7gk"]
 [ext_resource type="PackedScene" uid="uid://2pswi1yg6tyh" path="res://SCENES/Asteroid.tscn" id="2_owkoa"]
+[ext_resource type="PackedScene" uid="uid://jir05eflrfkg" path="res://SCENES/SimulantDreadwing.tscn" id="3_b0b5h"]
 [ext_resource type="PackedScene" uid="uid://baw74y3wwaw71" path="res://SCENES/EnemyShip.tscn" id="3_owkoa"]
 
 [sub_resource type="Environment" id="Environment_nogys"]
@@ -14,6 +15,8 @@ glow_bloom = 0.05
 script = ExtResource("1_h5ewn")
 AsteroidScene = ExtResource("2_owkoa")
 
+[node name="EnemyShip2" parent="." unique_id=1459070871 instance=ExtResource("3_b0b5h")]
+
 [node name="PlayerShip" parent="." unique_id=799486836 instance=ExtResource("2_bc7gk")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 
@@ -21,7 +24,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 transform = Transform3D(1, 0, 0, 0, 0.9781476, 0.2079117, 0, -0.2079117, 0.9781476, 0, 3, 9)
 far = 2500.0
 
-[node name="EnemyShip" parent="." unique_id=1459070871 instance=ExtResource("3_owkoa")]
+[node name="EnemyShip" parent="." unique_id=404936285 instance=ExtResource("3_owkoa")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -45)
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1701239979]

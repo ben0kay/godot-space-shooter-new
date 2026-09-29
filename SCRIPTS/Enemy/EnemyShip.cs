@@ -18,24 +18,34 @@ public partial class EnemyShip : CharacterBody3D, IDamageable
 
 	#region Setup
 
-	// Reads the definition and creates this ship's runtime defence and shape.
-	public override void _Ready()
+	// Reads the definition and creates this ship's defence, visual, and collision.
+public override void _Ready()
+{
+	if (Definition == null)
 	{
-		if (Definition == null)
-		{
-			GD.PushError($"{Name} needs an EnemyDefinition.");
-			return;
-		}
-
-		_defence = new ShipDefence(
-			Definition.MaxShield,
-			Definition.MaxArmour,
-			Definition.MaxHull
-		);
-
-		CreateVisuals();
-		CreateCollision();
+		GD.PushError($"{Name} needs an EnemyDefinition.");
+		return;
 	}
+
+	_defence = new ShipDefence(
+		Definition.MaxShield,
+		Definition.MaxArmour,
+		Definition.MaxHull
+	);
+
+	if (Definition.VisualScene != null)
+	{
+		Node3D visual = Definition.VisualScene.Instantiate<Node3D>();
+		visual.Name = "Visual";
+		AddChild(visual);
+	}
+	else
+	{
+		CreateVisuals();
+	}
+
+	CreateCollision();
+}
 
 	#endregion
 

@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="PlayerShipDefinition" format=3 uid="uid://b0tvflrqn1oho"]
+
+[ext_resource type="Script" uid="uid://f6c21yq4g6oi" path="res://SCRIPTS/Player/PlayerShipDefinition.cs" id="1_kpfh5"]
+
+[resource]
+script = ExtResource("1_kpfh5")
+metadata/_custom_type_script = "uid://f6c21yq4g6oi"

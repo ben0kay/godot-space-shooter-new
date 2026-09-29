@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://jir05eflrfkg"]
+
+[ext_resource type="Script" uid="uid://clmq2oc3oe4e1" path="res://SCRIPTS/Enemy/EnemyShip.cs" id="1_vkfwo"]
+[ext_resource type="Resource" uid="uid://csvl4g0yb3iy7" path="res://RESOURCES/Enemies/RebelSkirmisher.tres" id="2_ap2dq"]
+
+[node name="EnemyShip" type="CharacterBody3D" unique_id=1459070871]
+script = ExtResource("1_vkfwo")
+Definition = ExtResource("2_ap2dq")

@@ -23,6 +23,7 @@ public partial class EnemyDefinition : Resource
 
 	#region Shape
 
+	[Export] public PackedScene VisualScene;
 	[Export] public Vector3 HullSize = new Vector3(2.0f, 0.7f, 4.0f);
 	[Export] public Vector3 WingSize = new Vector3(2.2f, 0.25f, 1.6f);
 	[Export] public Vector3 CollisionSize = new Vector3(5.8f, 0.9f, 4.3f);

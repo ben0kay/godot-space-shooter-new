@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3 uid="uid://tkfi5asftg5d"]
+
+[ext_resource type="PackedScene" uid="uid://bohf7i01xknix" path="res://SCENES/SimulantDreadwingVisual.tscn" id="1_5sfy2"]
+[ext_resource type="Script" uid="uid://bxv2gm5hx3d6i" path="res://SCRIPTS/Enemy/EnemyDefinition.cs" id="1_m5jen"]
+
+[resource]
+script = ExtResource("1_m5jen")
+Faction = 4
+Class = 3
+Rank = 2
+MaxShield = 180.0
+MaxArmour = 600.0
+MaxHull = 250.0
+VisualScene = ExtResource("1_5sfy2")
+CollisionSize = Vector3(13, 2, 7)
+metadata/_custom_type_script = "uid://bxv2gm5hx3d6i"

@@ -1,7 +1,14 @@
+using System;
 using Godot;
 
-public partial class PlayerShip : CharacterBody3D
+public partial class PlayerShip : CharacterBody3D, IDamageable
 {
+	#region Definition
+
+	[Export] public PlayerShipDefinition Definition;
+
+	#endregion
+
 	#region Controls
 
 	private const Key KEY_FORWARD = Key.Up;
@@ -35,16 +42,20 @@ public partial class PlayerShip : CharacterBody3D
 
 	#endregion
 
-	#region Variables
+	#region Runtime
 
 	private bool _rightCtrlHeld;
+	private bool _destroyed;
 	private Vector2 _mouseMovement;
+
+	public ShipDefence Defence { get; private set; }
+	public event Action DefenceChanged;
 
 	#endregion
 
 	#region Godot Events
 
-	
+	// Creates collision and initializes this ship's defence and HUD.
 	public override void _Ready()
 	{
 		BoxShape3D shape = new BoxShape3D();
@@ -56,12 +67,33 @@ public partial class PlayerShip : CharacterBody3D
 		collision.Position = new Vector3(0, 0.06f, -0.225f);
 		AddChild(collision);
 
+		if (Definition == null)
+		{
+			GD.PushError("Assign a PlayerShipDefinition to PlayerShip.");
+		}
+		else
+		{
+			Defence = new ShipDefence(
+				Definition.MaxShield,
+				Definition.MaxArmour,
+				Definition.MaxHull
+			);
+
+			PlayerDefenceHud hud = new PlayerDefenceHud();
+			hud.Name = "PlayerDefenceHud";
+			AddChild(hud);
+		}
+
 		Input.MouseMode = Input.MouseModeEnum.Captured;
 	}
 
-
 	public override void _Input(InputEvent inputEvent)
 	{
+		if (_destroyed)
+		{
+			return;
+		}
+
 		if (inputEvent is InputEventKey key)
 		{
 			if (key.Keycode == KEY_RELEASE_MOUSE && key.Pressed && !key.Echo)
@@ -110,10 +142,39 @@ public partial class PlayerShip : CharacterBody3D
 
 	public override void _PhysicsProcess(double delta)
 	{
+		if (_destroyed)
+		{
+			return;
+		}
+
 		float seconds = (float)delta;
 
 		UpdateRotation(seconds);
 		UpdateMovement(seconds);
+	}
+
+	#endregion
+
+	#region Defence
+
+	// Applies a projectile hit through shield, armour, and hull.
+	public void ApplyDamage(DamageInfo damage)
+	{
+		if (Defence == null || _destroyed || damage.Amount <= 0.0f)
+		{
+			return;
+		}
+
+		Defence.ApplyDamage(damage.Amount);
+		DefenceChanged?.Invoke();
+
+		if (Defence.Destroyed)
+		{
+			_destroyed = true;
+			Velocity = Vector3.Zero;
+			Input.MouseMode = Input.MouseModeEnum.Visible;
+			GD.Print("Player ship destroyed.");
+		}
 	}
 
 	#endregion
@@ -169,26 +230,6 @@ public partial class PlayerShip : CharacterBody3D
 		Velocity = Velocity.MoveToward(targetVelocity, response * seconds);
 
 		MoveAndSlide();
-	}
-
-	#endregion
-
-	#region Visual Helpers
-
-	private void CreateBox(string name, Vector3 position, Vector3 size, Color color)
-	{
-		BoxMesh mesh = new BoxMesh();
-		mesh.Size = size;
-
-		StandardMaterial3D material = new StandardMaterial3D();
-		material.AlbedoColor = color;
-		mesh.Material = material;
-
-		MeshInstance3D visual = new MeshInstance3D();
-		visual.Name = name;
-		visual.Position = position;
-		visual.Mesh = mesh;
-		AddChild(visual);
 	}
 
 	#endregion
