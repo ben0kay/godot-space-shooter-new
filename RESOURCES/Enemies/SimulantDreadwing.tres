@@ -17,7 +17,7 @@ metadata/_custom_type_script = "uid://daovfp0cngp6i"
 
 [sub_resource type="Resource" id="Resource_k1wv1"]
 script = ExtResource("2_b8h0j")
-Detection = 110.0
+Detection = 150.0
 BackAway = 30.0
 Forget = 140.0
 metadata/_custom_type_script = "uid://ccwbsekbqw5ln"

@@ -194,3 +194,5 @@ private float GetAsteroidRadius(Asteroid asteroid)
 		* 0.5f
 		* largestScale;
 }
+
+}
