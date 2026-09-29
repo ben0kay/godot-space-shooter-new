@@ -5,6 +5,11 @@
 [ext_resource type="PackedScene" uid="uid://2pswi1yg6tyh" path="res://SCENES/Asteroid.tscn" id="2_owkoa"]
 [ext_resource type="PackedScene" uid="uid://baw74y3wwaw71" path="res://SCENES/EnemyShip.tscn" id="3_owkoa"]
 
+[sub_resource type="Environment" id="Environment_nogys"]
+glow_enabled = true
+glow_intensity = 0.6
+glow_bloom = 0.05
+
 [node name="Sandbox" type="Node3D" unique_id=1526637451]
 script = ExtResource("1_h5ewn")
 AsteroidScene = ExtResource("2_owkoa")
@@ -18,3 +23,6 @@ far = 1000.0
 
 [node name="EnemyShip" parent="." unique_id=1459070871 instance=ExtResource("3_owkoa")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -45)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1701239979]
+environment = SubResource("Environment_nogys")

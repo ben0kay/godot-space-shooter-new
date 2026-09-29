@@ -31,7 +31,7 @@ PrimaryWeapon = NodePath("../PrimaryWeapon")
 script = ExtResource("6_5rg74")
 
 [node name="LeftEngine" type="Marker3D" parent="PlayerThrusters" unique_id=889705340]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5570936, 0, 2.1987095)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5285696, 0.014052935, 2.2291315)
 
 [node name="RightEngine" type="Marker3D" parent="PlayerThrusters" unique_id=591873319]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.47872758, 0, 2.2075617)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5303519, 0.011257753, 2.2430398)
