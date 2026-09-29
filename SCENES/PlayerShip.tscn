@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://bp0y5uoerlo2o" path="res://RESOURCES/Models/Player/Cyan_Interceptor_Mk2.glb" id="2_u2noc"]
 [ext_resource type="Resource" uid="uid://duk6me74e1i1y" path="res://RESOURCES/Weapons/minigun.tres" id="3_faoyc"]
 [ext_resource type="Script" uid="uid://crafoydkr28bx" path="res://SCRIPTS/Player/PlayerWeaponInput.cs" id="4_faoyc"]
+[ext_resource type="Script" uid="uid://dicus7a88byl7" path="res://SCRIPTS/Player/PlayerThrusters.cs" id="6_5rg74"]
 
 [node name="PlayerShip" type="CharacterBody3D" unique_id=1589947766]
 script = ExtResource("1_d2dyu")
@@ -25,3 +26,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.28, 0.36, -0.68)
 [node name="PlayerWeaponMount" type="Node" parent="." unique_id=1068048311 node_paths=PackedStringArray("PrimaryWeapon")]
 script = ExtResource("4_faoyc")
 PrimaryWeapon = NodePath("../PrimaryWeapon")
+
+[node name="PlayerThrusters" type="Node3D" parent="." unique_id=1126257128]
+script = ExtResource("6_5rg74")
+
+[node name="LeftEngine" type="Marker3D" parent="PlayerThrusters" unique_id=889705340]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5570936, 0, 2.1987095)
+
+[node name="RightEngine" type="Marker3D" parent="PlayerThrusters" unique_id=591873319]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.47872758, 0, 2.2075617)
