@@ -3,10 +3,10 @@
 [ext_resource type="Script" uid="uid://daovfp0cngp6i" path="res://SCRIPTS/Enemy/EnemyHandlingStats.cs" id="1_fv2d8"]
 [ext_resource type="Script" uid="uid://bxv2gm5hx3d6i" path="res://SCRIPTS/Enemy/EnemyDefinition.cs" id="1_m5jen"]
 [ext_resource type="Script" uid="uid://ccwbsekbqw5ln" path="res://SCRIPTS/Enemy/EnemyRangeStats.cs" id="2_b8h0j"]
-[ext_resource type="PackedScene" uid="uid://df3088rujgyds" path="res://SCENES/Enemy/SimulantDreadwingMovement.tscn" id="2_fevsa"]
+[ext_resource type="PackedScene" uid="uid://df3088rujgyds" path="res://SCENES/Enemy/SIMULANT/SHIPS/SimulantDreadwingMovement.tscn" id="2_fevsa"]
 [ext_resource type="Script" uid="uid://bu8ndi4ho15n3" path="res://SCRIPTS/Enemy/Hardpoints/HardpointDefinition.cs" id="2_thxfd"]
 [ext_resource type="Script" uid="uid://0flu37m8gb7j" path="res://SCRIPTS/Enemy/Hardpoints/HardpointRotationStats.cs" id="3_0kdpd"]
-[ext_resource type="PackedScene" uid="uid://bohf7i01xknix" path="res://SCENES/Enemy/SimulantDreadwingVisual.tscn" id="4_fevsa"]
+[ext_resource type="PackedScene" uid="uid://bohf7i01xknix" path="res://SCENES/Enemy/SIMULANT/SHIPS/SimulantDreadwingVisual.tscn" id="4_fevsa"]
 
 [sub_resource type="Resource" id="Resource_xhs40"]
 script = ExtResource("1_fv2d8")
