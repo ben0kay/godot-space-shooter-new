@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="FactionPalette" format=3 uid="uid://cotpw4suol56y"]
 
-[ext_resource type="Script" uid="uid://wiwlig41xmw3" path="res://SCRIPTS/Factions/FactionPalette.cs" id="1_dmlbd"]
+[ext_resource type="Script" uid="uid://wiwlig41xmw3" path="res://SCRIPTS/Enemy/Factions/FactionPalette.cs" id="1_dmlbd"]
 
 [resource]
 script = ExtResource("1_dmlbd")
