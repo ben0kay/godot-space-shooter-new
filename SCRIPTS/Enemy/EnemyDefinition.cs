@@ -7,6 +7,9 @@ public partial class EnemyDefinition : Resource
 
 	[Export] public string DisplayName = "Enemy Ship";
 	[Export] public Faction Faction = Faction.Neutral;
+	[Export] public EnemyRole Role = EnemyRole.Fighter;
+	[Export] public EnemyClass Class = EnemyClass.Light;
+	[Export] public EnemyRank Rank = EnemyRank.Common;
 
 	#endregion
 
