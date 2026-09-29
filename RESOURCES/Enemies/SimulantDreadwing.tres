@@ -34,6 +34,7 @@ MaxHull = 250.0
 Handling = SubResource("Resource_xhs40")
 Ranges = SubResource("Resource_k1wv1")
 MovementControllerScene = ExtResource("2_fevsa")
+AsteroidResponse = 1
 VisualScene = ExtResource("4_fevsa")
 CollisionSize = Vector3(13, 6, 8)
 metadata/_custom_type_script = "uid://bxv2gm5hx3d6i"

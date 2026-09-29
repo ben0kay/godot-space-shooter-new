@@ -3,10 +3,11 @@ using Godot;
 public partial class SimulantDreadwingMovement : EnemyMovementController
 {
 	private PlayerShip _target;
+	private float _targetSearchTimer;
 
 	protected override Vector3 GetDesiredVelocity(float seconds)
 	{
-		UpdateTarget();
+		UpdateTarget(seconds);
 
 		if (_target == null || Ship.Definition.Ranges == null)
 		{
@@ -44,7 +45,7 @@ public partial class SimulantDreadwingMovement : EnemyMovementController
 			: _target.GlobalPosition - Ship.GlobalPosition;
 	}
 
-	private void UpdateTarget()
+	private void UpdateTarget(float seconds)
 	{
 		EnemyRangeStats ranges = Ship.Definition.Ranges;
 
@@ -55,6 +56,14 @@ public partial class SimulantDreadwingMovement : EnemyMovementController
 		}
 
 		_target = null;
+		_targetSearchTimer -= seconds;
+
+		if (_targetSearchTimer > 0.0f)
+		{
+			return;
+		}
+
+		_targetSearchTimer = EnemyUpdateConfig.TargetSearchInterval;
 
 		foreach (Node node in GetTree().GetNodesInGroup("player_ship"))
 		{

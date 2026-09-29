@@ -26,6 +26,7 @@ public partial class EnemyDefinition : Resource
 	[Export] public EnemyHandlingStats Handling;
 	[Export] public EnemyRangeStats Ranges;
 	[Export] public PackedScene MovementControllerScene;
+	[Export] public AsteroidResponse AsteroidResponse = AsteroidResponse.Ignore;
 
 	#endregion
 

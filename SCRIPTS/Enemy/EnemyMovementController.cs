@@ -7,6 +7,8 @@ public partial class EnemyMovementController : Node
 
 	protected EnemyShip Ship;
 	protected Node3D Visual;
+	private float _asteroidProbeTimer;
+	private Vector3 _asteroidSteering;
 
 	#endregion
 
@@ -16,6 +18,11 @@ public partial class EnemyMovementController : Node
 	public void Initialize(EnemyShip ship)
 	{
 		Ship = ship;
+
+		// Different ships begin their probes at different points in the interval.
+		_asteroidProbeTimer =
+			(ship.GetInstanceId() % 10) / 10.0f
+			* EnemyUpdateConfig.AsteroidProbeInterval;
 	}
 
 	// Finds the ship's visual node so it can pitch and bank independently.
@@ -39,6 +46,8 @@ public partial class EnemyMovementController : Node
 		float seconds = (float)delta;
 		Vector3 desiredVelocity = GetDesiredVelocity(seconds);
 		Vector3 facingDirection = GetFacingDirection();
+
+		desiredVelocity = ApplyAsteroidResponse(desiredVelocity, seconds);
 
 		TurnToward(facingDirection, seconds);
 		Fly(desiredVelocity, seconds);
@@ -189,6 +198,106 @@ public partial class EnemyMovementController : Node
 
 	Visual.Rotation = rotation;
 }
+
+	#endregion
+
+	#region Asteroid Avoidance
+
+	private Vector3 ApplyAsteroidResponse(Vector3 desiredVelocity, float seconds)
+	{
+		if (Ship.Definition.AsteroidResponse != AsteroidResponse.Avoid
+			|| desiredVelocity.LengthSquared() < 0.001f)
+		{
+			_asteroidSteering = Vector3.Zero;
+			return desiredVelocity;
+		}
+
+		_asteroidProbeTimer -= seconds;
+
+		if (_asteroidProbeTimer <= 0.0f)
+		{
+			_asteroidProbeTimer = EnemyUpdateConfig.AsteroidProbeInterval;
+			_asteroidSteering = FindAsteroidSteering(desiredVelocity);
+		}
+
+		if (_asteroidSteering == Vector3.Zero)
+		{
+			return desiredVelocity;
+		}
+
+		// Keep moving generally toward the destination while giving the
+		// obstacle a strong steering influence.
+		Vector3 direction = (
+			desiredVelocity.Normalized() * 0.35f
+			+ _asteroidSteering * 1.5f
+		).Normalized();
+
+		return direction * desiredVelocity.Length();
+	}
+
+	private Vector3 FindAsteroidSteering(Vector3 desiredVelocity)
+	{
+		Vector3 direction = desiredVelocity.Normalized();
+		float lookAhead = Mathf.Max(
+			EnemyUpdateConfig.AsteroidMinimumLookAhead,
+			Ship.Velocity.Length() * EnemyUpdateConfig.AsteroidLookAheadSeconds
+		);
+
+		// Probe the centre and both sides of the wide hull.
+		float halfWidth = Ship.Definition.CollisionSize.X * 0.4f;
+		Node3D visual = Ship.GetNodeOrNull<Node3D>("Visual");
+
+		if (visual != null)
+		{
+			halfWidth *= visual.Scale.X;
+		}
+
+		Vector3 side = Ship.GlobalBasis.X;
+		Vector3[] offsets =
+		{
+			Vector3.Zero,
+			side * halfWidth,
+			-side * halfWidth
+		};
+
+		foreach (Vector3 offset in offsets)
+		{
+			Vector3 start = Ship.GlobalPosition + offset;
+			Vector3 end = start + direction * lookAhead;
+
+			PhysicsRayQueryParameters3D query =
+				PhysicsRayQueryParameters3D.Create(start, end);
+
+			query.Exclude = new Godot.Collections.Array<Rid>
+			{
+				Ship.GetRid()
+			};
+
+			var hit = Ship.GetWorld3D().DirectSpaceState.IntersectRay(query);
+
+			if (hit.Count == 0
+				|| hit["collider"].AsGodotObject() is not Asteroid asteroid)
+			{
+				continue;
+			}
+
+			// Find a direction away from the asteroid that does not simply
+			// push backward along our current flight path.
+			Vector3 away = Ship.GlobalPosition - asteroid.GlobalPosition;
+			Vector3 lateral = away - direction * away.Dot(direction);
+
+			if (lateral.LengthSquared() < 0.01f)
+			{
+				// A perfectly centred obstacle needs a consistent tie breaker.
+				float sign = Ship.GetInstanceId() % 2 == 0 ? 1.0f : -1.0f;
+				lateral = Ship.GlobalBasis.X * sign + Vector3.Up * 0.35f;
+			}
+
+			return lateral.Normalized();
+		}
+
+		return Vector3.Zero;
+	}
 
 	#endregion
 }
