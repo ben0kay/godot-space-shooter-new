@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://bohf7i01xknix"]
 
-[ext_resource type="Script" uid="uid://bu2ka31xvnpea" path="res://SCRIPTS/Enemy/Faction/Simulant/Dreadwing/SimulantDreadwingVisual.cs" id="1_rel0o"]
+[ext_resource type="PackedScene" uid="uid://dyx5iu61p51m5" path="res://RESOURCES/Enemies/SIMULANTS/DREADWING/Simulant_Dreadwing_Assembly_FINALglb.glb" id="1_model"]
 
-[node name="SimulantDreadwingVisual" type="Node3D" unique_id=33209402]
+[node name="SimulantDreadwingVisual" type="Node3D" unique_id=687124649]
 transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0, 0)
-script = ExtResource("1_rel0o")
-VisualScale = 1.5
+
+[node name="Model" parent="." unique_id=1241499498 instance=ExtResource("1_model")]
