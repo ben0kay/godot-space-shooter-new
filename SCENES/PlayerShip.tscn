@@ -2,21 +2,25 @@
 
 [ext_resource type="Script" uid="uid://bbbhwq6t3wsf7" path="res://SCRIPTS/Player/PlayerShip.cs" id="1_d2dyu"]
 [ext_resource type="Script" uid="uid://cmbhciihetpg7" path="res://SCRIPTS/Weapon/WeaponMount.cs" id="2_5lrhm"]
+[ext_resource type="PackedScene" uid="uid://bp0y5uoerlo2o" path="res://RESOURCES/Models/Player/Cyan_Interceptor_Mk2.glb" id="2_u2noc"]
 [ext_resource type="Resource" uid="uid://duk6me74e1i1y" path="res://RESOURCES/Weapons/minigun.tres" id="3_faoyc"]
 [ext_resource type="Script" uid="uid://crafoydkr28bx" path="res://SCRIPTS/Player/PlayerWeaponInput.cs" id="4_faoyc"]
 
 [node name="PlayerShip" type="CharacterBody3D" unique_id=1589947766]
 script = ExtResource("1_d2dyu")
 
+[node name="Cyan_Interceptor_Mk2" parent="." unique_id=1887880329 instance=ExtResource("2_u2noc")]
+transform = Transform3D(0.4, 0, 0, 0, 0.4, 0, 0, 0, 0.4, 0, 0, 0)
+
 [node name="PrimaryWeapon" type="Node3D" parent="." unique_id=384299454]
 script = ExtResource("2_5lrhm")
 Weapon = ExtResource("3_faoyc")
 
 [node name="LeftMuzzle" type="Marker3D" parent="PrimaryWeapon" unique_id=1688840903]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.8, 0, -2.4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.288, 0.336, -0.68)
 
 [node name="RightMuzzle" type="Marker3D" parent="PrimaryWeapon" unique_id=1616554921]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8, 0, -2.4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.28, 0.36, -0.68)
 
 [node name="PlayerWeaponMount" type="Node" parent="." unique_id=1068048311 node_paths=PackedStringArray("PrimaryWeapon")]
 script = ExtResource("4_faoyc")

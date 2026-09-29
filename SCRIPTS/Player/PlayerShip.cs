@@ -44,21 +44,21 @@ public partial class PlayerShip : CharacterBody3D
 
 	#region Godot Events
 
+	
 	public override void _Ready()
 	{
-		CreateBox("Hull", Vector3.Zero, new Vector3(2, 0.5f, 3), Colors.SteelBlue);
-		CreateBox("Nose", new Vector3(0, 0, -1.7f), new Vector3(0.8f, 0.35f, 1), Colors.OrangeRed);
-
 		BoxShape3D shape = new BoxShape3D();
-		shape.Size = new Vector3(2, 0.5f, 3);
+		shape.Size = new Vector3(3.8f, 1.0f, 3.8f);
 
 		CollisionShape3D collision = new CollisionShape3D();
 		collision.Name = "Collision";
 		collision.Shape = shape;
+		collision.Position = new Vector3(0, 0.06f, -0.225f);
 		AddChild(collision);
 
 		Input.MouseMode = Input.MouseModeEnum.Captured;
 	}
+
 
 	public override void _Input(InputEvent inputEvent)
 	{
