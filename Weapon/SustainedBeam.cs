@@ -1,19 +1,33 @@
 using Godot;
 
-// Draws and simulates a sustained beam that extends from a moving muzzle.
+// Simulates an extending beam with flowing visuals and reusable GPU particle emitters.
 public partial class SustainedBeam : Node3D
 {
+	#region Shared Assets
+
+	private static Shader _flowShader;
+
+	#endregion
+
 	#region Runtime
 
 	private Node3D _emitter;
 	private CollisionObject3D _source;
 	private Faction _faction;
+	private BeamDefinition _definition;
 
 	private PhysicsRayQueryParameters3D _ray;
 
-	private MeshInstance3D _body;
-	private MeshInstance3D _core;
-	private MeshInstance3D _glow;
+	private readonly MeshInstance3D[] _layers = new MeshInstance3D[3];
+	private readonly ShaderMaterial[] _materials = new ShaderMaterial[3];
+	private readonly float[] _diameters = new float[3];
+
+	private GpuParticles3D _embers;
+	private GpuParticles3D _muzzleParticles;
+	private GpuParticles3D _impactParticles;
+
+	private ParticleProcessMaterial _emberProcess;
+	private ParticleProcessMaterial _impactProcess;
 
 	private float _range;
 	private float _width;
@@ -23,14 +37,18 @@ public partial class SustainedBeam : Node3D
 	private float _extendedLength;
 	private float _visibleLength;
 
+	private float _releaseElapsed;
+	private float _cleanupDuration;
+
 	private bool _active;
+	private bool _releasing;
 
 	#endregion
 
 	#region Setup
 
 	// =========================================================
-	// Resolves weapon settings and prepares one sustained beam.
+	// Resolves weapon overrides and builds the beam's reusable effects.
 	public void Configure(
 		WeaponDefinition weapon,
 		Node3D emitter,
@@ -38,9 +56,9 @@ public partial class SustainedBeam : Node3D
 		Faction faction
 	)
 	{
-		BeamDefinition definition = weapon?.Beam;
+		_definition = weapon?.Beam;
 
-		if (definition == null || emitter == null || source == null)
+		if (_definition == null || emitter == null || source == null)
 		{
 			GD.PushError("SustainedBeam requires a beam, emitter, and source.");
 			QueueFree();
@@ -57,33 +75,33 @@ public partial class SustainedBeam : Node3D
 			0.01f,
 			overrides != null && overrides.OverrideRange
 				? overrides.Range
-				: definition.Range
+				: _definition.Range
 		);
 
 		_width = Mathf.Max(
 			0.001f,
 			overrides != null && overrides.OverrideWidth
 				? overrides.Width
-				: definition.Width
+				: _definition.Width
 		);
 
 		_extensionSpeed = Mathf.Max(
 			0.01f,
 			overrides != null && overrides.OverrideExtensionSpeed
 				? overrides.ExtensionSpeed
-				: definition.ExtensionSpeed
+				: _definition.ExtensionSpeed
 		);
 
 		_damagePerSecond = Mathf.Max(
 			0.0f,
 			overrides != null && overrides.OverrideDamage
 				? overrides.DamagePerSecond
-				: definition.DamagePerSecond
+				: _definition.DamagePerSecond
 		);
 
 		_ray = new PhysicsRayQueryParameters3D
 		{
-			CollisionMask = definition.CollisionMask,
+			CollisionMask = _definition.CollisionMask,
 			CollideWithBodies = true,
 			CollideWithAreas = false,
 			HitFromInside = true,
@@ -94,22 +112,12 @@ public partial class SustainedBeam : Node3D
 		};
 
 		TopLevel = true;
-
-		BuildVisuals(definition);
-
-		_active = true;
 		FollowEmitter();
-		UpdateVisuals();
-	}
 
-	// =========================================================
-	// Creates the beam layers once when firing begins.
-	private void BuildVisuals(BeamDefinition definition)
-	{
-		Color energy = definition.EnergyColor;
-		Color core = definition.CoreColor;
+		Color energy = _definition.EnergyColor;
+		Color core = _definition.CoreColor;
 
-		if (definition.UseFactionPalette)
+		if (_definition.UseFactionPalette)
 		{
 			var palette = FactionPalettes.Get(_faction);
 
@@ -117,76 +125,281 @@ public partial class SustainedBeam : Node3D
 			core = palette.Core;
 		}
 
+		BuildVisuals(energy, core);
+
+		if (_definition.ParticlesEnabled)
+		{
+			BuildParticles(energy);
+		}
+
+		_cleanupDuration = Mathf.Max(
+			Mathf.Max(0.0f, _definition.ReleaseDuration),
+			_definition.ParticlesEnabled
+				? Mathf.Max(0.05f, _definition.EmberLifetime)
+				: 0.0f
+		);
+
+		_active = true;
+
+		UpdateVisuals();
+	}
+
+	// =========================================================
+	// Builds segmented cylinders that can bend smoothly in the shader.
+	private void BuildVisuals(Color energy, Color core)
+	{
+		if (_flowShader == null)
+		{
+			_flowShader = GD.Load<Shader>(
+				"res://BEAMS/FlowingBeam.gdshader"
+			);
+		}
+
+		if (_flowShader == null)
+		{
+			GD.PushError("Could not load BEAMS/FlowingBeam.gdshader.");
+			return;
+		}
+
 		CylinderMesh mesh = new CylinderMesh
 		{
 			Height = 1.0f,
 			TopRadius = 0.5f,
 			BottomRadius = 0.5f,
-			RadialSegments = 8
+			RadialSegments = 8,
+			Rings = 64
 		};
 
-		_glow = CreateLayer(
-			mesh,
-			energy,
-			definition.EmissionEnergy,
-			Mathf.Clamp(definition.GlowOpacity, 0.0f, 1.0f)
-		);
-
-		_body = CreateLayer(
-			mesh,
-			energy,
-			definition.EmissionEnergy,
-			0.65f
-		);
-
-		_core = CreateLayer(
-			mesh,
-			core,
-			definition.EmissionEnergy,
-			1.0f
-		);
-
-		_glowWidth = _width * Mathf.Max(
+		_diameters[0] = _width * Mathf.Max(
 			1.0f,
-			definition.GlowWidthMultiplier
+			_definition.GlowWidthMultiplier
 		);
+
+		_diameters[1] = _width;
+		_diameters[2] = _width * 0.28f;
+
+		CreateLayer(
+			0,
+			mesh,
+			energy,
+			Mathf.Clamp(_definition.GlowOpacity, 0.0f, 1.0f)
+		);
+
+		CreateLayer(1, mesh, energy, 0.55f);
+		CreateLayer(2, mesh, core, 0.65f);
 	}
 
-	private float _glowWidth;
-
 	// =========================================================
-	// Creates an emissive cylinder aligned with the muzzle's forward axis.
-	private MeshInstance3D CreateLayer(
+	// Creates one beam layer and assigns its shared animation settings.
+	private void CreateLayer(
+		int index,
 		Mesh mesh,
 		Color color,
-		float emissionEnergy,
 		float opacity
 	)
 	{
-		StandardMaterial3D material = new StandardMaterial3D
+		ShaderMaterial material = new ShaderMaterial
 		{
-			ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-			Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
-			BlendMode = BaseMaterial3D.BlendModeEnum.Add,
-			AlbedoColor = new Color(
-				color.R, color.G, color.B, opacity
-			),
-			EmissionEnabled = true,
-			Emission = color,
-			EmissionEnergyMultiplier = Mathf.Max(0.0f, emissionEnergy),
-			CullMode = BaseMaterial3D.CullModeEnum.Disabled
+			Shader = _flowShader
 		};
+
+		material.SetShaderParameter("beam_color", color);
+		material.SetShaderParameter("opacity", opacity);
+		material.SetShaderParameter(
+			"emission_energy",
+			Mathf.Max(0.0f, _definition.EmissionEnergy)
+		);
+
+		material.SetShaderParameter(
+			"beam_diameter",
+			_diameters[index]
+		);
+
+		material.SetShaderParameter(
+			"wobble_amount",
+			_definition.WobbleAmount
+		);
+
+		material.SetShaderParameter(
+			"wobble_wavelength",
+			_definition.WobbleWavelength
+		);
+
+		material.SetShaderParameter(
+			"wobble_speed",
+			_definition.WobbleSpeed
+		);
+
+		material.SetShaderParameter(
+			"pulse_amount",
+			_definition.PulseAmount
+		);
+
+		material.SetShaderParameter(
+			"pulse_speed",
+			_definition.PulseSpeed
+		);
+
+		material.SetShaderParameter(
+			"band_spacing",
+			_definition.BandSpacing
+		);
+
+		material.SetShaderParameter(
+			"band_speed",
+			_definition.BandSpeed
+		);
+
+		material.SetShaderParameter(
+			"band_strength",
+			_definition.BandStrength
+		);
 
 		MeshInstance3D layer = new MeshInstance3D
 		{
 			Mesh = mesh,
 			MaterialOverride = material,
-			CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
+			CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+
+			// Include shader displacement in the mesh's culling bounds.
+			ExtraCullMargin = Mathf.Abs(_definition.WobbleAmount) * 3.0f
 		};
 
 		AddChild(layer);
 
-		return layer;
+		_layers[index] = layer;
+		_materials[index] = material;
+	}
+
+	#endregion
+
+	#region Particle Setup
+
+	// =========================================================
+	// Creates reusable emitters for the beam body, muzzle, and contact point.
+	private void BuildParticles(Color energy)
+	{
+		float size = Mathf.Max(0.001f, _definition.EmberSize);
+		float speed = Mathf.Max(0.0f, _definition.EmberSpeed);
+
+		_embers = CreateParticles(
+			_definition.EmberAmount,
+			size,
+			speed,
+			energy
+		);
+
+		_emberProcess = (ParticleProcessMaterial)_embers.ProcessMaterial;
+		_emberProcess.EmissionShape =
+			ParticleProcessMaterial.EmissionShapeEnum.Box;
+
+		_muzzleParticles = CreateParticles(
+			_definition.MuzzleAmount,
+			size * 1.25f,
+			speed * 0.8f,
+			energy
+		);
+
+		_impactParticles = CreateParticles(
+			_definition.ImpactAmount,
+			size * 0.8f,
+			speed * 3.0f,
+			energy
+		);
+
+		_impactProcess =
+			(ParticleProcessMaterial)_impactParticles.ProcessMaterial;
+	}
+
+	// =========================================================
+	// Builds a small world-space particle emitter with fading energy motes.
+	private GpuParticles3D CreateParticles(
+		int amount,
+		float size,
+		float speed,
+		Color energy
+	)
+	{
+		Gradient fade = new Gradient
+		{
+			Offsets = new float[] { 0.0f, 0.2f, 1.0f },
+			Colors = new Color[]
+			{
+				new Color(energy.R, energy.G, energy.B, 0.0f),
+				new Color(energy.R, energy.G, energy.B, 0.8f),
+				new Color(energy.R, energy.G, energy.B, 0.0f)
+			}
+		};
+
+		ParticleProcessMaterial process = new ParticleProcessMaterial
+		{
+			Direction = Vector3.Back,
+			Spread = 70.0f,
+			Gravity = Vector3.Zero,
+
+			InitialVelocityMin = speed * 0.3f,
+			InitialVelocityMax = speed,
+
+			ScaleMin = 0.5f,
+			ScaleMax = 1.3f,
+
+			ColorRamp = new GradientTexture1D
+			{
+				Gradient = fade
+			}
+		};
+
+		StandardMaterial3D material = new StandardMaterial3D
+		{
+			ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+			Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+			BlendMode = BaseMaterial3D.BlendModeEnum.Add,
+			VertexColorUseAsAlbedo = true,
+
+			AlbedoColor = Colors.White,
+
+			// Particle colour and alpha come from the gradient.
+			// Keeping emission disabled avoids washing the motes white.
+			EmissionEnabled = false
+		};
+
+		SphereMesh mesh = new SphereMesh
+		{
+			Radius = size * 0.5f,
+			Height = size,
+			RadialSegments = 6,
+			Rings = 3,
+			Material = material
+		};
+
+		float padding = Mathf.Max(
+			2.0f,
+			speed * Mathf.Max(0.05f, _definition.EmberLifetime) + 1.0f
+		);
+
+		GpuParticles3D particles = new GpuParticles3D
+		{
+			Amount = Mathf.Max(1, amount),
+			Lifetime = Mathf.Max(0.05f, _definition.EmberLifetime),
+			LocalCoords = false,
+			Emitting = false,
+			ProcessMaterial = process,
+			DrawPass1 = mesh,
+			CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+
+			VisibilityAabb = new Aabb(
+				new Vector3(-padding, -padding, -_range - padding),
+				new Vector3(
+					padding * 2.0f,
+					padding * 2.0f,
+					_range + padding * 2.0f
+				)
+			)
+		};
+
+		AddChild(particles);
+
+		return particles;
 	}
 
 	#endregion
@@ -194,7 +407,7 @@ public partial class SustainedBeam : Node3D
 	#region Simulation
 
 	// =========================================================
-	// Extends the beam, checks its current length, and applies sustained damage.
+	// Extends the beam and applies damage only along its current length.
 	public override void _PhysicsProcess(double delta)
 	{
 		if (!_active)
@@ -230,11 +443,15 @@ public partial class SustainedBeam : Node3D
 
 		_visibleLength = _extendedLength;
 
-		if (hit.Count > 0)
-		{
-			Vector3 hitPosition = hit["position"].AsVector3();
+		bool contact = hit.Count > 0;
+		Vector3 normal = -direction;
 
-			_visibleLength = origin.DistanceTo(hitPosition);
+		if (contact)
+		{
+			Vector3 position = hit["position"].AsVector3();
+
+			_visibleLength = origin.DistanceTo(position);
+			normal = hit["normal"].AsVector3();
 
 			GodotObject collider = hit["collider"].AsGodotObject();
 
@@ -249,20 +466,60 @@ public partial class SustainedBeam : Node3D
 		}
 
 		UpdateVisuals();
+		UpdateParticles(contact, normal);
 	}
 
 	// =========================================================
-	// Keeps the beam attached to cosmetic ship motion between physics ticks.
+	// Follows cosmetic ship motion and fades released beam visuals.
 	public override void _Process(double delta)
 	{
-		if (_active && GodotObject.IsInstanceValid(_emitter))
+		if (_active)
 		{
-			FollowEmitter();
+			if (GodotObject.IsInstanceValid(_emitter))
+			{
+				FollowEmitter();
+			}
+
+			return;
+		}
+
+		if (!_releasing)
+		{
+			return;
+		}
+
+		_releaseElapsed += (float)delta;
+
+		float duration = Mathf.Max(0.0f, _definition.ReleaseDuration);
+
+		float alpha = duration > 0.0f
+			? Mathf.Clamp(1.0f - _releaseElapsed / duration, 0.0f, 1.0f)
+			: 0.0f;
+
+		for (int i = 0; i < _materials.Length; i++)
+		{
+			if (_materials[i] != null)
+			{
+				_materials[i].SetShaderParameter(
+					"release_alpha",
+					alpha
+				);
+			}
+
+			if (_layers[i] != null)
+			{
+				_layers[i].Visible = alpha > 0.0f;
+			}
+		}
+
+		if (_releaseElapsed >= _cleanupDuration)
+		{
+			QueueFree();
 		}
 	}
 
 	// =========================================================
-	// Copies muzzle position and direction without inheriting its scale.
+	// Follows the muzzle without inheriting its scale.
 	private void FollowEmitter()
 	{
 		GlobalTransform = new Transform3D(
@@ -272,16 +529,26 @@ public partial class SustainedBeam : Node3D
 	}
 
 	// =========================================================
-	// Stops damage immediately and removes the visible beam.
+	// Stops damage immediately while letting visuals and particles finish.
 	public void Stop()
 	{
+		if (_releasing)
+		{
+			return;
+		}
+
 		_active = false;
+		_releasing = true;
+		_releaseElapsed = 0.0f;
 
-		Hide();
 		SetPhysicsProcess(false);
-		SetProcess(false);
 
-		QueueFree();
+		if (_embers != null)
+		{
+			_embers.Emitting = false;
+			_muzzleParticles.Emitting = false;
+			_impactParticles.Emitting = false;
+		}
 	}
 
 	#endregion
@@ -289,43 +556,81 @@ public partial class SustainedBeam : Node3D
 	#region Presentation
 
 	// =========================================================
-	// Sizes all beam layers to the unobstructed visible length.
+	// Updates beam length and places each cylinder between its endpoints.
 	private void UpdateVisuals()
-	{
-		if (_body == null)
-		{
-			return;
-		}
-
-		Visible = _visibleLength > 0.001f;
-
-		SetLayerTransform(_glow, _glowWidth);
-		SetLayerTransform(_body, _width);
-		SetLayerTransform(_core, _width * 0.3f);
-	}
-
-	// =========================================================
-	// Places one cylinder from the muzzle to the beam endpoint.
-	private void SetLayerTransform(
-		MeshInstance3D layer,
-		float diameter
-	)
 	{
 		Basis alignment = new Basis(
 			Vector3.Right,
 			Mathf.Pi * 0.5f
 		);
 
-		Basis scale = Basis.Identity.Scaled(new Vector3(
-			diameter,
-			Mathf.Max(0.001f, _visibleLength),
-			diameter
-		));
+		for (int i = 0; i < _layers.Length; i++)
+		{
+			if (_layers[i] == null)
+			{
+				continue;
+			}
 
-		layer.Transform = new Transform3D(
-			alignment * scale,
-			new Vector3(0.0f, 0.0f, -_visibleLength * 0.5f)
+			_layers[i].Visible = _visibleLength > 0.001f;
+
+			Basis scale = Basis.Identity.Scaled(new Vector3(
+				_diameters[i],
+				Mathf.Max(0.001f, _visibleLength),
+				_diameters[i]
+			));
+
+			_layers[i].Transform = new Transform3D(
+				alignment * scale,
+				new Vector3(0.0f, 0.0f, -_visibleLength * 0.5f)
+			);
+
+			_materials[i].SetShaderParameter(
+				"beam_length",
+				_visibleLength
+			);
+		}
+	}
+
+	// =========================================================
+	// Updates the reusable emission regions and contact spark direction.
+	private void UpdateParticles(bool contact, Vector3 normal)
+	{
+		if (_embers == null)
+		{
+			return;
+		}
+
+		bool visibleBeam = _visibleLength > 0.01f;
+
+		_embers.Emitting = visibleBeam;
+		_muzzleParticles.Emitting = visibleBeam;
+
+		// Spread embers along the current beam, stopping before its endpoint.
+		_embers.Position = new Vector3(
+			0.0f,
+			0.0f,
+			-_visibleLength * 0.5f
 		);
+
+		_emberProcess.EmissionBoxExtents = new Vector3(
+			_width * 0.5f,
+			_width * 0.5f,
+			_visibleLength * 0.48f
+		);
+
+		_impactParticles.Position = new Vector3(
+			0.0f,
+			0.0f,
+			-_visibleLength
+		);
+
+		_impactParticles.Emitting = contact && visibleBeam;
+
+		if (normal.LengthSquared() > 0.001f)
+		{
+			_impactProcess.Direction =
+				GlobalBasis.Inverse() * normal.Normalized();
+		}
 	}
 
 	#endregion
