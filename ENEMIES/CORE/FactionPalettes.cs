@@ -13,7 +13,7 @@ public static class FactionPalettes
 		{ Faction.Player, "res://ENEMIES/CORE/Factions/PlayerPalette.tres" },
 		{ Faction.Rebel, "res://ENEMIES/CORE/Factions/RebelPalette.tres" },
 		{ Faction.Corporation, "res://ENEMIES/CORE/Factions/CorporationPalette.tres" },
-		{ Faction.Simulant, "res://ENEMIES/CORE/Factions/SimulantPalette.tres" }
+		{ Faction.Simulant, "res://ENEMIES/SIMULANTS/SimulantPalette.tres" }
 	};
 
 	private static FactionPalette _fallback;
@@ -22,7 +22,7 @@ public static class FactionPalettes
 
 	#region Palette Access
 
-	// Loads a faction's palette once, using a fallback when no resource is available.
+	// Loads a faction's palette once, using a fallback if its resource is missing.
 	public static FactionPalette Get(Faction faction)
 	{
 		if (_cache.TryGetValue(faction, out FactionPalette cached))

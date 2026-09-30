@@ -65,6 +65,7 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 	public float PitchInput { get; private set; }
 	public float YawInput { get; private set; }
 	public float StrafeInput { get; private set; }
+	public float RollInput { get; private set; }
 
 	public ShipDefence Defence { get; private set; }
 	public event Action DefenceChanged;
@@ -209,6 +210,7 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 			PitchInput = 0.0f;
 			YawInput = 0.0f;
 			StrafeInput = 0.0f;
+			RollInput = 0.0f;
 			return;
 		}
 
@@ -244,35 +246,37 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 
 	#region Flight Movement
 
-	// Rotates the physical ship and publishes normalized steering rates.
-	private void UpdateRotation(float seconds)
+	// Rotates the physical ship and publishes steering signals for visual movement.
+private void UpdateRotation(float seconds)
+{
+	float keyboardRoll = 0.0f;
+
+	bool controlsActive = Input.MouseMode == Input.MouseModeEnum.Captured;
+
+	if (controlsActive)
 	{
-		float keyboardRoll = 0.0f;
-
-		bool controlsActive = Input.MouseMode == Input.MouseModeEnum.Captured;
-
-		if (controlsActive)
-		{
-			if (Input.IsPhysicalKeyPressed(KEY_ROLL_LEFT)) keyboardRoll -= 1.0f;
-			if (Input.IsPhysicalKeyPressed(KEY_ROLL_RIGHT)) keyboardRoll += 1.0f;
-		}
-
-		float pitch = _mouseMovement.Y * MousePitchSensitivity;
-		float yaw = -_mouseMovement.X * MouseYawSensitivity;
-		float roll = Mathf.DegToRad(keyboardRoll * RollSpeed * seconds);
-
-		float referenceTurnRate = Mathf.DegToRad(60.0f);
-		float referenceTurnStep = referenceTurnRate * Mathf.Max(seconds, 0.0001f);
-
-		PitchInput = Mathf.Clamp(pitch / referenceTurnStep, -1.0f, 1.0f);
-		YawInput = Mathf.Clamp(yaw / referenceTurnStep, -1.0f, 1.0f);
-
-		RotateObjectLocal(Vector3.Right, pitch);
-		RotateObjectLocal(Vector3.Up, yaw);
-		RotateObjectLocal(Vector3.Forward, roll);
-
-		_mouseMovement = Vector2.Zero;
+		if (Input.IsPhysicalKeyPressed(KEY_ROLL_LEFT)) keyboardRoll -= 1.0f;
+		if (Input.IsPhysicalKeyPressed(KEY_ROLL_RIGHT)) keyboardRoll += 1.0f;
 	}
+
+	RollInput = keyboardRoll;
+
+	float pitch = _mouseMovement.Y * MousePitchSensitivity;
+	float yaw = -_mouseMovement.X * MouseYawSensitivity;
+	float roll = Mathf.DegToRad(keyboardRoll * RollSpeed * seconds);
+
+	float referenceTurnRate = Mathf.DegToRad(60.0f);
+	float referenceTurnStep = referenceTurnRate * Mathf.Max(seconds, 0.0001f);
+
+	PitchInput = Mathf.Clamp(pitch / referenceTurnStep, -1.0f, 1.0f);
+	YawInput = Mathf.Clamp(yaw / referenceTurnStep, -1.0f, 1.0f);
+
+	RotateObjectLocal(Vector3.Right, pitch);
+	RotateObjectLocal(Vector3.Up, yaw);
+	RotateObjectLocal(Vector3.Forward, roll);
+
+	_mouseMovement = Vector2.Zero;
+}
 
 	// Applies normal flight or automatic forward thrust while Shift is held.
 	private void UpdateMovement(float seconds)

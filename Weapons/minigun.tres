@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="WeaponDefinition" format=3 uid="uid://duk6me74e1i1y"]
 
 [ext_resource type="Script" uid="uid://dk13qlucl75kd" path="res://Weapon/WeaponDefinition.cs" id="1_weapon"]
-[ext_resource type="Resource" path="res://PROJECTILES/MinigunRound.tres" id="2_projectile"]
+[ext_resource type="Resource" uid="uid://bph7lxpthpuvc" path="res://PROJECTILES/MinigunRound.tres" id="2_projectile"]
 [ext_resource type="Script" uid="uid://mv26j0357h2" path="res://Weapon/WeaponEffectsProfile.cs" id="3_effects"]
 
 [sub_resource type="Resource" id="Effects_muzzle"]

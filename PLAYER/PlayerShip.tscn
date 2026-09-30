@@ -37,3 +37,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5285696, 0.014052935, 2.22
 
 [node name="RightEngine" type="Marker3D" parent="PlayerThrusters" unique_id=591873319]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5303519, 0.011257753, 2.2430398)
+
+[node name="WingTrails" type="Node3D" parent="." unique_id=1352075688]
+
+[node name="LeftWingtip" type="Marker3D" parent="WingTrails" unique_id=940650724]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.399035, 0.17849404, 1.9549721)
+
+[node name="RightWingtip" type="Marker3D" parent="WingTrails" unique_id=612439037]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.4372416, 0.085373044, 1.9875399)

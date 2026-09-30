@@ -3,14 +3,15 @@ using Godot;
 // Adds cosmetic ship pitch and banking, plus smooth movement-based camera offsets.
 public partial class PlayerFlightVisuals : Node
 {
-	#region Ship Settings
+#region Ship Settings
 
-	[Export] public float PitchTiltDegrees = 6.0f;
-	[Export] public float TurnBankDegrees = 8.0f;
-	[Export] public float StrafeBankDegrees = 10.0f;
-	[Export] public float ShipResponse = 8.0f;
+[Export] public float PitchTiltDegrees = 6.0f;
+[Export] public float TurnBankDegrees = 8.0f;
+[Export] public float StrafeBankDegrees = 10.0f;
+[Export] public float RollTiltDegrees = 14.0f;
+[Export] public float ShipResponse = 8.0f;
 
-	#endregion
+#endregion
 
 	#region Camera Settings
 
@@ -37,35 +38,37 @@ public partial class PlayerFlightVisuals : Node
 	#region Setup
 
 	// Groups the visible assembly and caches the existing camera once.
-	public override void _Ready()
+	pub// Groups the visible assembly and wingtip emitters, then caches the camera.
+public override void _Ready()
+{
+	_ship = GetParent() as PlayerShip;
+
+	if (_ship == null)
 	{
-		_ship = GetParent() as PlayerShip;
-
-		if (_ship == null)
-		{
-			GD.PushError("PlayerFlightVisuals must be a child of PlayerShip.");
-			SetProcess(false);
-			return;
-		}
-
-		_visualPivot = new Node3D
-		{
-			Name = "FlightVisualPivot"
-		};
-
-		_ship.AddChild(_visualPivot);
-
-		MoveUnderPivot("Cyan_Interceptor_Mk2");
-		MoveUnderPivot("PrimaryWeapon");
-		MoveUnderPivot("PlayerThrusters");
-
-		_camera = _ship.GetNodeOrNull<Camera3D>("Camera3D");
-
-		if (_camera != null)
-		{
-			_cameraRestPosition = _camera.Position;
-		}
+		GD.PushError("PlayerFlightVisuals must be a child of PlayerShip.");
+		SetProcess(false);
+		return;
 	}
+
+	_visualPivot = new Node3D
+	{
+		Name = "FlightVisualPivot"
+	};
+
+	_ship.AddChild(_visualPivot);
+
+	MoveUnderPivot("Cyan_Interceptor_Mk2");
+	MoveUnderPivot("PrimaryWeapon");
+	MoveUnderPivot("PlayerThrusters");
+	MoveUnderPivot("WingTrails");
+
+	_camera = _ship.GetNodeOrNull<Camera3D>("Camera3D");
+
+	if (_camera != null)
+	{
+		_cameraRestPosition = _camera.Position;
+	}
+}
 
 	// Moves a visual component while preserving its existing placement.
 	private void MoveUnderPivot(string nodeName)
@@ -96,25 +99,27 @@ public partial class PlayerFlightVisuals : Node
 		UpdateCamera(seconds);
 	}
 
-	// Tilts the visual assembly according to pitch, turning, and strafing.
-	private void UpdateShipVisuals(float seconds)
-	{
-		Vector3 desiredAngles = new(
-			Mathf.DegToRad(_ship.PitchInput * PitchTiltDegrees),
-			0.0f,
-			Mathf.DegToRad(
-				_ship.YawInput * TurnBankDegrees
-				- _ship.StrafeInput * StrafeBankDegrees
-			)
-		);
+	// Adds smooth visual pitch and banking for turns, strafing, and manual rolls.
+private void UpdateShipVisuals(float seconds)
+{
+	float bankDegrees =
+		_ship.YawInput * TurnBankDegrees
+		- _ship.StrafeInput * StrafeBankDegrees
+		- _ship.RollInput * RollTiltDegrees;
 
-		float blend = 1.0f - Mathf.Exp(
-			-Mathf.Max(0.0f, ShipResponse) * seconds
-		);
+	Vector3 desiredAngles = new(
+		Mathf.DegToRad(_ship.PitchInput * PitchTiltDegrees),
+		0.0f,
+		Mathf.DegToRad(bankDegrees)
+	);
 
-		_visualAngles = _visualAngles.Lerp(desiredAngles, blend);
-		_visualPivot.Rotation = _visualAngles;
-	}
+	float blend = 1.0f - Mathf.Exp(
+		-Mathf.Max(0.0f, ShipResponse) * seconds
+	);
+
+	_visualAngles = _visualAngles.Lerp(desiredAngles, blend);
+	_visualPivot.Rotation = _visualAngles;
+}
 
 	// Pulls back with actual movement, then adds the boost distance and mild sway.
 	private void UpdateCamera(float seconds)
