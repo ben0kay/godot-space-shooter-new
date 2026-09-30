@@ -1,11 +1,22 @@
 using Godot;
 
-// Selects a projectile and stores weapon firing settings, launch overrides, and muzzle effects.
+// Selects a weapon's delivery type, shared definition, overrides, and muzzle effects.
 [GlobalClass]
 public partial class WeaponDefinition : Resource
 {
+	#region Delivery Types
+
+	public enum DeliveryType
+	{
+		Projectile,
+		Beam
+	}
+
+	#endregion
+
 	#region Firing
 
+	[Export] public DeliveryType Delivery = DeliveryType.Projectile;
 	[Export] public float SecondsBetweenShots = 0.09f;
 
 	#endregion
@@ -15,8 +26,14 @@ public partial class WeaponDefinition : Resource
 	[Export] public ProjectileDefinition Projectile;
 	[Export] public ProjectileLaunchOverrides LaunchOverrides;
 
-	// Exposes the selected projectile scene to the shared firing controllers.
 	public PackedScene ProjectileScene => Projectile?.Scene;
+
+	#endregion
+
+	#region Beam Delivery
+
+	[Export] public BeamDefinition Beam;
+	[Export] public BeamLaunchOverrides BeamOverrides;
 
 	#endregion
 

@@ -38,7 +38,8 @@ public partial class PlayerFlightVisuals : Node
 	#region Setup
 
 
-	// Groups the visible assembly and wingtip emitters, then caches the camera.
+	// =========================================================
+// Groups the ship visuals and both weapon mounts, then caches the camera.
 public override void _Ready()
 {
 	_ship = GetParent() as PlayerShip;
@@ -59,6 +60,7 @@ public override void _Ready()
 
 	MoveUnderPivot("Cyan_Interceptor_Mk2");
 	MoveUnderPivot("PrimaryWeapon");
+	MoveUnderPivot("SecondaryWeapon");
 	MoveUnderPivot("PlayerThrusters");
 	MoveUnderPivot("WingTrails");
 
