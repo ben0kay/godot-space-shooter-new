@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://jir05eflrfkg"]
 
 [ext_resource type="Script" uid="uid://clmq2oc3oe4e1" path="res://ENEMIES/CORE/EnemyShip.cs" id="1_rexhl"]
-[ext_resource type="Resource" uid="uid://tkfi5asftg5d" path="res://ENEMIES/SIMULANTS/Dreadwing/SimulantDreadwing.tres" id="2_rexhl"]
+[ext_resource type="Resource" uid="uid://tkfi5asftg5d" path="res://ENEMIES/SIMULANTS/Ships/Dreadwing/SimulantDreadwing.tres" id="2_rexhl"]
 
 [node name="EnemyShip" type="CharacterBody3D" unique_id=1459070871]
 script = ExtResource("1_rexhl")

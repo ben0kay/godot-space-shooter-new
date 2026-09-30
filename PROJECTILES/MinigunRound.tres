@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="ProjectileDefinition" format=3]
+[gd_resource type="Resource" script_class="ProjectileDefinition" format=3 uid="uid://bph7lxpthpuvc"]
 
-[ext_resource type="Script" path="res://PROJECTILES/ProjectileDefinition.cs" id="1_definition"]
-[ext_resource type="PackedScene" path="res://Projectile.tscn" id="2_scene"]
-[ext_resource type="Script" path="res://Weapon/WeaponEffectsProfile.cs" id="3_effects"]
+[ext_resource type="Script" uid="uid://7oyb1xy2i35r" path="res://PROJECTILES/ProjectileDefinition.cs" id="1_definition"]
+[ext_resource type="PackedScene" uid="uid://bykb33nirbctc" path="res://PROJECTILES/Projectile.tscn" id="2_scene"]
+[ext_resource type="Script" uid="uid://mv26j0357h2" path="res://Weapon/WeaponEffectsProfile.cs" id="3_effects"]
 
 [sub_resource type="Resource" id="Effects_round"]
 script = ExtResource("3_effects")
@@ -19,12 +19,10 @@ ImpactSpeed = 4.0
 [resource]
 script = ExtResource("1_definition")
 Scene = ExtResource("2_scene")
-Damage = 3.0
 Speed = 180.0
 Lifetime = 1.5
 CollisionRadius = 0.04
 Color = Color(1, 0.85, 0.15, 1)
-EmissionEnergy = 1.5
 VisualLength = 0.9
 VisualWidth = 0.035
 Effects = SubResource("Effects_round")

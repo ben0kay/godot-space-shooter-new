@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://cmbhciihetpg7" path="res://Weapon/WeaponMount.cs" id="2_5lrhm"]
 [ext_resource type="PackedScene" uid="uid://bp0y5uoerlo2o" path="res://PLAYER/Models/Cyan_Interceptor_Mk2.glb" id="2_u2noc"]
 [ext_resource type="Resource" uid="uid://b0tvflrqn1oho" path="res://PLAYER/PlayerShip.tres" id="2_vl8mf"]
-[ext_resource type="Resource" uid="uid://duk6me74e1i1y" path="res://RESOURCES/Weapons/minigun.tres" id="3_faoyc"]
+[ext_resource type="Resource" uid="uid://duk6me74e1i1y" path="res://Weapons/minigun.tres" id="3_faoyc"]
 [ext_resource type="Script" uid="uid://crafoydkr28bx" path="res://PLAYER/Scripts/PlayerWeaponInput.cs" id="4_faoyc"]
 [ext_resource type="Script" uid="uid://dicus7a88byl7" path="res://PLAYER/Scripts/PlayerThrusters.cs" id="6_5rg74"]
 

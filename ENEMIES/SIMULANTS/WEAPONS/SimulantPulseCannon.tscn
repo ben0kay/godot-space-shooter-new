@@ -1,12 +1,12 @@
 [gd_scene format=3 uid="uid://bhcalgt0dkuwm"]
 
-[ext_resource type="PackedScene" uid="uid://cu278g8fet35q" path="res://ENEMIES/SIMULANTS/WEAPONS/Simulant_PulseCannon.glb" id="1_ncnq5"]
-[ext_resource type="Script" uid="uid://cle77mfe2h8rq" path="res://ENEMIES/CORE/Hardpoints/EnemyHardpoint.cs" id="1_qubhk"]
+[ext_resource type="Script" uid="uid://cle77mfe2h8rq" path="res://ENEMIES/CORE/Hardpoints/EnemyHardpoint.cs" id="1_j2sea"]
+[ext_resource type="PackedScene" uid="uid://cu278g8fet35q" path="res://ENEMIES/SIMULANTS/WEAPONS/Simulant_PulseCannon.glb" id="2_o0dc5"]
 
 [node name="SimulantPulseCannon" type="Node3D" unique_id=411003694]
-script = ExtResource("1_qubhk")
+script = ExtResource("1_j2sea")
 
-[node name="Model" parent="." unique_id=897131914 instance=ExtResource("1_ncnq5")]
+[node name="Model" parent="." unique_id=897131914 instance=ExtResource("2_o0dc5")]
 
 [node name="Muzzle" type="Marker3D" parent="." unique_id=130631814]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.3841858e-07, 0.375306, -1.9330027)
