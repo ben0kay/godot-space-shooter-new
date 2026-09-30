@@ -2,14 +2,31 @@ using Godot;
 
 public partial class EnemyHardpoint : Node3D
 {
+	#region Configuration
+
+	[ExportGroup("Identity")]
+	[Export] public string Key = "";
+	[Export] public string Group = "cannons";
+
+	[ExportGroup("Aiming")]
+	[Export] public HardpointRotationStats RotationStats = new();
+
+	#endregion
+
 	#region References
 
 	private EnemyShip _ship;
 	private Node3D _mountParent;
 	private Basis _restBasis;
+	private Vector3 _restScale;
 
-	public HardpointDefinition Definition { get; private set; }
 	public Marker3D Muzzle { get; private set; }
+
+	public string MountKey =>
+		string.IsNullOrWhiteSpace(Key) ? Name.ToString() : Key;
+
+	public Vector3 MuzzlePosition => Muzzle.GlobalPosition;
+	public Vector3 MuzzleDirection => -Muzzle.GlobalBasis.Z.Normalized();
 
 	#endregion
 
@@ -20,81 +37,59 @@ public partial class EnemyHardpoint : Node3D
 
 	public bool TargetWithinLimits { get; private set; }
 
-	public Vector3 MuzzlePosition => Muzzle.GlobalPosition;
-	public Vector3 MuzzleDirection => -Muzzle.GlobalBasis.Z.Normalized();
-
 	#endregion
 
 	#region Setup
 
-	public void Initialize(EnemyShip ship, HardpointDefinition definition)
-	{
-		_ship = ship;
-		Definition = definition;
-
-		Name = definition.Key;
-		Position = definition.Position;
-
-		Vector3 restRadians = new(
-			Mathf.DegToRad(definition.RestRotationDegrees.X),
-			Mathf.DegToRad(definition.RestRotationDegrees.Y),
-			Mathf.DegToRad(definition.RestRotationDegrees.Z)
-		);
-
-		_restBasis = Basis.FromEuler(restRadians);
-		Basis = _restBasis;
-
-		// Aim after the movement controller has updated the visual tilt.
-		ProcessPhysicsPriority = 10;
-	}
-
+	// Caches the authored mount orientation and existing muzzle marker.
 	public override void _Ready()
 	{
-		_mountParent = GetParent<Node3D>();
+		_mountParent = GetParent() as Node3D;
+		_restScale = Scale;
+		_restBasis = Basis.Orthonormalized();
+		Muzzle = GetNodeOrNull<Marker3D>("Muzzle");
 
-		Muzzle = new Marker3D
+		// Aim after the ship's movement has updated its visual orientation.
+		ProcessPhysicsPriority = 10;
+
+		if (_mountParent == null || Muzzle == null)
 		{
-			Name = "Muzzle",
-			Position = Definition.MuzzleOffset
-		};
-
-		AddChild(Muzzle);
-
-		if (Definition.VisualScene != null)
-		{
-			AddChild(Definition.VisualScene.Instantiate<Node3D>());
+			GD.PushError($"{Name} needs a Node3D parent and a Muzzle Marker3D.");
+			SetPhysicsProcess(false);
 		}
-		else if (Definition.ShowPlaceholderBarrel)
-		{
-			CreatePlaceholderBarrel();
-		}
+	}
+
+	// Connects this scene-placed mount to its owning ship.
+	public void Initialize(EnemyShip ship)
+	{
+		_ship = ship;
 	}
 
 	#endregion
 
 	#region Aiming
 
+	// Tracks the ship's selected target within the configured aiming limits.
 	public override void _PhysicsProcess(double delta)
 	{
-		if (!_ship.IsCombatTargetable)
+		TargetWithinLimits = false;
+
+		if (!GodotObject.IsInstanceValid(_ship)
+			|| !_ship.IsCombatTargetable
+			|| Muzzle == null)
 		{
 			return;
 		}
 
-		HardpointRotationStats rotation = Definition.RotationStats;
+		HardpointRotationStats rotation = RotationStats;
 
-		if (rotation == null
-			|| rotation.Mode == HardpointRotationMode.Fixed)
+		if (rotation == null || rotation.Mode == HardpointRotationMode.Fixed)
 		{
 			_yaw = 0.0f;
 			_pitch = 0.0f;
-			Basis = _restBasis;
-			TargetWithinLimits = false;
+			ApplyAim();
 			return;
 		}
-
-		float desiredYaw = 0.0f;
-		float desiredPitch = 0.0f;
 
 		Node3D target = _ship.Targeting?.Target;
 
@@ -102,37 +97,41 @@ public partial class EnemyHardpoint : Node3D
 			GodotObject.IsInstanceValid(target)
 			&& !target.IsQueuedForDeletion();
 
-		TargetWithinLimits = false;
+		float desiredYaw = 0.0f;
+		float desiredPitch = 0.0f;
 
 		if (hasTarget)
 		{
-			// Convert into the visual's space, then the mount's resting space.
-			Vector3 localDirection = _restBasis.Inverse() * (
+			// Measure the target direction relative to the resting mount.
+			Vector3 direction = _restBasis.Inverse() * (
 				_mountParent.ToLocal(target.GlobalPosition) - Position
 			);
 
-			if (localDirection.LengthSquared() < 0.001f)
+			if (direction.LengthSquared() < 0.0001f)
 			{
 				return;
 			}
 
-			float horizontalLength = new Vector2(
-				localDirection.X,
-				localDirection.Z
-			).Length();
+			float horizontalLength =
+				new Vector2(direction.X, direction.Z).Length();
 
 			desiredYaw = horizontalLength > 0.001f
-				? Mathf.Atan2(-localDirection.X, -localDirection.Z)
+				? Mathf.Atan2(-direction.X, -direction.Z)
 				: _yaw;
 
-			desiredPitch = Mathf.Atan2(
-				localDirection.Y,
-				horizontalLength
+			desiredPitch = Mathf.Atan2(direction.Y, horizontalLength);
+
+			float yawLimit = Mathf.DegToRad(
+				Mathf.Clamp(rotation.YawLimitDegrees, 0.0f, 180.0f)
 			);
 
-			float yawLimit = Mathf.DegToRad(rotation.YawLimitDegrees);
-			float pitchUp = Mathf.DegToRad(rotation.PitchUpDegrees);
-			float pitchDown = Mathf.DegToRad(rotation.PitchDownDegrees);
+			float pitchUp = Mathf.DegToRad(
+				Mathf.Clamp(rotation.PitchUpDegrees, 0.0f, 89.0f)
+			);
+
+			float pitchDown = Mathf.DegToRad(
+				Mathf.Clamp(rotation.PitchDownDegrees, 0.0f, 89.0f)
+			);
 
 			TargetWithinLimits =
 				Mathf.Abs(desiredYaw) <= yawLimit
@@ -154,60 +153,21 @@ public partial class EnemyHardpoint : Node3D
 		_yaw = Mathf.MoveToward(_yaw, desiredYaw, turnStep);
 		_pitch = Mathf.MoveToward(_pitch, desiredPitch, turnStep);
 
-		Basis = _restBasis * Basis.FromEuler(
-			new Vector3(_pitch, _yaw, 0.0f)
-		);
+		ApplyAim();
 	}
 
-	#endregion
-
-	#region Placeholder Visual
-
-	private void CreatePlaceholderBarrel()
+	// Applies yaw and pitch while preserving the mount's authored scale.
+	private void ApplyAim()
 	{
-		FactionPalette palette = FactionPalettes.Get(_ship.CombatFaction);
+		Basis aim = _restBasis * Basis.FromEuler(
+			new Vector3(_pitch, _yaw, 0.0f)
+		);
 
-		StandardMaterial3D barrelMaterial = new()
-		{
-			AlbedoColor = palette.Metal,
-			Metallic = 0.45f,
-			Roughness = 0.38f
-		};
-
-		MeshInstance3D barrel = new()
-		{
-			Name = "Barrel",
-			Position = Definition.BarrelOffset,
-			Mesh = new BoxMesh { Size = Definition.BarrelSize },
-			MaterialOverride = barrelMaterial
-		};
-
-		AddChild(barrel);
-
-		StandardMaterial3D muzzleMaterial = new()
-		{
-			AlbedoColor = palette.Energy,
-			EmissionEnabled = true,
-			Emission = palette.Energy,
-			EmissionEnergyMultiplier = 3.0f
-		};
-
-		MeshInstance3D aperture = new()
-		{
-			Name = "MuzzleAperture",
-			Position = Definition.MuzzleOffset,
-			Mesh = new BoxMesh
-			{
-				Size = new Vector3(
-					Definition.BarrelSize.X * 0.7f,
-					Definition.BarrelSize.Y * 0.7f,
-					0.04f
-				)
-			},
-			MaterialOverride = muzzleMaterial
-		};
-
-		AddChild(aperture);
+		Basis = new Basis(
+			aim.X * _restScale.X,
+			aim.Y * _restScale.Y,
+			aim.Z * _restScale.Z
+		);
 	}
 
 	#endregion

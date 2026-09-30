@@ -1,6 +1,0 @@
-[gd_scene format=3 uid="uid://bykb33nirbctc"]
-
-[ext_resource type="Script" uid="uid://43pt7vkkjfis" path="res://SCRIPTS/Projectile.cs" id="1_flcvy"]
-
-[node name="Projectile" type="Area3D" unique_id=91974845]
-script = ExtResource("1_flcvy")

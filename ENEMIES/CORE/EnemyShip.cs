@@ -83,28 +83,31 @@ public override void _Ready()
 	AddChild(controller);
 }
 
-// Creates each configured mount under the visual so it inherits scale and tilt.
+// Registers scene-placed hardpoints once when the ship is created.
 private void CreateHardpoints()
 {
-	if (Definition.Hardpoints == null)
+	Hardpoints.Clear();
+
+	Node3D visual = GetNodeOrNull<Node3D>("Visual");
+
+	if (visual != null)
 	{
-		return;
+		RegisterHardpoints(visual);
 	}
+}
 
-	Node3D mountParent = GetNodeOrNull<Node3D>("Visual") ?? this;
-
-	foreach (HardpointDefinition definition in Definition.Hardpoints)
+// Finds mounts recursively so ships can organise them beneath any visual node.
+private void RegisterHardpoints(Node parent)
+{
+	foreach (Node child in parent.GetChildren())
 	{
-		if (definition == null)
+		if (child is EnemyHardpoint hardpoint)
 		{
-			continue;
+			hardpoint.Initialize(this);
+			Hardpoints.Add(hardpoint);
 		}
 
-		EnemyHardpoint hardpoint = new();
-		hardpoint.Initialize(this, definition);
-
-		mountParent.AddChild(hardpoint);
-		Hardpoints.Add(hardpoint);
+		RegisterHardpoints(child);
 	}
 }
 
