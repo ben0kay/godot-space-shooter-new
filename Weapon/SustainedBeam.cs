@@ -48,101 +48,99 @@ public partial class SustainedBeam : Node3D
 	#region Setup
 
 	// =========================================================
-	// Resolves weapon overrides and builds the beam's reusable effects.
-	public void Configure(
-		WeaponDefinition weapon,
-		Node3D emitter,
-		CollisionObject3D source,
-		Faction faction
-	)
+// Resolves beam settings and prepares interception against other ships' shields.
+public void Configure(
+	WeaponDefinition weapon,
+	Node3D emitter,
+	CollisionObject3D source,
+	Faction faction
+)
+{
+	_definition = weapon?.Beam;
+
+	if (_definition == null || emitter == null || source == null)
 	{
-		_definition = weapon?.Beam;
-
-		if (_definition == null || emitter == null || source == null)
-		{
-			GD.PushError("SustainedBeam requires a beam, emitter, and source.");
-			QueueFree();
-			return;
-		}
-
-		_emitter = emitter;
-		_source = source;
-		_faction = faction;
-
-		BeamLaunchOverrides overrides = weapon.BeamOverrides;
-
-		_range = Mathf.Max(
-			0.01f,
-			overrides != null && overrides.OverrideRange
-				? overrides.Range
-				: _definition.Range
-		);
-
-		_width = Mathf.Max(
-			0.001f,
-			overrides != null && overrides.OverrideWidth
-				? overrides.Width
-				: _definition.Width
-		);
-
-		_extensionSpeed = Mathf.Max(
-			0.01f,
-			overrides != null && overrides.OverrideExtensionSpeed
-				? overrides.ExtensionSpeed
-				: _definition.ExtensionSpeed
-		);
-
-		_damagePerSecond = Mathf.Max(
-			0.0f,
-			overrides != null && overrides.OverrideDamage
-				? overrides.DamagePerSecond
-				: _definition.DamagePerSecond
-		);
-
-		_ray = new PhysicsRayQueryParameters3D
-		{
-			CollisionMask = _definition.CollisionMask,
-			CollideWithBodies = true,
-			CollideWithAreas = false,
-			HitFromInside = true,
-			Exclude = new Godot.Collections.Array<Rid>
-			{
-				source.GetRid()
-			}
-		};
-
-		TopLevel = true;
-		FollowEmitter();
-
-		Color energy = _definition.EnergyColor;
-		Color core = _definition.CoreColor;
-
-		if (_definition.UseFactionPalette)
-		{
-			var palette = FactionPalettes.Get(_faction);
-
-			energy = palette.Energy;
-			core = palette.Core;
-		}
-
-		BuildVisuals(energy, core);
-
-		if (_definition.ParticlesEnabled)
-		{
-			BuildParticles(energy);
-		}
-
-		_cleanupDuration = Mathf.Max(
-			Mathf.Max(0.0f, _definition.ReleaseDuration),
-			_definition.ParticlesEnabled
-				? Mathf.Max(0.05f, _definition.EmberLifetime)
-				: 0.0f
-		);
-
-		_active = true;
-
-		UpdateVisuals();
+		GD.PushError("SustainedBeam requires a beam, emitter, and source.");
+		QueueFree();
+		return;
 	}
+
+	_emitter = emitter;
+	_source = source;
+	_faction = faction;
+
+	BeamLaunchOverrides overrides = weapon.BeamOverrides;
+
+	_range = Mathf.Max(
+		0.01f,
+		overrides != null && overrides.OverrideRange
+			? overrides.Range
+			: _definition.Range
+	);
+
+	_width = Mathf.Max(
+		0.001f,
+		overrides != null && overrides.OverrideWidth
+			? overrides.Width
+			: _definition.Width
+	);
+
+	_extensionSpeed = Mathf.Max(
+		0.01f,
+		overrides != null && overrides.OverrideExtensionSpeed
+			? overrides.ExtensionSpeed
+			: _definition.ExtensionSpeed
+	);
+
+	_damagePerSecond = Mathf.Max(
+		0.0f,
+		overrides != null && overrides.OverrideDamage
+			? overrides.DamagePerSecond
+			: _definition.DamagePerSecond
+	);
+
+	_ray = new PhysicsRayQueryParameters3D
+	{
+		CollisionMask = _definition.CollisionMask,
+		CollideWithBodies = true,
+		CollideWithAreas = false,
+		HitFromInside = true
+	};
+
+	ShipShield.ConfigureWeaponQuery(_ray, source);
+
+	TopLevel = true;
+	FollowEmitter();
+
+	Color energy = _definition.EnergyColor;
+	Color core = _definition.CoreColor;
+
+	if (_definition.UseFactionPalette)
+	{
+		var palette = FactionPalettes.Get(_faction);
+
+		energy = palette.Energy;
+		core = palette.Core;
+	}
+
+	BuildVisuals(energy, core);
+
+	if (_definition.ParticlesEnabled)
+	{
+		BuildParticles(energy);
+	}
+
+	_cleanupDuration = Mathf.Max(
+		Mathf.Max(0.0f, _definition.ReleaseDuration),
+		_definition.ParticlesEnabled
+			? Mathf.Max(0.05f, _definition.EmberLifetime)
+			: 0.0f
+	);
+
+	_active = true;
+
+	UpdateVisuals();
+}
 
 	// =========================================================
 	// Builds segmented cylinders that can bend smoothly in the shader.

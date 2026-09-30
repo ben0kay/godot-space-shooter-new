@@ -24,85 +24,84 @@ public partial class Projectile : Area3D
 
 	#region Setup
 
-	// Resolves projectile defaults and weapon overrides into this shot's runtime values.
-	public void Configure(
-		WeaponDefinition weapon,
-		CollisionObject3D source,
-		Faction sourceFaction,
-		Vector3 sourceVelocity
-	)
+	// =========================================================
+// Resolves projectile settings and excludes the owning ship and its shield.
+public void Configure(
+	WeaponDefinition weapon,
+	CollisionObject3D source,
+	Faction sourceFaction,
+	Vector3 sourceVelocity
+)
+{
+	_definition = weapon.Projectile;
+	_source = source;
+	_sourceFaction = sourceFaction;
+
+	if (_definition == null)
 	{
-		_definition = weapon.Projectile;
-		_source = source;
-		_sourceFaction = sourceFaction;
-
-		if (_definition == null)
-		{
-			GD.PushError("Projectile needs a weapon with a ProjectileDefinition.");
-			QueueFree();
-			return;
-		}
-
-		ProjectileLaunchOverrides launch = weapon.LaunchOverrides;
-
-		_damage = Mathf.Max(
-			0.0f,
-			launch != null && launch.OverrideDamage
-				? launch.Damage
-				: _definition.Damage
-		);
-
-		float speed = Mathf.Max(
-			0.0f,
-			launch != null && launch.OverrideSpeed
-				? launch.Speed
-				: _definition.Speed
-		);
-
-		_lifeRemaining = Mathf.Max(
-			0.01f,
-			launch != null && launch.OverrideLifetime
-				? launch.Lifetime
-				: _definition.Lifetime
-		);
-
-		_sizeScale = Mathf.Max(0.01f, launch?.SizeScale ?? 1.0f);
-
-		_collisionRadius = Mathf.Max(
-			0.005f,
-			_definition.CollisionRadius * _sizeScale
-		);
-
-		_velocity = -GlobalBasis.Z.Normalized() * speed + sourceVelocity;
-
-		_flightQuery = PhysicsRayQueryParameters3D.Create(
-			GlobalPosition,
-			GlobalPosition
-		);
-
-		_flightQuery.HitFromInside = true;
-
-		Godot.Collections.Array<Rid> exclusions = new()
-		{
-			GetRid()
-		};
-
-		if (GodotObject.IsInstanceValid(source))
-		{
-			exclusions.Add(source.GetRid());
-		}
-
-		_flightQuery.Exclude = exclusions;
-
-		CreateVisual();
-		CreateCollision();
-
-		_trail = WeaponEffects.CreateTrail(
-			this,
-			_definition.Effects,
-			_sourceFaction
-		);
+		GD.PushError("Projectile needs a weapon with a ProjectileDefinition.");
+		QueueFree();
+		return;
 	}
+
+	ProjectileLaunchOverrides launch = weapon.LaunchOverrides;
+
+	_damage = Mathf.Max(
+		0.0f,
+		launch != null && launch.OverrideDamage
+			? launch.Damage
+			: _definition.Damage
+	);
+
+	float speed = Mathf.Max(
+		0.0f,
+		launch != null && launch.OverrideSpeed
+			? launch.Speed
+			: _definition.Speed
+	);
+
+	_lifeRemaining = Mathf.Max(
+		0.01f,
+		launch != null && launch.OverrideLifetime
+			? launch.Lifetime
+			: _definition.Lifetime
+	);
+
+	_sizeScale = Mathf.Max(0.01f, launch?.SizeScale ?? 1.0f);
+
+	_collisionRadius = Mathf.Max(
+		0.005f,
+		_definition.CollisionRadius * _sizeScale
+	);
+
+	_velocity = -GlobalBasis.Z.Normalized() * speed + sourceVelocity;
+
+	_flightQuery = PhysicsRayQueryParameters3D.Create(
+		GlobalPosition,
+		GlobalPosition
+	);
+
+	_flightQuery.HitFromInside = true;
+
+	_flightQuery.Exclude = new Godot.Collections.Array<Rid>
+	{
+		GetRid()
+	};
+
+	ShipShield.ConfigureWeaponQuery(_flightQuery, source);
+
+	// Overlap fallback must also detect shield bodies.
+	CollisionMask |= ShipShield.ShieldLayer;
+
+	CreateVisual();
+	CreateCollision();
+
+	_trail = WeaponEffects.CreateTrail(
+		this,
+		_definition.Effects,
+		_sourceFaction
+	);
+}
 
 	// Connects overlap detection for bodies touching the projectile.
 	public override void _Ready()
@@ -164,15 +163,18 @@ public partial class Projectile : Area3D
 	}
 
 	// =========================================================
-// Applies damage with contact information and emits the projectile's impact effects.
+// Applies a projectile impact while ignoring the firing ship's shield.
 private void ResolveHit(Node3D body, Vector3 normal)
 {
-	if (
-		_hit
+	if (_hit
 		|| _definition == null
 		|| body == null
-		|| body == _source
-	)
+		|| body == _source)
+	{
+		return;
+	}
+
+	if (body is ShipShield ownShield && ownShield.Ship == _source)
 	{
 		return;
 	}

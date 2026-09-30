@@ -80,6 +80,7 @@ private float _yawRate;
 
 	public ShipDefence Defence { get; private set; }
 	public event Action DefenceChanged;
+	private ShipShield _shield;
 
 	public Faction CombatFaction => Faction.Player;
 
@@ -92,54 +93,61 @@ private float _yawRate;
 
 	#region Godot Events
 
-	// Creates collision, defence, HUD, and the shared flight presentation.
-	public override void _Ready()
-	{
-		AddToGroup("player_ship");
-		AddToGroup("combat_targets");
+// =========================================================
+// Creates player collision, defence, presentation, and the shared enclosing shield.
+public override void _Ready()
+{
+	AddToGroup("player_ship");
+	AddToGroup("combat_targets");
 
-		BoxShape3D shape = new()
+	AddChild(new CollisionShape3D
+	{
+		Name = "Collision",
+		Shape = new BoxShape3D
 		{
 			Size = new Vector3(3.8f, 1.0f, 3.8f)
-		};
+		},
+		Position = new Vector3(0.0f, 0.06f, -0.225f)
+	});
 
-		CollisionShape3D collision = new()
-		{
-			Name = "Collision",
-			Shape = shape,
-			Position = new Vector3(0, 0.06f, -0.225f)
-		};
-
-		AddChild(collision);
-
-		if (Definition == null)
-		{
-			GD.PushError("Assign a PlayerShipDefinition to PlayerShip.");
-		}
-		else
-		{
-			Defence = new ShipDefence(
-				Definition.MaxShield,
-				Definition.MaxArmour,
-				Definition.MaxHull
-			);
-
-			AddChild(new PlayerDefenceHud
-			{
-				Name = "PlayerDefenceHud"
-			});
-		}
-
-		if (GetNodeOrNull<PlayerFlightVisuals>("FlightVisuals") == null)
-		{
-			AddChild(new PlayerFlightVisuals
-			{
-				Name = "FlightVisuals"
-			});
-		}
-
-		Input.MouseMode = Input.MouseModeEnum.Captured;
+	if (Definition == null)
+	{
+		GD.PushError("Assign a PlayerShipDefinition to PlayerShip.");
 	}
+	else
+	{
+		Defence = new ShipDefence(
+			Definition.MaxShield,
+			Definition.MaxArmour,
+			Definition.MaxHull
+		);
+
+		AddChild(new PlayerDefenceHud
+		{
+			Name = "PlayerDefenceHud"
+		});
+	}
+
+	if (GetNodeOrNull<PlayerFlightVisuals>("FlightVisuals") == null)
+	{
+		AddChild(new PlayerFlightVisuals
+		{
+			Name = "FlightVisuals"
+		});
+	}
+
+	if (Defence != null)
+	{
+		_shield = ShipShield.Attach(
+			this,
+			Defence,
+			CombatFaction,
+			Definition.ShieldVisuals
+		);
+	}
+
+	Input.MouseMode = Input.MouseModeEnum.Captured;
+}
 
 	// Handles mouse capture, relative steering, and right-Control descent.
 	public override void _Input(InputEvent inputEvent)
@@ -241,25 +249,32 @@ public override void _Notification(int what)
 
 	#region Defence
 
-	// Applies incoming damage through shield, armour, and hull.
-	public void ApplyDamage(DamageInfo damage)
+	// =========================================================
+// Resolves defence damage and informs the shield visual of actual shield loss.
+public void ApplyDamage(DamageInfo damage)
+{
+	if (Defence == null || _destroyed || damage.Amount <= 0.0f)
 	{
-		if (Defence == null || _destroyed || damage.Amount <= 0.0f)
-		{
-			return;
-		}
-
-		Defence.ApplyDamage(damage.Amount);
-		DefenceChanged?.Invoke();
-
-		if (Defence.Destroyed)
-		{
-			_destroyed = true;
-			Velocity = Vector3.Zero;
-			Input.MouseMode = Input.MouseModeEnum.Visible;
-			GD.Print("Player ship destroyed.");
-		}
+		return;
 	}
+
+	float shieldBefore = Defence.Shield;
+
+	Defence.ApplyDamage(damage.Amount);
+
+	_shield?.NotifyDamage(shieldBefore, damage);
+	DefenceChanged?.Invoke();
+
+	if (Defence.Destroyed)
+	{
+		_destroyed = true;
+		Velocity = Vector3.Zero;
+
+		Input.MouseMode = Input.MouseModeEnum.Visible;
+
+		GD.Print("Player ship destroyed.");
+	}
+}
 
 	#endregion
 

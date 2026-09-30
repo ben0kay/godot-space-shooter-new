@@ -21,11 +21,13 @@ public partial class EnemyShip : CharacterBody3D, IDamageable, ICombatTarget
 		&& !_defence.Destroyed
 		&& !IsQueuedForDeletion();
 	public System.Collections.Generic.List<EnemyHardpoint> Hardpoints { get; } = new();
+	private ShipShield _shield;
 	#endregion
 
 	#region Setup
 
-// Creates defence, visuals, collision, targeting, hardpoints, attacks, and movement.
+// =========================================================
+// Creates defence, visuals, collision, controllers, and the shared shield.
 public override void _Ready()
 {
 	if (Definition == null)
@@ -45,7 +47,9 @@ public override void _Ready()
 	if (Definition.VisualScene != null)
 	{
 		Node3D visual = Definition.VisualScene.Instantiate<Node3D>();
+
 		visual.Name = "Visual";
+
 		AddChild(visual);
 	}
 	else
@@ -57,13 +61,24 @@ public override void _Ready()
 
 	if (Definition.Ranges != null)
 	{
-		Targeting = new EnemyTargeting();
-		Targeting.Name = "Targeting";
+		Targeting = new EnemyTargeting
+		{
+			Name = "Targeting"
+		};
+
 		Targeting.Initialize(this);
 		AddChild(Targeting);
 	}
 
 	CreateHardpoints();
+
+	_shield = ShipShield.Attach(
+		this,
+		_defence,
+		CombatFaction,
+		Definition.ShieldVisuals
+	);
+
 	CreateAttackController();
 
 	if (Definition.MovementControllerScene == null)
@@ -82,6 +97,7 @@ public override void _Ready()
 
 	controller.Name = "MovementController";
 	controller.Initialize(this);
+
 	AddChild(controller);
 }
 
@@ -134,23 +150,29 @@ private void RegisterHardpoints(Node parent)
 
 	#region Damage
 
-	// Passes projectile damage through the ship's three defence layers.
-	public void ApplyDamage(DamageInfo damage)
+// =========================================================
+// Resolves layered damage, updates the shield feedback, and removes destroyed enemies.
+public void ApplyDamage(DamageInfo damage)
+{
+	if (_defence == null
+		|| _defence.Destroyed
+		|| damage.Amount <= 0.0f
+		|| IsQueuedForDeletion())
 	{
-		if (_defence == null
-			|| damage.Amount <= 0.0f
-			|| IsQueuedForDeletion())
-		{
-			return;
-		}
-
-		_defence.ApplyDamage(damage.Amount);
-
-		if (_defence.Destroyed)
-		{
-			QueueFree();
-		}
+		return;
 	}
+
+	float shieldBefore = _defence.Shield;
+
+	_defence.ApplyDamage(damage.Amount);
+
+	_shield?.NotifyDamage(shieldBefore, damage);
+
+	if (_defence.Destroyed)
+	{
+		QueueFree();
+	}
+}
 
 	#endregion
 
