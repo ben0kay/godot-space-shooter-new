@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bohf7i01xknix"]
 
-[ext_resource type="PackedScene" uid="uid://bhcalgt0dkuwm" path="res://SCENES/Enemy/SIMULANT/WEAPONS/SimulantPulseCannon.tscn" id="1_365ka"]
+[ext_resource type="PackedScene" uid="uid://bhcalgt0dkuwm" path="res://ENEMIES/SIMULANTS/WEAPONS/SimulantPulseCannon.tscn" id="1_365ka"]
 [ext_resource type="PackedScene" uid="uid://dxxlyf3m8qccd" path="res://ENEMIES/SIMULANTS/Dreadwing/Simulant_Dreadwing_Hull.glb" id="2_q2h1j"]
 
 [node name="SimulantDreadwingVisual" type="Node3D" unique_id=687124649]

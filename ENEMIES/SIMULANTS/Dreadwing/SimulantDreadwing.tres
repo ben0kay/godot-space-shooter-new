@@ -2,9 +2,9 @@
 
 [ext_resource type="Script" uid="uid://daovfp0cngp6i" path="res://ENEMIES/CORE/EnemyHandlingStats.cs" id="1_fl1mw"]
 [ext_resource type="Script" uid="uid://bu8ndi4ho15n3" path="res://ENEMIES/CORE/Hardpoints/HardpointDefinition.cs" id="2_83nn3"]
-[ext_resource type="PackedScene" uid="uid://df3088rujgyds" path="res://SCENES/Enemy/SIMULANT/SHIPS/Dreadwing/SimulantDreadwingMovement.tscn" id="3_lwrb8"]
+[ext_resource type="PackedScene" uid="uid://df3088rujgyds" path="res://ENEMIES/SIMULANTS/Dreadwing/SimulantDreadwingMovement.tscn" id="3_lwrb8"]
 [ext_resource type="Script" uid="uid://ccwbsekbqw5ln" path="res://ENEMIES/CORE/EnemyRangeStats.cs" id="4_2fhql"]
-[ext_resource type="PackedScene" uid="uid://bohf7i01xknix" path="res://SCENES/Enemy/SIMULANT/SHIPS/Dreadwing/SimulantDreadwingVisual.tscn" id="5_t6p2a"]
+[ext_resource type="PackedScene" uid="uid://bohf7i01xknix" path="res://ENEMIES/SIMULANTS/Dreadwing/SimulantDreadwingVisual.tscn" id="5_t6p2a"]
 [ext_resource type="Script" uid="uid://bxv2gm5hx3d6i" path="res://ENEMIES/CORE/EnemyDefinition.cs" id="6_mpu4x"]
 
 [sub_resource type="Resource" id="Resource_xhs40"]

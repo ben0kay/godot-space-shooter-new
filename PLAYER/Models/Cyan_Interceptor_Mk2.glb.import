@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://cu278g8fet35q"
-path="res://.godot/imported/Simulant_PulseCannon.glb-fbd2c3576a442bd2562ebcf75e66c558.scn"
+uid="uid://bp0y5uoerlo2o"
+path="res://.godot/imported/Cyan_Interceptor_Mk2.glb-8695d1f3d29cd5e802de4dec26b6902a.scn"
 
 [deps]
 
-source_file="res://ENEMIES/SIMULANTS/Simulant_PulseCannon.glb"
-dest_files=["res://.godot/imported/Simulant_PulseCannon.glb-fbd2c3576a442bd2562ebcf75e66c558.scn"]
+source_file="res://PLAYER/Models/Cyan_Interceptor_Mk2.glb"
+dest_files=["res://.godot/imported/Cyan_Interceptor_Mk2.glb-8695d1f3d29cd5e802de4dec26b6902a.scn"]
 
 [params]
 
