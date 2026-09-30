@@ -38,6 +38,22 @@ public partial class Asteroid : StaticBody3D, IDamageable
 
 	#endregion
 
+		#region Damage Appearance
+
+	[Export] public bool CracksEnabled = true;
+	[Export] public float CrackDensity = 3.5f;
+	[Export] public float CrackWidth = 0.07f;
+
+	[Export] public float ImpactFlashDuration = 0.14f;
+	[Export] public bool DestructionDustEnabled = true;
+
+	private static Shader _damageShader;
+
+	private ShaderMaterial _damageMaterial;
+	private float _flashRemaining;
+
+	#endregion
+
 	#region Runtime
 
 	private float _radius = 3.0f;
@@ -65,32 +81,39 @@ public partial class Asteroid : StaticBody3D, IDamageable
 	}
 
 	// =========================================================
-	// Builds the asteroid, initializes its health, and chooses its rotation.
-	public override void _Ready()
+// Builds the asteroid, initializes damage visuals, and chooses its rotation.
+public override void _Ready()
+{
+	_maximumHealth = Mathf.Max(
+		1.0f,
+		_radius * HealthPerRadius
+	);
+
+	_health = _maximumHealth;
+
+	ArrayMesh mesh = CreateShape();
+
+	MeshInstance3D visual = new MeshInstance3D
 	{
-		_maximumHealth = Mathf.Max(
-			1.0f,
-			_radius * HealthPerRadius
-		);
+		Name = "Visual",
+		Mesh = mesh
+	};
 
-		_health = _maximumHealth;
+	AddChild(visual);
 
-		ArrayMesh mesh = CreateShape();
+	AddChild(new CollisionShape3D
+	{
+		Name = "Collision",
+		Shape = mesh.CreateConvexShape()
+	});
 
-		AddChild(new MeshInstance3D
-		{
-			Name = "Visual",
-			Mesh = mesh
-		});
+	ConfigureDamageVisuals(visual, mesh);
 
-		AddChild(new CollisionShape3D
-		{
-			Name = "Collision",
-			Shape = mesh.CreateConvexShape()
-		});
+	// Frame updates are only needed while a hit flash is fading.
+	SetProcess(false);
 
-		ConfigureRotation();
-	}
+	ConfigureRotation();
+}
 
 	// =========================================================
 	// Chooses a repeatable rotation axis and speed for selected asteroids.
@@ -159,68 +182,80 @@ public partial class Asteroid : StaticBody3D, IDamageable
 	#region Damage
 
 	// =========================================================
-	// Applies damage, emits throttled contact debris, and destroys depleted asteroids.
-	public void ApplyDamage(DamageInfo damage)
+// Updates health and cracks, flashes the hit surface, and emits throttled debris.
+public void ApplyDamage(DamageInfo damage)
+{
+	if (_destroyed
+		|| IsQueuedForDeletion()
+		|| damage.Amount <= 0.0f)
 	{
-		if (_destroyed
-			|| IsQueuedForDeletion()
-			|| damage.Amount <= 0.0f)
-		{
-			return;
-		}
+		return;
+	}
 
-		_health = Mathf.Max(0.0f, _health - damage.Amount);
+	_health = Mathf.Max(0.0f, _health - damage.Amount);
 
-		if (_health <= 0.0f)
-		{
-			Destroy();
-			return;
-		}
+	if (_health <= 0.0f)
+	{
+		Destroy();
+		return;
+	}
 
-		if (!ImpactDebrisEnabled || !damage.HasImpact)
-		{
-			return;
-		}
+	UpdateDamageVisuals(damage);
 
-		ulong now = Time.GetTicksMsec();
+	if (!ImpactDebrisEnabled || !damage.HasImpact)
+	{
+		return;
+	}
 
-		if (now < _nextImpactTime)
-		{
-			return;
-		}
+	ulong now = Time.GetTicksMsec();
 
-		_nextImpactTime = now + (ulong)(
-			Mathf.Max(0.02f, ImpactDebrisInterval) * 1000.0f
-		);
+	if (now < _nextImpactTime)
+	{
+		return;
+	}
 
-		AsteroidEffects.Impact(
+	_nextImpactTime = now + (ulong)(
+		Mathf.Max(0.02f, ImpactDebrisInterval) * 1000.0f
+	);
+
+	AsteroidEffects.Impact(
+		this,
+		damage.ImpactPosition,
+		damage.ImpactNormal,
+		_radius
+	);
+}
+
+	// =========================================================
+// Emits independent fragments and dust before removing the asteroid.
+private void Destroy()
+{
+	_destroyed = true;
+
+	SetPhysicsProcess(false);
+	SetProcess(false);
+	Hide();
+
+	if (DestructionDebrisEnabled)
+	{
+		AsteroidEffects.Destruction(
 			this,
-			damage.ImpactPosition,
-			damage.ImpactNormal,
+			GlobalPosition,
 			_radius
 		);
 	}
 
-	// =========================================================
-	// Emits independent debris and removes this asteroid safely.
-	private void Destroy()
+	if (DestructionDustEnabled)
 	{
-		_destroyed = true;
-
-		SetPhysicsProcess(false);
-		Hide();
-
-		if (DestructionDebrisEnabled)
-		{
-			AsteroidEffects.Destruction(
-				this,
-				GlobalPosition,
-				_radius
-			);
-		}
-
-		QueueFree();
+		AsteroidEffects.Dust(
+			this,
+			GlobalPosition,
+			_radius
+		);
 	}
+
+	QueueFree();
+}
 
 	#endregion
 
@@ -301,4 +336,133 @@ public partial class Asteroid : StaticBody3D, IDamageable
 	}
 
 	#endregion
+
+	#region Damage Visuals
+
+// =========================================================
+// Assigns a seeded crack material while preserving this asteroid's rock colour.
+private void ConfigureDamageVisuals(
+	MeshInstance3D visual,
+	ArrayMesh mesh
+)
+{
+	if (_damageShader == null)
+	{
+		_damageShader = GD.Load<Shader>(
+			"res://ASTEROIDS/AsteroidDamage.gdshader"
+		);
+	}
+
+	if (_damageShader == null)
+	{
+		GD.PushError("Could not load ASTEROIDS/AsteroidDamage.gdshader.");
+		return;
+	}
+
+	Color rockColor = new Color(0.4f, 0.4f, 0.42f);
+
+	if (mesh.SurfaceGetMaterial(0) is StandardMaterial3D original)
+	{
+		rockColor = original.AlbedoColor;
+	}
+
+	RandomNumberGenerator random = new RandomNumberGenerator
+	{
+		Seed = _shapeSeed ^ 0x85EBCA6BUL
+	};
+
+	_damageMaterial = new ShaderMaterial
+	{
+		Shader = _damageShader
+	};
+
+	_damageMaterial.SetShaderParameter("rock_color", rockColor);
+	_damageMaterial.SetShaderParameter("asteroid_radius", _radius);
+
+	_damageMaterial.SetShaderParameter(
+		"crack_density",
+		Mathf.Max(0.1f, CrackDensity)
+	);
+
+	_damageMaterial.SetShaderParameter(
+		"crack_width",
+		Mathf.Max(0.001f, CrackWidth)
+	);
+
+	_damageMaterial.SetShaderParameter(
+		"pattern_offset",
+		new Vector3(
+			random.RandfRange(0.0f, 100.0f),
+			random.RandfRange(0.0f, 100.0f),
+			random.RandfRange(0.0f, 100.0f)
+		)
+	);
+
+	visual.MaterialOverride = _damageMaterial;
+}
+
+// =========================================================
+// Updates health-driven cracks and starts a flash at the supplied surface hit.
+private void UpdateDamageVisuals(DamageInfo damage)
+{
+	if (_damageMaterial == null)
+	{
+		return;
+	}
+
+	_damageMaterial.SetShaderParameter(
+		"damage_amount",
+		CracksEnabled ? 1.0f - HealthFraction : 0.0f
+	);
+
+	if (!damage.HasImpact || ImpactFlashDuration <= 0.0f)
+	{
+		return;
+	}
+
+	// Store the hit in asteroid coordinates so it follows the rotating surface.
+	_damageMaterial.SetShaderParameter(
+		"hit_position",
+		ToLocal(damage.ImpactPosition)
+	);
+
+	_damageMaterial.SetShaderParameter(
+		"hit_radius",
+		Mathf.Clamp(_radius * 0.08f, 0.65f, 6.0f)
+	);
+
+	_damageMaterial.SetShaderParameter("hit_strength", 1.0f);
+
+	_flashRemaining = ImpactFlashDuration;
+
+	SetProcess(true);
+}
+
+// =========================================================
+// Fades the local hit flash and disables frame updates when it finishes.
+public override void _Process(double delta)
+{
+	if (_destroyed || _damageMaterial == null)
+	{
+		SetProcess(false);
+		return;
+	}
+
+	_flashRemaining = Mathf.Max(
+		0.0f,
+		_flashRemaining - (float)delta
+	);
+
+	float strength = _flashRemaining
+		/ Mathf.Max(0.001f, ImpactFlashDuration);
+
+	_damageMaterial.SetShaderParameter("hit_strength", strength);
+
+	if (_flashRemaining <= 0.0f)
+	{
+		SetProcess(false);
+	}
+}
+
+#endregion
 }

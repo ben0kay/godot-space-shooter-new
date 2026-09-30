@@ -31,109 +31,206 @@ public partial class Sandbox : Node3D
 
 #endregion
 
+#region Space Appearance
+
+[Export] public float StarBrightness = 1.4f;
+[Export] public float NebulaStrength = 0.025f;
+
+[Export] public float SunEnergy = 1.2f;
+[Export] public float AmbientEnergy = 0.18f;
+
+#endregion
+
 
 	#region Godot Events
 
-	// Creates the room, lighting, and asteroid field when Sandbox starts.
-	public override void _Ready()
-	{
-		CreateRoom();
-		CreateLighting();
-		SpawnAsteroids();
-	}
-
+	// =========================================================
+// Creates finite invisible boundaries, the space environment, lighting, and asteroids.
+public override void _Ready()
+{
+	CreateRoom();
+	CreateSpaceEnvironment();
+	CreateLighting();
+	SpawnAsteroids();
+}
 	#endregion
 
 	#region Room
 
-	// Creates the six collidable boundaries of the large test room.
-	
+	// =========================================================
+// Creates six invisible collision boundaries around the playable volume.
 private void CreateRoom()
 {
 	float halfWidth = RoomWidth * 0.5f;
 	float halfHeight = RoomHeight * 0.5f;
 	float halfDepth = RoomDepth * 0.5f;
 
-	CreateBox(
+	CreateBoundary(
 		"Floor",
-		new Vector3(0, -halfHeight - 0.5f, 0),
-		new Vector3(RoomWidth, 1, RoomDepth),
-		Colors.DarkSlateGray
+		new Vector3(0.0f, -halfHeight - 0.5f, 0.0f),
+		new Vector3(RoomWidth, 1.0f, RoomDepth)
 	);
 
-	CreateBox(
+	CreateBoundary(
 		"Ceiling",
-		new Vector3(0, halfHeight + 0.5f, 0),
-		new Vector3(RoomWidth, 1, RoomDepth),
-		Colors.DarkSlateGray
+		new Vector3(0.0f, halfHeight + 0.5f, 0.0f),
+		new Vector3(RoomWidth, 1.0f, RoomDepth)
 	);
 
-	CreateBox(
+	CreateBoundary(
 		"NorthWall",
-		new Vector3(0, 0, -halfDepth - 0.5f),
-		new Vector3(RoomWidth, RoomHeight, 1),
-		Colors.DimGray
+		new Vector3(0.0f, 0.0f, -halfDepth - 0.5f),
+		new Vector3(RoomWidth, RoomHeight, 1.0f)
 	);
 
-	CreateBox(
+	CreateBoundary(
 		"SouthWall",
-		new Vector3(0, 0, halfDepth + 0.5f),
-		new Vector3(RoomWidth, RoomHeight, 1),
-		Colors.DimGray
+		new Vector3(0.0f, 0.0f, halfDepth + 0.5f),
+		new Vector3(RoomWidth, RoomHeight, 1.0f)
 	);
 
-	CreateBox(
+	CreateBoundary(
 		"WestWall",
-		new Vector3(-halfWidth - 0.5f, 0, 0),
-		new Vector3(1, RoomHeight, RoomDepth),
-		Colors.DimGray
+		new Vector3(-halfWidth - 0.5f, 0.0f, 0.0f),
+		new Vector3(1.0f, RoomHeight, RoomDepth)
 	);
 
-	CreateBox(
+	CreateBoundary(
 		"EastWall",
-		new Vector3(halfWidth + 0.5f, 0, 0),
-		new Vector3(1, RoomHeight, RoomDepth),
-		Colors.DimGray
+		new Vector3(halfWidth + 0.5f, 0.0f, 0.0f),
+		new Vector3(1.0f, RoomHeight, RoomDepth)
 	);
 }
 
-
-	// Adds a light so the room and asteroids are visible.
-	private void CreateLighting()
+// =========================================================
+// Creates a collision-only boundary without a visible wall mesh.
+private void CreateBoundary(
+	string name,
+	Vector3 position,
+	Vector3 size
+)
+{
+	StaticBody3D body = new StaticBody3D
 	{
-		DirectionalLight3D light = new DirectionalLight3D();
-		light.RotationDegrees = new Vector3(-45, -30, 0);
-		AddChild(light);
-	}
+		Name = name,
+		Position = position
+	};
 
-	// Creates one visible box with a matching static collision shape.
-	private void CreateBox(string name, Vector3 position, Vector3 size, Color color)
+	AddChild(body);
+
+	body.AddChild(new CollisionShape3D
 	{
-		StaticBody3D body = new StaticBody3D();
-		body.Name = name;
-		body.Position = position;
-		AddChild(body);
+		Name = "Collision",
+		Shape = new BoxShape3D
+		{
+			Size = size
+		}
+	});
+}
 
-		BoxMesh mesh = new BoxMesh();
-		mesh.Size = size;
 
-		StandardMaterial3D material = new StandardMaterial3D();
-		material.AlbedoColor = color;
-		mesh.Material = material;
+	// =========================================================
+// Adds directional sunlight with shaded asteroid faces and a slightly warm tint.
+private void CreateLighting()
+{
+	DirectionalLight3D light = new DirectionalLight3D
+	{
+		Name = "DistantSun",
+		RotationDegrees = new Vector3(-35.0f, -30.0f, 0.0f),
 
-		MeshInstance3D visual = new MeshInstance3D();
-		visual.Mesh = mesh;
-		body.AddChild(visual);
+		LightColor = new Color(1.0f, 0.95f, 0.88f),
+		LightEnergy = Mathf.Max(0.0f, SunEnergy),
 
-		BoxShape3D shape = new BoxShape3D();
-		shape.Size = size;
+		ShadowEnabled = true,
+		DirectionalShadowMaxDistance = 350.0f
+	};
 
-		CollisionShape3D collision = new CollisionShape3D();
-		collision.Shape = shape;
-		body.AddChild(collision);
-	}
+	AddChild(light);
+}
 
 	#endregion
+
+	#region Space Environment
+
+// =========================================================
+// Reuses the sandbox's WorldEnvironment and assigns a procedural space sky.
+private void CreateSpaceEnvironment()
+{
+	Shader shader = GD.Load<Shader>(
+		"res://ENVIRONMENT/SpaceSky.gdshader"
+	);
+
+	if (shader == null)
+	{
+		GD.PushError("Could not load ENVIRONMENT/SpaceSky.gdshader.");
+		return;
+	}
+
+	ShaderMaterial skyMaterial = new ShaderMaterial
+	{
+		Shader = shader
+	};
+
+	skyMaterial.SetShaderParameter(
+		"star_brightness",
+		Mathf.Max(0.0f, StarBrightness)
+	);
+
+	skyMaterial.SetShaderParameter(
+		"nebula_strength",
+		Mathf.Max(0.0f, NebulaStrength)
+	);
+
+	Sky sky = new Sky
+	{
+		SkyMaterial = skyMaterial
+	};
+
+	WorldEnvironment worldEnvironment =
+		GetNodeOrNull<WorldEnvironment>("WorldEnvironment");
+
+	if (worldEnvironment == null)
+	{
+		worldEnvironment = new WorldEnvironment
+		{
+			Name = "WorldEnvironment"
+		};
+
+		AddChild(worldEnvironment);
+	}
+
+	// Duplicate the existing resource so its saved glow settings are preserved.
+	Godot.Environment environment =
+		worldEnvironment.Environment != null
+			? (Godot.Environment)worldEnvironment.Environment.Duplicate()
+			: new Godot.Environment();
+
+	environment.BackgroundMode = Godot.Environment.BGMode.Sky;
+	environment.Sky = sky;
+
+	// Use a little controlled ambient light rather than illuminating rocks from the star sky.
+	environment.AmbientLightSource =
+		Godot.Environment.AmbientSource.Color;
+
+	environment.AmbientLightColor = new Color(
+		0.32f, 0.4f, 0.55f
+	);
+
+	environment.AmbientLightEnergy = Mathf.Max(
+		0.0f,
+		AmbientEnergy
+	);
+
+	environment.ReflectedLightSource =
+		Godot.Environment.ReflectionSource.Disabled;
+
+	environment.FogEnabled = false;
+	environment.VolumetricFogEnabled = false;
+
+	worldEnvironment.Environment = environment;
+}
+
+#endregion
 
 	#region Asteroid Spawning
 

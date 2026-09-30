@@ -12,6 +12,15 @@ public static class AsteroidEffects
 
 	#endregion
 
+	#region Dust Assets
+
+private static QuadMesh _dustMesh;
+private static int _activeDustBursts;
+
+private const int MaximumActiveDustBursts = 8;
+
+#endregion
+
 	#region Effects
 
 	// =========================================================
@@ -218,4 +227,179 @@ public static class AsteroidEffects
 	}
 
 	#endregion
+
+	#region Destruction Dust
+
+// =========================================================
+// Creates a short, expanding dust cloud with a bounded number of GPU particles.
+public static void Dust(
+	Node3D context,
+	Vector3 position,
+	float radius
+)
+{
+	if (_activeDustBursts >= MaximumActiveDustBursts
+		|| !GodotObject.IsInstanceValid(context))
+	{
+		return;
+	}
+
+	Node scene = context.GetTree().CurrentScene;
+
+	if (scene == null)
+	{
+		return;
+	}
+
+	EnsureDustMesh();
+
+	const float lifetime = 1.6f;
+
+	float size = Mathf.Max(0.8f, radius * 0.75f);
+	float speed = Mathf.Clamp(radius * 0.15f, 1.0f, 10.0f);
+	float emissionRadius = radius * 0.55f;
+
+	Gradient fade = new Gradient
+	{
+		Offsets = new float[] { 0.0f, 0.12f, 0.5f, 1.0f },
+		Colors = new Color[]
+		{
+			new Color(1.0f, 1.0f, 1.0f, 0.0f),
+			new Color(1.0f, 1.0f, 1.0f, 0.4f),
+			new Color(1.0f, 1.0f, 1.0f, 0.22f),
+			new Color(1.0f, 1.0f, 1.0f, 0.0f)
+		}
+	};
+
+	Curve expansion = new Curve();
+
+	expansion.AddPoint(new Vector2(0.0f, 0.4f));
+	expansion.AddPoint(new Vector2(1.0f, 1.0f));
+
+	ParticleProcessMaterial process = new ParticleProcessMaterial
+	{
+		EmissionShape = ParticleProcessMaterial.EmissionShapeEnum.Sphere,
+		EmissionSphereRadius = emissionRadius,
+
+		Direction = Vector3.Up,
+		Spread = 180.0f,
+		Gravity = Vector3.Zero,
+
+		InitialVelocityMin = speed * 0.3f,
+		InitialVelocityMax = speed,
+
+		ScaleMin = size * 0.7f,
+		ScaleMax = size * 1.3f,
+
+		ScaleCurve = new CurveTexture
+		{
+			Curve = expansion
+		},
+
+		ColorRamp = new GradientTexture1D
+		{
+			Gradient = fade
+		}
+	};
+
+	float bounds = emissionRadius + speed * lifetime + size * 2.0f;
+
+	GpuParticles3D particles = new GpuParticles3D
+	{
+		Name = "AsteroidDust",
+
+		Amount = 20,
+		Lifetime = lifetime,
+		OneShot = true,
+		Explosiveness = 1.0f,
+		LocalCoords = false,
+		Emitting = false,
+
+		ProcessMaterial = process,
+		DrawPass1 = _dustMesh,
+
+		CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+
+		VisibilityAabb = new Aabb(
+			Vector3.One * -bounds,
+			Vector3.One * bounds * 2.0f
+		)
+	};
+
+	scene.AddChild(particles);
+
+	particles.GlobalPosition = position;
+
+	_activeDustBursts++;
+
+	particles.TreeExiting += () =>
+	{
+		_activeDustBursts = Mathf.Max(0, _activeDustBursts - 1);
+	};
+
+	particles.Emitting = true;
+	particles.Restart();
+
+	context.GetTree().CreateTimer(lifetime + 0.3f).Timeout += () =>
+	{
+		if (GodotObject.IsInstanceValid(particles))
+		{
+			particles.QueueFree();
+		}
+	};
+}
+
+// =========================================================
+// Creates a shared soft-edged dust sprite without requiring an imported texture.
+private static void EnsureDustMesh()
+{
+	if (_dustMesh != null)
+	{
+		return;
+	}
+
+	Gradient radialFade = new Gradient
+	{
+		Offsets = new float[] { 0.0f, 0.35f, 1.0f },
+		Colors = new Color[]
+		{
+			Colors.White,
+			new Color(1.0f, 1.0f, 1.0f, 0.65f),
+			new Color(1.0f, 1.0f, 1.0f, 0.0f)
+		}
+	};
+
+	GradientTexture2D texture = new GradientTexture2D
+	{
+		Width = 64,
+		Height = 64,
+		Gradient = radialFade,
+		Fill = GradientTexture2D.FillEnum.Radial,
+		FillFrom = new Vector2(0.5f, 0.5f),
+		FillTo = new Vector2(1.0f, 0.5f)
+	};
+
+	StandardMaterial3D material = new StandardMaterial3D
+	{
+		AlbedoColor = new Color(0.42f, 0.37f, 0.31f),
+		AlbedoTexture = texture,
+
+		ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+		Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+		CullMode = BaseMaterial3D.CullModeEnum.Disabled,
+
+		VertexColorUseAsAlbedo = true,
+
+		BillboardMode = BaseMaterial3D.BillboardModeEnum.Enabled,
+		BillboardKeepScale = true
+	};
+
+	_dustMesh = new QuadMesh
+	{
+		Size = Vector2.One,
+		Material = material
+	};
+}
+
+#endregion
 }
