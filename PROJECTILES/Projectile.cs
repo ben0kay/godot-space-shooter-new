@@ -1,16 +1,19 @@
 using Godot;
 
-// Moves a weapon projectile, applies impact damage, and manages its visual effects.
+// Resolves launch settings, moves one projectile, and applies its damage and effects.
 public partial class Projectile : Area3D
 {
 	#region Runtime
 
-	private Vector3 _velocity;
-	private float _lifeRemaining;
-
+	private ProjectileDefinition _definition;
 	private CollisionObject3D _source;
 	private Faction _sourceFaction;
-	private WeaponDefinition _definition;
+
+	private Vector3 _velocity;
+	private float _lifeRemaining;
+	private float _damage;
+	private float _sizeScale;
+	private float _collisionRadius;
 
 	private PhysicsRayQueryParameters3D _flightQuery;
 	private GpuParticles3D _trail;
@@ -21,26 +24,56 @@ public partial class Projectile : Area3D
 
 	#region Setup
 
-	// Receives the weapon settings, firing ship, faction, and inherited velocity.
+	// Resolves projectile defaults and weapon overrides into this shot's runtime values.
 	public void Configure(
-		WeaponDefinition definition,
+		WeaponDefinition weapon,
 		CollisionObject3D source,
 		Faction sourceFaction,
 		Vector3 sourceVelocity
 	)
 	{
-		_definition = definition;
+		_definition = weapon.Projectile;
 		_source = source;
 		_sourceFaction = sourceFaction;
 
-		_lifeRemaining = Mathf.Max(
-			0.01f,
-			definition.ProjectileLifetime
+		if (_definition == null)
+		{
+			GD.PushError("Projectile needs a weapon with a ProjectileDefinition.");
+			QueueFree();
+			return;
+		}
+
+		ProjectileLaunchOverrides launch = weapon.LaunchOverrides;
+
+		_damage = Mathf.Max(
+			0.0f,
+			launch != null && launch.OverrideDamage
+				? launch.Damage
+				: _definition.Damage
 		);
 
-		_velocity =
-			-GlobalBasis.Z.Normalized() * definition.ProjectileSpeed
-			+ sourceVelocity;
+		float speed = Mathf.Max(
+			0.0f,
+			launch != null && launch.OverrideSpeed
+				? launch.Speed
+				: _definition.Speed
+		);
+
+		_lifeRemaining = Mathf.Max(
+			0.01f,
+			launch != null && launch.OverrideLifetime
+				? launch.Lifetime
+				: _definition.Lifetime
+		);
+
+		_sizeScale = Mathf.Max(0.01f, launch?.SizeScale ?? 1.0f);
+
+		_collisionRadius = Mathf.Max(
+			0.005f,
+			_definition.CollisionRadius * _sizeScale
+		);
+
+		_velocity = -GlobalBasis.Z.Normalized() * speed + sourceVelocity;
 
 		_flightQuery = PhysicsRayQueryParameters3D.Create(
 			GlobalPosition,
@@ -66,8 +99,8 @@ public partial class Projectile : Area3D
 
 		_trail = WeaponEffects.CreateTrail(
 			this,
-			definition.Effects,
-			sourceFaction
+			_definition.Effects,
+			_sourceFaction
 		);
 	}
 
@@ -130,7 +163,7 @@ public partial class Projectile : Area3D
 		ResolveHit(body, normal);
 	}
 
-	// Applies damage, emits impact particles, and allows the trail to finish.
+	// Applies this shot's resolved damage and the projectile's impact effects.
 	private void ResolveHit(Node3D body, Vector3 normal)
 	{
 		if (
@@ -151,13 +184,11 @@ public partial class Projectile : Area3D
 
 		if (body is IDamageable target)
 		{
-			DamageInfo damage = new DamageInfo(
-				_definition.Damage,
+			target.ApplyDamage(new DamageInfo(
+				_damage,
 				source,
 				_sourceFaction
-			);
-
-			target.ApplyDamage(damage);
+			));
 		}
 
 		WeaponEffects.Impact(
@@ -172,7 +203,7 @@ public partial class Projectile : Area3D
 		QueueFree();
 	}
 
-	// Removes an expired projectile while its remaining trail particles finish.
+	// Removes an expired shot while its remaining trail particles finish.
 	private void Expire()
 	{
 		if (_hit)
@@ -188,69 +219,80 @@ public partial class Projectile : Area3D
 
 	#endregion
 
-	#region Appearance
+	#region Appearance And Collision
 
-	// Creates the projectile using its effect colour or existing weapon colour.
+	// Creates the projectile's sphere or tracer using its resolved size scale.
 	private void CreateVisual()
 	{
-		float radius = Mathf.Max(
-			0.005f,
-			_definition.ProjectileRadius
-		);
-
 		Color color = _definition.Effects != null
-			? WeaponEffects.GetColor(
-				_definition.Effects,
-				_sourceFaction
-			)
-			: _definition.ProjectileColor;
+			? WeaponEffects.GetColor(_definition.Effects, _sourceFaction)
+			: _definition.Color;
 
 		StandardMaterial3D material = new()
 		{
 			AlbedoColor = color,
 			EmissionEnabled = true,
 			Emission = color,
-			EmissionEnergyMultiplier =
-				_definition.Effects?.EmissionEnergy ?? 1.0f,
+			EmissionEnergyMultiplier = _definition.EmissionEnergy,
 			ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded
 		};
 
-		SphereMesh mesh = new()
-		{
-			Radius = radius,
-			Height = radius * 2.0f,
-			RadialSegments = 8,
-			Rings = 4,
-			Material = material
-		};
+		Mesh mesh;
+		Vector3 position = Vector3.Zero;
 
-		MeshInstance3D visual = new()
+		if (_definition.VisualLength > 0.0f)
+		{
+			float length = Mathf.Max(
+				0.01f,
+				_definition.VisualLength * _sizeScale
+			);
+
+			float width = Mathf.Max(
+				0.005f,
+				_definition.VisualWidth * _sizeScale
+			);
+
+			mesh = new BoxMesh
+			{
+				Size = new Vector3(width, width, length),
+				Material = material
+			};
+
+			// The collision point is the front of the tracer.
+			position = Vector3.Back * length * 0.5f;
+		}
+		else
+		{
+			mesh = new SphereMesh
+			{
+				Radius = _collisionRadius,
+				Height = _collisionRadius * 2.0f,
+				RadialSegments = 8,
+				Rings = 4,
+				Material = material
+			};
+		}
+
+		AddChild(new MeshInstance3D
 		{
 			Name = "Visual",
-			Mesh = mesh
-		};
-
-		AddChild(visual);
+			Mesh = mesh,
+			Position = position,
+			CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
+		});
 	}
 
-	// Creates a collision sphere matching the visible projectile radius.
+	// Creates the projectile's scaled collision sphere.
 	private void CreateCollision()
 	{
-		SphereShape3D shape = new()
-		{
-			Radius = Mathf.Max(
-				0.005f,
-				_definition.ProjectileRadius
-			)
-		};
-
-		CollisionShape3D collision = new()
+		AddChild(new CollisionShape3D
 		{
 			Name = "Collision",
-			Shape = shape
-		};
-
-		AddChild(collision);
+			Shape = new SphereShape3D
+			{
+				Radius = _collisionRadius
+			}
+		});
 	}
 
 	#endregion

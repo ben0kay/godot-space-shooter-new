@@ -1,29 +1,28 @@
 using Godot;
 
-// Stores shared weapon settings for projectiles, damage, and optional effects.
+// Selects a projectile and stores weapon firing settings, launch overrides, and muzzle effects.
 [GlobalClass]
 public partial class WeaponDefinition : Resource
 {
 	#region Firing
 
 	[Export] public float SecondsBetweenShots = 0.09f;
-	[Export] public PackedScene ProjectileScene;
 
 	#endregion
 
-	#region Projectile
+	#region Projectile Delivery
 
-	[Export] public float Damage = 3.0f;
-	[Export] public float ProjectileSpeed = 90.0f;
-	[Export] public float ProjectileLifetime = 3.0f;
-	[Export] public float ProjectileRadius = 0.12f;
-	[Export] public Color ProjectileColor = Colors.Orange;
+	[Export] public ProjectileDefinition Projectile;
+	[Export] public ProjectileLaunchOverrides LaunchOverrides;
+
+	// Exposes the selected projectile scene to the shared firing controllers.
+	public PackedScene ProjectileScene => Projectile?.Scene;
 
 	#endregion
 
-	#region Effects
+	#region Muzzle Effects
 
-	[Export] public WeaponEffectsProfile Effects;
+	[Export] public WeaponEffectsProfile MuzzleEffects;
 
 	#endregion
 }

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Godot;
 
+// Alternates muzzle markers and fires the assigned weapon's selected projectile.
 public partial class WeaponMount : Node3D
 {
 	#region Settings
@@ -76,19 +77,34 @@ public partial class WeaponMount : Node3D
 		return true;
 	}
 
-	// Spawns one projectile and advances to the next muzzle.
-	private void FireShot()
-	{
-		Marker3D muzzle = _muzzles[_muzzleIndex];
-		_muzzleIndex = (_muzzleIndex + 1) % _muzzles.Count;
+	// Fires the selected projectile and emits the weapon's muzzle effect.
+private void FireShot()
+{
+	Marker3D muzzle = _muzzles[_muzzleIndex];
+	_muzzleIndex = (_muzzleIndex + 1) % _muzzles.Count;
 
-		Projectile projectile = Weapon.ProjectileScene.Instantiate<Projectile>();
+	Projectile projectile = Weapon.ProjectileScene.Instantiate<Projectile>();
 
-		GetTree().CurrentScene.AddChild(projectile);
+	GetTree().CurrentScene.AddChild(projectile);
 
-		projectile.GlobalTransform = muzzle.GlobalTransform;
-		projectile.Configure(Weapon, _ship, ShooterFaction, _ship.Velocity);
-	}
+	projectile.GlobalTransform = new Transform3D(
+		muzzle.GlobalBasis.Orthonormalized(),
+		muzzle.GlobalPosition
+	);
+
+	projectile.Configure(
+		Weapon,
+		_ship,
+		ShooterFaction,
+		_ship.Velocity
+	);
+
+	WeaponEffects.Muzzle(
+		muzzle,
+		Weapon.MuzzleEffects,
+		ShooterFaction
+	);
+}
 
 	#endregion
 }

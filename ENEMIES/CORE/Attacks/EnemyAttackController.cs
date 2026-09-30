@@ -459,41 +459,41 @@ public partial class EnemyAttackController : Node
 
 	#region Projectile Creation
 
-	// Spawns a projectile along the muzzle direction and emits its muzzle flash.
-	private void Fire(
-		EnemyHardpoint mount,
-		WeaponDefinition weapon
-	)
-	{
-		Projectile projectile = weapon.ProjectileScene.Instantiate<Projectile>();
+	// Fires the weapon's selected projectile along the hardpoint's muzzle direction.
+private void Fire(
+	EnemyHardpoint mount,
+	WeaponDefinition weapon
+)
+{
+	Projectile projectile = weapon.ProjectileScene.Instantiate<Projectile>();
 
-		GetTree().CurrentScene.AddChild(projectile);
+	GetTree().CurrentScene.AddChild(projectile);
 
-		Vector3 direction = mount.MuzzleDirection;
+	Vector3 direction = mount.MuzzleDirection;
 
-		Vector3 up = Mathf.Abs(direction.Dot(Vector3.Up)) > 0.99f
-			? Vector3.Right
-			: Vector3.Up;
+	Vector3 up = Mathf.Abs(direction.Dot(Vector3.Up)) > 0.99f
+		? Vector3.Right
+		: Vector3.Up;
 
-		projectile.LookAtFromPosition(
-			mount.MuzzlePosition,
-			mount.MuzzlePosition + direction,
-			up
-		);
+	projectile.LookAtFromPosition(
+		mount.MuzzlePosition,
+		mount.MuzzlePosition + direction,
+		up
+	);
 
-		projectile.Configure(
-			weapon,
-			_ship,
-			_ship.CombatFaction,
-			_ship.Velocity
-		);
+	projectile.Configure(
+		weapon,
+		_ship,
+		_ship.CombatFaction,
+		_ship.Velocity
+	);
 
-		WeaponEffects.Muzzle(
-			mount.Muzzle,
-			weapon.Effects,
-			_ship.CombatFaction
-		);
-	}
+	WeaponEffects.Muzzle(
+		mount.Muzzle,
+		weapon.MuzzleEffects,
+		_ship.CombatFaction
+	);
+}
 
 	#endregion
 }

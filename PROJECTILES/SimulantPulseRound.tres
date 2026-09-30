@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="ProjectileDefinition" format=3]
+
+[ext_resource type="Script" path="res://PROJECTILES/ProjectileDefinition.cs" id="1_definition"]
+[ext_resource type="PackedScene" path="res://Projectile.tscn" id="2_scene"]
+[ext_resource type="Script" path="res://Weapon/WeaponEffectsProfile.cs" id="3_effects"]
+
+[sub_resource type="Resource" id="Effects_pulse"]
+script = ExtResource("3_effects")
+UseFactionPalette = true
+EmissionEnergy = 3.0
+ParticleRadius = 0.045
+MuzzleParticles = 0
+TrailParticles = 12
+TrailLifetime = 0.2
+ImpactParticles = 12
+ImpactLifetime = 0.25
+ImpactSpeed = 5.0
+
+[resource]
+script = ExtResource("1_definition")
+Scene = ExtResource("2_scene")
+Damage = 6.0
+Speed = 60.0
+Lifetime = 3.0
+CollisionRadius = 0.16
+EmissionEnergy = 3.0
+Effects = SubResource("Effects_pulse")

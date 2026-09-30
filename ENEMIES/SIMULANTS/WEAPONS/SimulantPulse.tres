@@ -1,19 +1,6 @@
 [gd_resource type="Resource" script_class="WeaponDefinition" format=3 uid="uid://bw66vuhpdphfd"]
 
 [ext_resource type="Script" uid="uid://dk13qlucl75kd" path="res://Weapon/WeaponDefinition.cs" id="1_weapon"]
-[ext_resource type="PackedScene" uid="uid://bykb33nirbctc" path="res://Projectile.tscn" id="2_projectile"]
-[ext_resource type="Script" uid="uid://mv26j0357h2" path="res://Weapon/WeaponEffectsProfile.cs" id="3_effects"]
-
-[sub_resource type="Resource" id="Effects_pulse"]
-script = ExtResource("3_effects")
-ParticleRadius = 0.045
-MuzzleLifetime = 0.12
-TrailLifetime = 0.2
 
 [resource]
 script = ExtResource("1_weapon")
-ProjectileScene = ExtResource("2_projectile")
-Damage = 6.0
-ProjectileSpeed = 60.0
-ProjectileRadius = 0.16
-Effects = SubResource("Effects_pulse")
