@@ -2,19 +2,37 @@
 
 [ext_resource type="Script" uid="uid://dnknugvhnysd0" path="res://ENEMIES/CORE/Attacks/EnemyAttackControllerDefinition.cs" id="1_controller"]
 [ext_resource type="Script" uid="uid://c018bvm22iks8" path="res://ENEMIES/CORE/Attacks/EnemyAttackDefinition.cs" id="2_attack"]
-[ext_resource type="Resource" uid="uid://bw66vuhpdphfd" path="res://ENEMIES/SIMULANTS/Weapons/SimulantPulse.tres" id="3_weapon"]
+[ext_resource type="Resource" uid="uid://bw66vuhpdphfd" path="res://ENEMIES/SIMULANTS/WEAPONS/SimulantPulse.tres" id="3_pulse"]
+[ext_resource type="Resource" uid="uid://nb740567d3jy" path="res://ENEMIES/SIMULANTS/Weapons/SimulantWeaponSeekerCore.tres" id="4_seeker"]
 
 [sub_resource type="Resource" id="Attack_cannons"]
 script = ExtResource("2_attack")
 Key = "four_cannon_salvo"
 Channel = "cannons"
 Weight = 40.0
-Weapon = ExtResource("3_weapon")
+Weapon = ExtResource("3_pulse")
 RangeMin = 8.0
 RangeMax = 215.0
+Order = 1
 IntervalSeconds = 0.13
+
+[sub_resource type="Resource" id="Attack_seeker"]
+script = ExtResource("2_attack")
+Key = "seeker_core_launch"
+Channel = "heavy"
+HardpointGroup = "core_weapon"
+Weight = 20.0
+Weapon = ExtResource("4_seeker")
+RangeMin = 30.0
+RangeMax = 250.0
+FireToleranceDegrees = 180.0
+Order = 2
+VolleyRounds = 1
+IntervalSeconds = 0.5
+CooldownSeconds = 5.0
 
 [resource]
 script = ExtResource("1_controller")
+MaxActiveChannels = 2
 SelectionIntervalSeconds = 0.2
-Attacks = Array[ExtResource("2_attack")]([SubResource("Attack_cannons")])
+Attacks = Array[ExtResource("2_attack")]([SubResource("Attack_cannons"), SubResource("Attack_seeker")])
