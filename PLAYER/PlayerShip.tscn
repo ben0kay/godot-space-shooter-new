@@ -7,10 +7,13 @@
 [ext_resource type="Resource" uid="uid://duk6me74e1i1y" path="res://Weapons/minigun.tres" id="3_faoyc"]
 [ext_resource type="Script" uid="uid://crafoydkr28bx" path="res://PLAYER/Scripts/PlayerWeaponInput.cs" id="4_faoyc"]
 [ext_resource type="Script" uid="uid://dicus7a88byl7" path="res://PLAYER/Scripts/PlayerThrusters.cs" id="6_5rg74"]
+[ext_resource type="Script" uid="uid://c4dvf21ox7pnp" path="res://PLAYER/WingtipTrail.cs" id="8_crfyu"]
 
 [node name="PlayerShip" type="CharacterBody3D" unique_id=1589947766]
 script = ExtResource("1_d2dyu")
 Definition = ExtResource("2_vl8mf")
+MaxPitchSpeedDegrees = 90.0
+MaxYawSpeedDegrees = 120.0
 
 [node name="Cyan_Interceptor_Mk2" parent="." unique_id=1887880329 instance=ExtResource("2_u2noc")]
 transform = Transform3D(0.4, 0, 0, 0, 0.4, 0, 0, 0, 0.4, 0, 0, 0)
@@ -42,6 +45,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5303519, 0.011257753, 2.243
 
 [node name="LeftWingtip" type="Marker3D" parent="WingTrails" unique_id=940650724]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.399035, 0.17849404, 1.9549721)
+script = ExtResource("8_crfyu")
 
 [node name="RightWingtip" type="Marker3D" parent="WingTrails" unique_id=612439037]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.4372416, 0.085373044, 1.9875399)
+script = ExtResource("8_crfyu")

@@ -44,6 +44,17 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 
 	#endregion
 
+	#region Steering Settings
+
+[Export] public float MaxPitchSpeedDegrees = 60.0f;
+[Export] public float MaxYawSpeedDegrees = 75.0f;
+[Export] public float SteeringResponse = 12.0f;
+
+private float _pitchRate;
+private float _yawRate;
+
+#endregion
+
 	#region Boost Settings
 
 	[Export] public float BoostSpeedMultiplier = 2.2f;
@@ -177,15 +188,23 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 		}
 	}
 
-	// Clears accumulated input when the application loses focus.
-	public override void _Notification(int what)
+// =========================================================
+// Clears held input and steering momentum when the application loses focus.
+public override void _Notification(int what)
+{
+	if (what == NotificationApplicationFocusOut)
 	{
-		if (what == NotificationApplicationFocusOut)
-		{
-			_rightCtrlHeld = false;
-			_mouseMovement = Vector2.Zero;
-		}
+		_rightCtrlHeld = false;
+		_mouseMovement = Vector2.Zero;
+
+		_pitchRate = 0.0f;
+		_yawRate = 0.0f;
+
+		PitchInput = 0.0f;
+		YawInput = 0.0f;
+		RollInput = 0.0f;
 	}
+}
 
 	// Restores the pointer when leaving gameplay.
 	public override void _ExitTree()
@@ -246,36 +265,89 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 
 	#region Flight Movement
 
-	// Rotates the physical ship and publishes steering signals for visual movement.
+	// =========================================================
+// Limits and smooths mouse steering, then publishes the actual turning strength.
 private void UpdateRotation(float seconds)
 {
-	float keyboardRoll = 0.0f;
-
 	bool controlsActive = Input.MouseMode == Input.MouseModeEnum.Captured;
 
-	if (controlsActive)
+	if (!controlsActive)
 	{
-		if (Input.IsPhysicalKeyPressed(KEY_ROLL_LEFT)) keyboardRoll -= 1.0f;
-		if (Input.IsPhysicalKeyPressed(KEY_ROLL_RIGHT)) keyboardRoll += 1.0f;
+		_pitchRate = 0.0f;
+		_yawRate = 0.0f;
+
+		PitchInput = 0.0f;
+		YawInput = 0.0f;
+		RollInput = 0.0f;
+
+		_mouseMovement = Vector2.Zero;
+		return;
 	}
+
+	float safeSeconds = Mathf.Max(seconds, 0.0001f);
+
+	float maxPitchRate = Mathf.DegToRad(
+		Mathf.Max(0.0f, MaxPitchSpeedDegrees)
+	);
+
+	float maxYawRate = Mathf.DegToRad(
+		Mathf.Max(0.0f, MaxYawSpeedDegrees)
+	);
+
+	// Convert this tick's mouse displacement into requested angular velocity.
+	float desiredPitchRate = Mathf.Clamp(
+		_mouseMovement.Y * MousePitchSensitivity / safeSeconds,
+		-maxPitchRate,
+		maxPitchRate
+	);
+
+	float desiredYawRate = Mathf.Clamp(
+		-_mouseMovement.X * MouseYawSensitivity / safeSeconds,
+		-maxYawRate,
+		maxYawRate
+	);
+
+	// Consume input immediately so excess mouse movement never builds a backlog.
+	_mouseMovement = Vector2.Zero;
+
+	float blend = 1.0f - Mathf.Exp(
+		-Mathf.Max(0.0f, SteeringResponse) * seconds
+	);
+
+	_pitchRate = Mathf.Clamp(
+		Mathf.Lerp(_pitchRate, desiredPitchRate, blend),
+		-maxPitchRate,
+		maxPitchRate
+	);
+
+	_yawRate = Mathf.Clamp(
+		Mathf.Lerp(_yawRate, desiredYawRate, blend),
+		-maxYawRate,
+		maxYawRate
+	);
+
+	float keyboardRoll = 0.0f;
+
+	if (Input.IsPhysicalKeyPressed(KEY_ROLL_LEFT)) keyboardRoll -= 1.0f;
+	if (Input.IsPhysicalKeyPressed(KEY_ROLL_RIGHT)) keyboardRoll += 1.0f;
 
 	RollInput = keyboardRoll;
 
-	float pitch = _mouseMovement.Y * MousePitchSensitivity;
-	float yaw = -_mouseMovement.X * MouseYawSensitivity;
-	float roll = Mathf.DegToRad(keyboardRoll * RollSpeed * seconds);
+	PitchInput = maxPitchRate > 0.0001f
+		? _pitchRate / maxPitchRate
+		: 0.0f;
 
-	float referenceTurnRate = Mathf.DegToRad(60.0f);
-	float referenceTurnStep = referenceTurnRate * Mathf.Max(seconds, 0.0001f);
+	YawInput = maxYawRate > 0.0001f
+		? _yawRate / maxYawRate
+		: 0.0f;
 
-	PitchInput = Mathf.Clamp(pitch / referenceTurnStep, -1.0f, 1.0f);
-	YawInput = Mathf.Clamp(yaw / referenceTurnStep, -1.0f, 1.0f);
+	RotateObjectLocal(Vector3.Right, _pitchRate * seconds);
+	RotateObjectLocal(Vector3.Up, _yawRate * seconds);
 
-	RotateObjectLocal(Vector3.Right, pitch);
-	RotateObjectLocal(Vector3.Up, yaw);
-	RotateObjectLocal(Vector3.Forward, roll);
-
-	_mouseMovement = Vector2.Zero;
+	RotateObjectLocal(
+		Vector3.Forward,
+		Mathf.DegToRad(keyboardRoll * RollSpeed) * seconds
+	);
 }
 
 	// Applies normal flight or automatic forward thrust while Shift is held.

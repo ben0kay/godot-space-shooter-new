@@ -1,4 +1,4 @@
-I prefer comments above functions/methods. along with a commented line of =================== so i can easily see when editing code in godot
+I prefer comments above functions/methods. along with a commented line of ========================================================= so i can easily see when editing code in godot
 I prefer some comment at top of each script to explain what the script is doing.
 I prefer you organizing functions/methods into regions when appropriate.
 I prefer to organize my scripts for ease of finding in future etc.
