@@ -7,6 +7,16 @@
 transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0, 0)
 
 [node name="CannonOuterLeft" parent="." unique_id=411003694 instance=ExtResource("1_365ka")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.2015905, 0.9672818, -1.5273769)
+
+[node name="CannonInnerLeft" parent="." unique_id=1951924921 instance=ExtResource("1_365ka")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.54603, 1.8273329, -2.0217779)
+
+[node name="CannonOuterRight" parent="." unique_id=1910999809 instance=ExtResource("1_365ka")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.2066674, 0.9672818, -1.5273769)
+
+[node name="CannonInnerRight" parent="." unique_id=43522916 instance=ExtResource("1_365ka")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.4716837, 1.8273329, -2.0217779)
 
 [node name="Hull" parent="." unique_id=1905829790 instance=ExtResource("2_q2h1j")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0031369529, -0.02109496, -0.02376779)

@@ -1,15 +1,14 @@
 [gd_resource type="Resource" script_class="EnemyDefinition" format=3 uid="uid://tkfi5asftg5d"]
 
-[ext_resource type="Script" uid="uid://daovfp0cngp6i" path="res://SCRIPTS/Enemy/EnemyHandlingStats.cs" id="1_fv2d8"]
-[ext_resource type="Script" uid="uid://bxv2gm5hx3d6i" path="res://SCRIPTS/Enemy/EnemyDefinition.cs" id="1_m5jen"]
-[ext_resource type="Script" uid="uid://ccwbsekbqw5ln" path="res://SCRIPTS/Enemy/EnemyRangeStats.cs" id="2_b8h0j"]
-[ext_resource type="PackedScene" uid="uid://df3088rujgyds" path="res://SCENES/Enemy/SIMULANT/SHIPS/Dreadwing/SimulantDreadwingMovement.tscn" id="2_fevsa"]
-[ext_resource type="Script" uid="uid://bu8ndi4ho15n3" path="res://SCRIPTS/Enemy/Hardpoints/HardpointDefinition.cs" id="2_thxfd"]
-[ext_resource type="Script" uid="uid://0flu37m8gb7j" path="res://SCRIPTS/Enemy/Hardpoints/HardpointRotationStats.cs" id="3_0kdpd"]
-[ext_resource type="PackedScene" uid="uid://bohf7i01xknix" path="res://SCENES/Enemy/SIMULANT/SHIPS/Dreadwing/SimulantDreadwingVisual.tscn" id="4_fevsa"]
+[ext_resource type="Script" uid="uid://daovfp0cngp6i" path="res://SCRIPTS/Enemy/EnemyHandlingStats.cs" id="1_fl1mw"]
+[ext_resource type="Script" uid="uid://bu8ndi4ho15n3" path="res://SCRIPTS/Enemy/Hardpoints/HardpointDefinition.cs" id="2_83nn3"]
+[ext_resource type="PackedScene" uid="uid://df3088rujgyds" path="res://SCENES/Enemy/SIMULANT/SHIPS/Dreadwing/SimulantDreadwingMovement.tscn" id="3_lwrb8"]
+[ext_resource type="Script" uid="uid://ccwbsekbqw5ln" path="res://SCRIPTS/Enemy/EnemyRangeStats.cs" id="4_2fhql"]
+[ext_resource type="PackedScene" uid="uid://bohf7i01xknix" path="res://SCENES/Enemy/SIMULANT/SHIPS/Dreadwing/SimulantDreadwingVisual.tscn" id="5_t6p2a"]
+[ext_resource type="Script" uid="uid://bxv2gm5hx3d6i" path="res://SCRIPTS/Enemy/EnemyDefinition.cs" id="6_mpu4x"]
 
 [sub_resource type="Resource" id="Resource_xhs40"]
-script = ExtResource("1_fv2d8")
+script = ExtResource("1_fl1mw")
 MaxSpeed = 10.0
 Acceleration = 4.0
 Braking = 6.0
@@ -17,34 +16,15 @@ TurnSpeedDegrees = 45.0
 MaxPitchDegrees = 35.0
 metadata/_custom_type_script = "uid://daovfp0cngp6i"
 
-[sub_resource type="Resource" id="Resource_thxfd"]
-script = ExtResource("3_0kdpd")
-
-[sub_resource type="Resource" id="Resource_tmcrp"]
-script = ExtResource("2_thxfd")
-metadata/_custom_type_script = "uid://bu8ndi4ho15n3"
-
-[sub_resource type="Resource" id="Resource_cefqf"]
-script = ExtResource("2_thxfd")
-metadata/_custom_type_script = "uid://bu8ndi4ho15n3"
-
-[sub_resource type="Resource" id="Resource_qw487"]
-script = ExtResource("2_thxfd")
-metadata/_custom_type_script = "uid://bu8ndi4ho15n3"
-
-[sub_resource type="Resource" id="Resource_jncf3"]
-script = ExtResource("2_thxfd")
-metadata/_custom_type_script = "uid://bu8ndi4ho15n3"
-
 [sub_resource type="Resource" id="Resource_k1wv1"]
-script = ExtResource("2_b8h0j")
+script = ExtResource("4_2fhql")
 Detection = 150.0
 BackAway = 30.0
 Forget = 140.0
 metadata/_custom_type_script = "uid://ccwbsekbqw5ln"
 
 [resource]
-script = ExtResource("1_m5jen")
+script = ExtResource("6_mpu4x")
 DisplayName = "Simulant Dreadwing"
 Faction = 4
 Class = 3
@@ -54,9 +34,8 @@ MaxArmour = 600.0
 MaxHull = 250.0
 Handling = SubResource("Resource_xhs40")
 Ranges = SubResource("Resource_k1wv1")
-MovementControllerScene = ExtResource("2_fevsa")
+MovementControllerScene = ExtResource("3_lwrb8")
 AsteroidResponse = 1
-VisualScene = ExtResource("4_fevsa")
+VisualScene = ExtResource("5_t6p2a")
 CollisionSize = Vector3(13, 6, 8)
-Hardpoints = Array[ExtResource("2_thxfd")]([SubResource("Resource_tmcrp"), SubResource("Resource_cefqf"), SubResource("Resource_qw487"), SubResource("Resource_jncf3")])
 metadata/_custom_type_script = "uid://bxv2gm5hx3d6i"
