@@ -392,23 +392,23 @@ public partial class EnemyAttackController : Node
 			&& distanceSquared <= maximum * maximum;
 	}
 
-	// Checks the actual muzzle alignment and optional line of sight.
+		// =========================================================
+	// Checks muzzle alignment and accepts the target's hull or shield as clear LOS.
 	private bool CanFire(
 		EnemyHardpoint mount,
 		EnemyAttackDefinition attack,
 		Node3D target
 	)
 	{
-		if (
-			!GodotObject.IsInstanceValid(mount)
+		if (!GodotObject.IsInstanceValid(mount)
 			|| mount.IsQueuedForDeletion()
-			|| !GodotObject.IsInstanceValid(mount.Muzzle)
-		)
+			|| !GodotObject.IsInstanceValid(mount.Muzzle))
 		{
 			return false;
 		}
 
-		Vector3 offset = target.GlobalPosition - mount.MuzzlePosition;
+		Vector3 offset =
+			target.GlobalPosition - mount.MuzzlePosition;
 
 		if (offset.LengthSquared() < 0.0001f)
 		{
@@ -416,7 +416,11 @@ public partial class EnemyAttackController : Node
 		}
 
 		float tolerance = Mathf.DegToRad(
-			Mathf.Clamp(attack.FireToleranceDegrees, 0.0f, 180.0f)
+			Mathf.Clamp(
+				attack.FireToleranceDegrees,
+				0.0f,
+				180.0f
+			)
 		);
 
 		float alignment = mount.MuzzleDirection.Dot(
@@ -436,64 +440,73 @@ public partial class EnemyAttackController : Node
 		PhysicsRayQueryParameters3D query =
 			PhysicsRayQueryParameters3D.Create(
 				mount.MuzzlePosition,
-				target.GlobalPosition
+				target.GlobalPosition,
+				1u
 			);
 
 		query.HitFromInside = true;
 
-		query.Exclude = new Godot.Collections.Array<Rid>
-		{
-			_ship.GetRid()
-		};
+		ShipShield.ConfigureWeaponQuery(query, _ship);
 
 		var result = _ship.GetWorld3D().DirectSpaceState.IntersectRay(
 			query
 		);
 
-		return
-			result.Count == 0
-			|| result["collider"].AsGodotObject() == target;
+		if (result.Count == 0)
+		{
+			return true;
+		}
+
+		GodotObject collider = result["collider"].AsGodotObject();
+
+		return collider == target
+			|| collider is ShipShield shield && shield.Ship == target;
 	}
 
 	#endregion
 
 	#region Projectile Creation
 
-	// Fires the weapon's selected projectile along the hardpoint's muzzle direction.
-private void Fire(
-	EnemyHardpoint mount,
-	WeaponDefinition weapon
-)
-{
-	Projectile projectile = weapon.ProjectileScene.Instantiate<Projectile>();
+		// =========================================================
+	// Launches a projectile and passes the ship's selected target to guidance.
+	private void Fire(
+		EnemyHardpoint mount,
+		WeaponDefinition weapon
+	)
+	{
+		Projectile projectile =
+			weapon.ProjectileScene.Instantiate<Projectile>();
 
-	GetTree().CurrentScene.AddChild(projectile);
+		GetTree().CurrentScene.AddChild(projectile);
 
-	Vector3 direction = mount.MuzzleDirection;
+		Vector3 direction = mount.MuzzleDirection;
 
-	Vector3 up = Mathf.Abs(direction.Dot(Vector3.Up)) > 0.99f
-		? Vector3.Right
-		: Vector3.Up;
+		Vector3 up =
+			Mathf.Abs(direction.Dot(Vector3.Up)) > 0.99f
+				? Vector3.Right
+				: Vector3.Up;
 
-	projectile.LookAtFromPosition(
-		mount.MuzzlePosition,
-		mount.MuzzlePosition + direction,
-		up
-	);
+		projectile.LookAtFromPosition(
+			mount.MuzzlePosition,
+			mount.MuzzlePosition + direction,
+			up
+		);
 
-	projectile.Configure(
-		weapon,
-		_ship,
-		_ship.CombatFaction,
-		_ship.Velocity
-	);
+		projectile.Configure(
+			weapon,
+			_ship,
+			_ship.CombatFaction,
+			_ship.Velocity
+		);
 
-	WeaponEffects.Muzzle(
-		mount.Muzzle,
-		weapon.MuzzleEffects,
-		_ship.CombatFaction
-	);
-}
+		projectile.SetGuidanceTarget(_ship.Targeting?.Target);
+
+		WeaponEffects.Muzzle(
+			mount.Muzzle,
+			weapon.MuzzleEffects,
+			_ship.CombatFaction
+		);
+	}
 
 	#endregion
 }

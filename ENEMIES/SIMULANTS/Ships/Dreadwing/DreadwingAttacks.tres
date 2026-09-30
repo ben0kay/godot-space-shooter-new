@@ -11,7 +11,7 @@ Channel = "cannons"
 Weight = 40.0
 Weapon = ExtResource("3_weapon")
 RangeMin = 8.0
-RangeMax = 95.0
+RangeMax = 215.0
 IntervalSeconds = 0.13
 
 [resource]

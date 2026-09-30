@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ProjectileDefinition" format=3 uid="uid://dknpf6hm6nbgk"]
+
+[ext_resource type="Script" uid="uid://7oyb1xy2i35r" path="res://PROJECTILES/ProjectileDefinition.cs" id="1_l107y"]
+[ext_resource type="Script" uid="uid://mv26j0357h2" path="res://Weapon/WeaponEffectsProfile.cs" id="1_y5dae"]
+[ext_resource type="PackedScene" uid="uid://bykb33nirbctc" path="res://PROJECTILES/Projectile.tscn" id="2_r4gln"]
+
+[sub_resource type="Resource" id="Resource_485x1"]
+script = ExtResource("1_y5dae")
+ParticleRadius = 0.12
+TrailParticles = 40
+TrailLifetime = 0.7
+ImpactParticles = 24
+ImpactLifetime = 0.45
+ImpactSpeed = 8.0
+metadata/_custom_type_script = "uid://mv26j0357h2"
+
+[resource]
+script = ExtResource("1_l107y")
+Scene = ExtResource("2_r4gln")
+Damage = 25.0
+Speed = 45.0
+Lifetime = 10.0
+CollisionRadius = 0.7
+EmissionEnergy = 2.0
+Effects = SubResource("Resource_485x1")
+metadata/_custom_type_script = "uid://7oyb1xy2i35r"

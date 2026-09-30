@@ -40,4 +40,11 @@ public partial class ProjectileDefinition : Resource
 	[Export] public WeaponEffectsProfile Effects;
 
 	#endregion
+	
+		#region Guidance
+
+	// Null means this projectile flies without guidance.
+	[Export] public ProjectileGuidanceSettings Guidance;
+
+	#endregion
 }

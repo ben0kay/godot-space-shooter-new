@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="WeaponDefinition" format=3 uid="uid://nb740567d3jy"]
+
+[ext_resource type="Resource" uid="uid://dknpf6hm6nbgk" path="res://ENEMIES/SIMULANTS/Projectiles/SimulantSeekerCore.tres" id="1_8yyiv"]
+[ext_resource type="Script" uid="uid://dk13qlucl75kd" path="res://Weapon/WeaponDefinition.cs" id="1_uo0ix"]
+
+[resource]
+script = ExtResource("1_uo0ix")
+Projectile = ExtResource("1_8yyiv")
+metadata/_custom_type_script = "uid://dk13qlucl75kd"

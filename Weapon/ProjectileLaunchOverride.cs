@@ -30,4 +30,14 @@ public partial class ProjectileLaunchOverrides : Resource
 	[Export] public float SizeScale = 1.0f;
 
 	#endregion
+	
+		#region Guidance
+
+	// Replaces the projectile's guidance settings for this weapon.
+	[Export] public bool OverrideGuidance = false;
+
+	// With OverrideGuidance enabled, null explicitly disables guidance.
+	[Export] public ProjectileGuidanceSettings Guidance;
+
+	#endregion
 }
