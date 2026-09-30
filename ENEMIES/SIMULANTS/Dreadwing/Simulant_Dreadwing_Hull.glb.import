@@ -4,12 +4,12 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://dxxlyf3m8qccd"
-path="res://.godot/imported/Simulant_Dreadwing_Hull.glb-ace8bcf20ffdf1ed3ff85cd71c26c068.scn"
+path="res://.godot/imported/Simulant_Dreadwing_Hull.glb-e563381cd04faa14bbbb3009781c591f.scn"
 
 [deps]
 
-source_file="res://RESOURCES/Enemies/SIMULANTS/DREADWING/Simulant_Dreadwing_Hull.glb"
-dest_files=["res://.godot/imported/Simulant_Dreadwing_Hull.glb-ace8bcf20ffdf1ed3ff85cd71c26c068.scn"]
+source_file="res://ENEMIES/SIMULANTS/Dreadwing/Simulant_Dreadwing_Hull.glb"
+dest_files=["res://.godot/imported/Simulant_Dreadwing_Hull.glb-e563381cd04faa14bbbb3009781c591f.scn"]
 
 [params]
 

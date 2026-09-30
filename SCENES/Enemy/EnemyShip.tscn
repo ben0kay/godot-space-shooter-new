@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://baw74y3wwaw71"]
 
-[ext_resource type="Script" uid="uid://clmq2oc3oe4e1" path="res://SCRIPTS/Enemy/EnemyShip.cs" id="1_pbd75"]
-[ext_resource type="Resource" uid="uid://csvl4g0yb3iy7" path="res://RESOURCES/Enemies/RebelSkirmisher.tres" id="2_kr5rp"]
+[ext_resource type="Script" uid="uid://clmq2oc3oe4e1" path="res://ENEMIES/CORE/EnemyShip.cs" id="1_pbd75"]
+[ext_resource type="Resource" uid="uid://csvl4g0yb3iy7" path="res://ENEMIES/REBELS/RebelSkirmisher.tres" id="2_kr5rp"]
 
 [node name="EnemyShip" type="CharacterBody3D" unique_id=1459070871]
 script = ExtResource("1_pbd75")
