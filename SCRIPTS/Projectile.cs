@@ -1,21 +1,27 @@
 using Godot;
 
+// Moves a weapon projectile, applies impact damage, and manages its visual effects.
 public partial class Projectile : Area3D
 {
 	#region Runtime
 
 	private Vector3 _velocity;
 	private float _lifeRemaining;
+
 	private CollisionObject3D _source;
 	private Faction _sourceFaction;
 	private WeaponDefinition _definition;
+
+	private PhysicsRayQueryParameters3D _flightQuery;
+	private GpuParticles3D _trail;
+
 	private bool _hit;
 
 	#endregion
 
 	#region Setup
 
-	// Receives the weapon, source, faction, and inherited ship velocity.
+	// Receives the weapon settings, firing ship, faction, and inherited velocity.
 	public void Configure(
 		WeaponDefinition definition,
 		CollisionObject3D source,
@@ -26,14 +32,43 @@ public partial class Projectile : Area3D
 		_definition = definition;
 		_source = source;
 		_sourceFaction = sourceFaction;
-		_lifeRemaining = definition.ProjectileLifetime;
+
+		_lifeRemaining = Mathf.Max(
+			0.01f,
+			definition.ProjectileLifetime
+		);
 
 		_velocity =
-			-GlobalBasis.Z * definition.ProjectileSpeed
+			-GlobalBasis.Z.Normalized() * definition.ProjectileSpeed
 			+ sourceVelocity;
+
+		_flightQuery = PhysicsRayQueryParameters3D.Create(
+			GlobalPosition,
+			GlobalPosition
+		);
+
+		_flightQuery.HitFromInside = true;
+
+		Godot.Collections.Array<Rid> exclusions = new()
+		{
+			GetRid()
+		};
+
+		if (GodotObject.IsInstanceValid(source))
+		{
+			exclusions.Add(source.GetRid());
+		}
+
+		_flightQuery.Exclude = exclusions;
 
 		CreateVisual();
 		CreateCollision();
+
+		_trail = WeaponEffects.CreateTrail(
+			this,
+			definition.Effects,
+			sourceFaction
+		);
 	}
 
 	// Connects overlap detection for bodies touching the projectile.
@@ -46,10 +81,10 @@ public partial class Projectile : Area3D
 
 	#region Flight And Impact
 
-	// Checks the flight path, moves the projectile, and expires old shots.
+	// Checks the travelled path, advances the projectile, and expires old shots.
 	public override void _PhysicsProcess(double delta)
 	{
-		if (_hit)
+		if (_hit || _definition == null)
 		{
 			return;
 		}
@@ -57,20 +92,22 @@ public partial class Projectile : Area3D
 		float seconds = (float)delta;
 		Vector3 destination = GlobalPosition + _velocity * seconds;
 
-		PhysicsRayQueryParameters3D query =
-			PhysicsRayQueryParameters3D.Create(GlobalPosition, destination);
+		_flightQuery.From = GlobalPosition;
+		_flightQuery.To = destination;
 
-		query.Exclude = new Godot.Collections.Array<Rid>
-		{
-			_source.GetRid()
-		};
-
-		var result = GetWorld3D().DirectSpaceState.IntersectRay(query);
+		var result = GetWorld3D().DirectSpaceState.IntersectRay(
+			_flightQuery
+		);
 
 		if (result.Count > 0)
 		{
 			GlobalPosition = result["position"].AsVector3();
-			ResolveHit(result["collider"].AsGodotObject() as Node3D);
+
+			ResolveHit(
+				result["collider"].AsGodotObject() as Node3D,
+				result["normal"].AsVector3()
+			);
+
 			return;
 		}
 
@@ -79,37 +116,73 @@ public partial class Projectile : Area3D
 
 		if (_lifeRemaining <= 0.0f)
 		{
-			QueueFree();
+			Expire();
 		}
 	}
 
-	// Handles an overlap found by the Area3D collision shape.
+	// Uses the reverse flight direction when an overlap has no surface normal.
 	private void OnBodyEntered(Node3D body)
 	{
-		ResolveHit(body);
+		Vector3 normal = _velocity.LengthSquared() > 0.001f
+			? -_velocity.Normalized()
+			: Vector3.Up;
+
+		ResolveHit(body, normal);
 	}
 
-	// Sends damage to damageable targets and removes the projectile.
-	private void ResolveHit(Node3D body)
+	// Applies damage, emits impact particles, and allows the trail to finish.
+	private void ResolveHit(Node3D body, Vector3 normal)
 	{
-		if (_hit || body == null || body == _source)
+		if (
+			_hit
+			|| _definition == null
+			|| body == null
+			|| body == _source
+		)
 		{
 			return;
 		}
 
 		_hit = true;
 
+		CollisionObject3D source = GodotObject.IsInstanceValid(_source)
+			? _source
+			: null;
+
 		if (body is IDamageable target)
 		{
 			DamageInfo damage = new DamageInfo(
 				_definition.Damage,
-				_source,
+				source,
 				_sourceFaction
 			);
 
 			target.ApplyDamage(damage);
 		}
 
+		WeaponEffects.Impact(
+			this,
+			GlobalPosition,
+			normal,
+			_definition.Effects,
+			_sourceFaction
+		);
+
+		WeaponEffects.FinishTrail(_trail);
+		QueueFree();
+	}
+
+	// Removes an expired projectile while its remaining trail particles finish.
+	private void Expire()
+	{
+		if (_hit)
+		{
+			return;
+		}
+
+		_hit = true;
+
+		WeaponEffects.FinishTrail(_trail);
 		QueueFree();
 	}
 
@@ -117,36 +190,66 @@ public partial class Projectile : Area3D
 
 	#region Appearance
 
-	// Creates the visible bullet using the weapon definition.
+	// Creates the projectile using its effect colour or existing weapon colour.
 	private void CreateVisual()
 	{
-		SphereMesh mesh = new SphereMesh();
-		mesh.Radius = _definition.ProjectileRadius;
-		mesh.Height = _definition.ProjectileRadius * 2.0f;
-		mesh.RadialSegments = 8;
-		mesh.Rings = 4;
+		float radius = Mathf.Max(
+			0.005f,
+			_definition.ProjectileRadius
+		);
 
-		StandardMaterial3D material = new StandardMaterial3D();
-		material.AlbedoColor = _definition.ProjectileColor;
-		material.EmissionEnabled = true;
-		material.Emission = _definition.ProjectileColor;
-		mesh.Material = material;
+		Color color = _definition.Effects != null
+			? WeaponEffects.GetColor(
+				_definition.Effects,
+				_sourceFaction
+			)
+			: _definition.ProjectileColor;
 
-		MeshInstance3D visual = new MeshInstance3D();
-		visual.Name = "Visual";
-		visual.Mesh = mesh;
+		StandardMaterial3D material = new()
+		{
+			AlbedoColor = color,
+			EmissionEnabled = true,
+			Emission = color,
+			EmissionEnergyMultiplier =
+				_definition.Effects?.EmissionEnergy ?? 1.0f,
+			ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded
+		};
+
+		SphereMesh mesh = new()
+		{
+			Radius = radius,
+			Height = radius * 2.0f,
+			RadialSegments = 8,
+			Rings = 4,
+			Material = material
+		};
+
+		MeshInstance3D visual = new()
+		{
+			Name = "Visual",
+			Mesh = mesh
+		};
+
 		AddChild(visual);
 	}
 
-	// Creates the bullet's matching collision sphere.
+	// Creates a collision sphere matching the visible projectile radius.
 	private void CreateCollision()
 	{
-		SphereShape3D shape = new SphereShape3D();
-		shape.Radius = _definition.ProjectileRadius;
+		SphereShape3D shape = new()
+		{
+			Radius = Mathf.Max(
+				0.005f,
+				_definition.ProjectileRadius
+			)
+		};
 
-		CollisionShape3D collision = new CollisionShape3D();
-		collision.Name = "Collision";
-		collision.Shape = shape;
+		CollisionShape3D collision = new()
+		{
+			Name = "Collision",
+			Shape = shape
+		};
+
 		AddChild(collision);
 	}
 
