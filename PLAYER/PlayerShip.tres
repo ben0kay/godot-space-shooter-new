@@ -1,7 +1,14 @@
 [gd_resource type="Resource" script_class="PlayerShipDefinition" format=3 uid="uid://b0tvflrqn1oho"]
 
 [ext_resource type="Script" uid="uid://f6c21yq4g6oi" path="res://PLAYER/Scripts/PlayerShipDefinition.cs" id="1_kpfh5"]
+[ext_resource type="Script" uid="uid://bi8qfjqnsarb5" path="res://SHIELDS/ShieldVisualSettings.cs" id="1_og2g1"]
+
+[sub_resource type="Resource" id="Resource_ug3sq"]
+script = ExtResource("1_og2g1")
+Spherical = true
+metadata/_custom_type_script = "uid://bi8qfjqnsarb5"
 
 [resource]
 script = ExtResource("1_kpfh5")
+ShieldVisuals = SubResource("Resource_ug3sq")
 metadata/_custom_type_script = "uid://f6c21yq4g6oi"

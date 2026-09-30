@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://bu8ndi4ho15n3" path="res://ENEMIES/CORE/Hardpoints/HardpointDefinition.cs" id="3_bp6io"]
 [ext_resource type="PackedScene" uid="uid://df3088rujgyds" path="res://ENEMIES/SIMULANTS/Ships/Dreadwing/SimulantDreadwingMovement.tscn" id="4_h6nun"]
 [ext_resource type="Script" uid="uid://ccwbsekbqw5ln" path="res://ENEMIES/CORE/EnemyRangeStats.cs" id="5_fyjsa"]
+[ext_resource type="Script" uid="uid://bi8qfjqnsarb5" path="res://SHIELDS/ShieldVisualSettings.cs" id="6_40ml7"]
 [ext_resource type="PackedScene" uid="uid://bohf7i01xknix" path="res://ENEMIES/SIMULANTS/Ships/Dreadwing/SimulantDreadwingVisual.tscn" id="6_j7elm"]
 [ext_resource type="Script" uid="uid://bxv2gm5hx3d6i" path="res://ENEMIES/CORE/EnemyDefinition.cs" id="7_y5ihi"]
 
@@ -25,6 +26,11 @@ BackAway = 50.0
 Forget = 400.0
 metadata/_custom_type_script = "uid://ccwbsekbqw5ln"
 
+[sub_resource type="Resource" id="Resource_tp0rx"]
+script = ExtResource("6_40ml7")
+Spherical = true
+metadata/_custom_type_script = "uid://bi8qfjqnsarb5"
+
 [resource]
 script = ExtResource("7_y5ihi")
 DisplayName = "Simulant Dreadwing"
@@ -34,6 +40,7 @@ Rank = 2
 MaxShield = 180.0
 MaxArmour = 600.0
 MaxHull = 250.0
+ShieldVisuals = SubResource("Resource_tp0rx")
 Handling = SubResource("Resource_xhs40")
 Ranges = SubResource("Resource_k1wv1")
 MovementControllerScene = ExtResource("4_h6nun")

@@ -36,176 +36,253 @@ public partial class ShipShield : StaticBody3D, IDamageable
 
 	#region Setup
 
-	// =========================================================
-	// Adds a shared shield only to ships whose definition provides shield capacity.
-	public static ShipShield Attach(
-		CollisionObject3D ship,
-		ShipDefence defence,
-		Faction faction,
-		ShieldVisualSettings settings
-	)
+// =========================================================
+// Adds a shared enclosing shield using explicit settings or the default ellipsoid.
+public static ShipShield Attach(
+	CollisionObject3D ship,
+	ShipDefence defence,
+	Faction faction,
+	ShieldVisualSettings settings
+)
+{
+	if (defence == null || defence.MaxShield <= 0.0f)
 	{
-		if (defence == null || defence.MaxShield <= 0.0f)
-		{
-			return null;
-		}
-
-		ShipShield shield = new ShipShield
-		{
-			Name = "Shield",
-			CollisionLayer = ShieldLayer,
-			CollisionMask = 0,
-
-			_ship = ship,
-			_damageReceiver = ship as IDamageable,
-			_defence = defence,
-
-			_settings = settings ?? new ShieldVisualSettings
-			{
-				Spherical = ship is PlayerShip
-			}
-		};
-
-		ship.AddChild(shield);
-
-		Color color = shield._settings.UseFactionPalette
-			? FactionPalettes.Get(faction).Energy
-			: shield._settings.Color;
-
-		shield.Build(color);
-
-		return shield;
+		return null;
 	}
 
-	// =========================================================
-	// Builds matching visual and convex collision geometry at the calculated size.
-	private void Build(Color color)
+	ShipShield shield = new ShipShield
 	{
-		SetPhysicsProcess(false);
-		SetProcess(false);
+		Name = "Shield",
+		CollisionLayer = ShieldLayer,
+		CollisionMask = 0,
 
-		List<Vector3> points = new();
-		CollectBounds(_ship, points);
+		_ship = ship,
+		_damageReceiver = ship as IDamageable,
+		_defence = defence,
 
-		if (points.Count == 0)
-		{
-			points.Add(new Vector3(-2.0f, -1.0f, -2.0f));
-			points.Add(new Vector3(2.0f, 1.0f, 2.0f));
-		}
+		_settings = settings ?? new ShieldVisualSettings()
+	};
 
-		Vector3 minimum = points[0];
-		Vector3 maximum = points[0];
+	ship.AddChild(shield);
 
-		float sphereRadius = 0.0f;
+	Color color = shield._settings.UseFactionPalette
+		? FactionPalettes.Get(faction).Energy
+		: shield._settings.Color;
+
+	shield.Build(color);
+
+	return shield;
+}
+
+// =========================================================
+// Fits the shield to ship bounds and sampled player banking, then builds matching geometry.
+private void Build(Color color)
+{
+	SetPhysicsProcess(false);
+	SetProcess(false);
+
+	List<Vector3> points = new();
+	CollectBounds(_ship, points);
+
+	if (points.Count == 0)
+	{
+		points.Add(new Vector3(-2.0f, -1.0f, -2.0f));
+		points.Add(new Vector3(2.0f, 1.0f, 2.0f));
+	}
+
+	if (!_settings.Spherical)
+	{
+		AddPlayerMotionBounds(points);
+	}
+
+	Vector3 minimum = points[0];
+	Vector3 maximum = points[0];
+
+	float sphereRadius = 0.0f;
+
+	foreach (Vector3 point in points)
+	{
+		minimum = new Vector3(
+			Mathf.Min(minimum.X, point.X),
+			Mathf.Min(minimum.Y, point.Y),
+			Mathf.Min(minimum.Z, point.Z)
+		);
+
+		maximum = new Vector3(
+			Mathf.Max(maximum.X, point.X),
+			Mathf.Max(maximum.Y, point.Y),
+			Mathf.Max(maximum.Z, point.Z)
+		);
+
+		sphereRadius = Mathf.Max(sphereRadius, point.Length());
+	}
+
+	float multiplier = Mathf.Max(1.0f, _settings.SizeMultiplier);
+	float padding = Mathf.Max(0.0f, _settings.Padding);
+
+	if (_settings.Spherical)
+	{
+		Position = Vector3.Zero;
+
+		_radii = Vector3.One * (
+			sphereRadius * multiplier + padding
+		);
+	}
+	else
+	{
+		Position = (minimum + maximum) * 0.5f;
+
+		Vector3 halfSize = (maximum - minimum) * 0.5f;
+
+		halfSize = new Vector3(
+			Mathf.Max(0.1f, halfSize.X),
+			Mathf.Max(0.1f, halfSize.Y),
+			Mathf.Max(0.1f, halfSize.Z)
+		);
+
+		// Find the expansion needed to enclose the collected points.
+		// This avoids automatically using sqrt(3) for every ship.
+		float enclosingScale = 1.0f;
 
 		foreach (Vector3 point in points)
 		{
-			minimum = new Vector3(
-				Mathf.Min(minimum.X, point.X),
-				Mathf.Min(minimum.Y, point.Y),
-				Mathf.Min(minimum.Z, point.Z)
+			Vector3 relative = point - Position;
+
+			Vector3 normalized = new Vector3(
+				relative.X / halfSize.X,
+				relative.Y / halfSize.Y,
+				relative.Z / halfSize.Z
 			);
 
-			maximum = new Vector3(
-				Mathf.Max(maximum.X, point.X),
-				Mathf.Max(maximum.Y, point.Y),
-				Mathf.Max(maximum.Z, point.Z)
+			enclosingScale = Mathf.Max(
+				enclosingScale,
+				normalized.Length()
 			);
-
-			sphereRadius = Mathf.Max(sphereRadius, point.Length());
 		}
 
-		float multiplier = Mathf.Max(1.0f, _settings.SizeMultiplier);
-		float padding = Mathf.Max(0.0f, _settings.Padding);
+		_radii = halfSize * enclosingScale * multiplier
+			+ Vector3.One * padding;
+	}
 
-		if (_settings.Spherical)
+	SphereMesh mesh = new SphereMesh
+	{
+		Radius = 1.0f,
+		Height = 2.0f,
+		RadialSegments = 48,
+		Rings = 24
+	};
+
+	Vector3[] vertices = mesh.SurfaceGetArrays(0)[
+		(int)Mesh.ArrayType.Vertex
+	].AsVector3Array();
+
+	for (int i = 0; i < vertices.Length; i++)
+	{
+		vertices[i] *= _radii;
+	}
+
+	AddChild(new CollisionShape3D
+	{
+		Name = "ShieldCollision",
+		Shape = new ConvexPolygonShape3D
 		{
-			// Centre on the ship origin to accommodate rotation of its visual assembly.
-			Position = Vector3.Zero;
-
-			_radii = Vector3.One * (
-				sphereRadius * multiplier + padding
-			);
+			Points = vertices
 		}
-		else
-		{
-			Position = (minimum + maximum) * 0.5f;
+	});
 
-			Vector3 halfSize = (maximum - minimum) * 0.5f;
+	if (_shader == null)
+	{
+		_shader = GD.Load<Shader>(
+			"res://SHIELDS/ShipShield.gdshader"
+		);
+	}
 
-			// sqrt(3) ensures the ellipsoid contains all corners of these bounds.
-			_radii = halfSize * Mathf.Sqrt(3.0f) * multiplier
-				+ Vector3.One * padding;
-		}
+	if (_shader == null)
+	{
+		GD.PushError("Could not load SHIELDS/ShipShield.gdshader.");
+		return;
+	}
 
-		_radii = new Vector3(
-			Mathf.Max(0.1f, _radii.X),
-			Mathf.Max(0.1f, _radii.Y),
-			Mathf.Max(0.1f, _radii.Z)
+	_material = new ShaderMaterial
+	{
+		Shader = _shader
+	};
+
+	_material.SetShaderParameter("shield_color", color);
+	_material.SetShaderParameter("idle_opacity", _settings.IdleOpacity);
+	_material.SetShaderParameter("rim_opacity", _settings.RimOpacity);
+	_material.SetShaderParameter("brightness", _settings.Brightness);
+
+	_visual = new MeshInstance3D
+	{
+		Name = "ShieldVisual",
+		Mesh = mesh,
+		Scale = _radii,
+		MaterialOverride = _material,
+		CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
+	};
+
+	AddChild(_visual);
+
+	Refresh();
+}
+
+// =========================================================
+// Adds sampled cosmetic pitch and bank poses so the player's wings stay enclosed.
+private void AddPlayerMotionBounds(List<Vector3> points)
+{
+	if (_ship is not PlayerShip)
+	{
+		return;
+	}
+
+	PlayerFlightVisuals visuals =
+		_ship.GetNodeOrNull<PlayerFlightVisuals>("FlightVisuals");
+
+	if (visuals == null)
+	{
+		return;
+	}
+
+	float maximumPitch = Mathf.Abs(visuals.PitchTiltDegrees);
+
+	float maximumBank =
+		Mathf.Abs(visuals.TurnBankDegrees)
+		+ Mathf.Abs(visuals.StrafeBankDegrees)
+		+ Mathf.Abs(visuals.RollTiltDegrees);
+
+	Vector3[] restPoints = points.ToArray();
+
+	// Sample once at spawn; no bounds calculations run during normal flight.
+	for (int pitchStep = 0; pitchStep <= 4; pitchStep++)
+	{
+		float pitch = Mathf.Lerp(
+			-maximumPitch,
+			maximumPitch,
+			pitchStep / 4.0f
 		);
 
-		SphereMesh mesh = new SphereMesh
+		for (int bankStep = 0; bankStep <= 16; bankStep++)
 		{
-			Radius = 1.0f,
-			Height = 2.0f,
-			RadialSegments = 32,
-			Rings = 16
-		};
-
-		Vector3[] vertices = mesh.SurfaceGetArrays(0)[
-			(int)Mesh.ArrayType.Vertex
-		].AsVector3Array();
-
-		for (int i = 0; i < vertices.Length; i++)
-		{
-			vertices[i] *= _radii;
-		}
-
-		AddChild(new CollisionShape3D
-		{
-			Name = "ShieldCollision",
-			Shape = new ConvexPolygonShape3D
-			{
-				Points = vertices
-			}
-		});
-
-		if (_shader == null)
-		{
-			_shader = GD.Load<Shader>(
-				"res://SHIELDS/ShipShield.gdshader"
+			float bank = Mathf.Lerp(
+				-maximumBank,
+				maximumBank,
+				bankStep / 16.0f
 			);
+
+			Basis rotation = Basis.FromEuler(new Vector3(
+				Mathf.DegToRad(pitch),
+				0.0f,
+				Mathf.DegToRad(bank)
+			));
+
+			foreach (Vector3 point in restPoints)
+			{
+				points.Add(rotation * point);
+			}
 		}
-
-		if (_shader == null)
-		{
-			GD.PushError("Could not load SHIELDS/ShipShield.gdshader.");
-			return;
-		}
-
-		_material = new ShaderMaterial
-		{
-			Shader = _shader
-		};
-
-		_material.SetShaderParameter("shield_color", color);
-		_material.SetShaderParameter("idle_opacity", _settings.IdleOpacity);
-		_material.SetShaderParameter("rim_opacity", _settings.RimOpacity);
-		_material.SetShaderParameter("brightness", _settings.Brightness);
-
-		_visual = new MeshInstance3D
-		{
-			Name = "ShieldVisual",
-			Mesh = mesh,
-			Scale = _radii,
-			MaterialOverride = _material,
-			CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
-		};
-
-		AddChild(_visual);
-
-		Refresh();
 	}
+}
 
 	// =========================================================
 	// Collects mesh and collision bounds in the owning ship's coordinates.
@@ -277,51 +354,52 @@ public partial class ShipShield : StaticBody3D, IDamageable
 	}
 
 	// =========================================================
-	// Starts a ripple only when damage actually reduced shield strength.
-	public void NotifyDamage(float shieldBefore, DamageInfo damage)
+// Shows actual shield damage without restarting an expanding ripple every beam tick.
+public void NotifyDamage(float shieldBefore, DamageInfo damage)
+{
+	if (shieldBefore <= _defence.Shield)
 	{
-		if (shieldBefore <= _defence.Shield)
-		{
-			return;
-		}
-
-		if (_material != null && damage.HasImpact)
-		{
-			Vector3 local = ToLocal(damage.ImpactPosition);
-
-			Vector3 direction = new Vector3(
-				local.X / _radii.X,
-				local.Y / _radii.Y,
-				local.Z / _radii.Z
-			);
-
-			direction = direction.LengthSquared() > 0.001f
-				? direction.Normalized()
-				: Vector3.Forward;
-
-			_material.SetShaderParameter("hit_direction", direction);
-			_material.SetShaderParameter("hit_progress", 0.0f);
-			_material.SetShaderParameter("hit_strength", 1.0f);
-
-			_hitElapsed = 0.0f;
-			_hitActive = true;
-
-			SetProcess(true);
-		}
-
-		if (_defence.Shield <= 0.0f)
-		{
-			// Disable interception immediately; keep the visual briefly for collapse.
-			CollisionLayer = 0;
-
-			_collapsing = true;
-			_collapseElapsed = 0.0f;
-
-			SetProcess(true);
-		}
-
-		Refresh();
+		return;
 	}
+
+	if (_material != null
+		&& damage.HasImpact
+		&& !_hitActive)
+	{
+		Vector3 local = ToLocal(damage.ImpactPosition);
+
+		Vector3 direction = new Vector3(
+			local.X / _radii.X,
+			local.Y / _radii.Y,
+			local.Z / _radii.Z
+		);
+
+		direction = direction.LengthSquared() > 0.001f
+			? direction.Normalized()
+			: Vector3.Forward;
+
+		_material.SetShaderParameter("hit_direction", direction);
+		_material.SetShaderParameter("hit_progress", 0.0f);
+		_material.SetShaderParameter("hit_strength", 1.0f);
+
+		_hitElapsed = 0.0f;
+		_hitActive = true;
+
+		SetProcess(true);
+	}
+
+	if (_defence.Shield <= 0.0f)
+	{
+		CollisionLayer = 0;
+
+		_collapsing = true;
+		_collapseElapsed = 0.0f;
+
+		SetProcess(true);
+	}
+
+	Refresh();
+}
 
 	// =========================================================
 	// Synchronizes visibility and interception with the authoritative defence values.
