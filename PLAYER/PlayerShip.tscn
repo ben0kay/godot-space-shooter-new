@@ -15,8 +15,9 @@
 [node name="PlayerShip" type="CharacterBody3D" unique_id=1589947766]
 script = ExtResource("1_d2dyu")
 Definition = ExtResource("2_vl8mf")
-MaxPitchSpeedDegrees = 90.0
-MaxYawSpeedDegrees = 120.0
+MaxPitchSpeedDegrees = 110.0
+MaxYawSpeedDegrees = 135.0
+SteeringResponse = 14.0
 
 [node name="Cyan_Interceptor_Mk2" parent="." unique_id=1887880329 instance=ExtResource("2_u2noc")]
 transform = Transform3D(0.4, 0, 0, 0, 0.4, 0, 0, 0, 0.4, 0, 0, 0)

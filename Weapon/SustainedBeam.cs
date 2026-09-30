@@ -42,10 +42,25 @@ public partial class SustainedBeam : Node3D
 
 	private bool _active;
 	private bool _releasing;
+		private WeaponMount _aimMount;
+	private Vector3 _aimPoint;
+	private bool _hasAimPoint;
 
 	#endregion
 
 	#region Setup
+
+		// =========================================================
+	// Connects optional camera aiming and schedules the beam after player movement.
+	public void SetAimMount(WeaponMount mount)
+	{
+		_aimMount = mount;
+
+		ProcessPhysicsPriority = 30;
+
+		// Follow the emitter after the normal camera and ship presentation updates.
+		ProcessPriority = 10;
+	}
 
 	// =========================================================
 // Resolves beam settings and prepares interception against other ships' shields.
@@ -404,70 +419,82 @@ public void Configure(
 
 	#region Simulation
 
-	// =========================================================
-// Extends the beam and supplies surface contact information with sustained damage.
-public override void _PhysicsProcess(double delta)
-{
-	if (!_active)
+		// =========================================================
+	// Updates aim, extends the beam, and applies damage along its actual muzzle ray.
+	public override void _PhysicsProcess(double delta)
 	{
-		return;
-	}
-
-	if (!GodotObject.IsInstanceValid(_emitter)
-		|| !GodotObject.IsInstanceValid(_source)
-		|| _emitter.IsQueuedForDeletion()
-		|| _source.IsQueuedForDeletion())
-	{
-		Stop();
-		return;
-	}
-
-	float seconds = (float)delta;
-
-	FollowEmitter();
-
-	_extendedLength = Mathf.Min(
-		_range,
-		_extendedLength + _extensionSpeed * seconds
-	);
-
-	Vector3 origin = GlobalPosition;
-	Vector3 direction = -GlobalBasis.Z.Normalized();
-
-	_ray.From = origin;
-	_ray.To = origin + direction * _extendedLength;
-
-	var hit = GetWorld3D().DirectSpaceState.IntersectRay(_ray);
-
-	_visibleLength = _extendedLength;
-
-	bool contact = hit.Count > 0;
-	Vector3 normal = -direction;
-
-	if (contact)
-	{
-		Vector3 position = hit["position"].AsVector3();
-
-		_visibleLength = origin.DistanceTo(position);
-		normal = hit["normal"].AsVector3();
-
-		GodotObject collider = hit["collider"].AsGodotObject();
-
-		if (collider is IDamageable damageable)
+		if (!_active)
 		{
-			damageable.ApplyDamage(new DamageInfo(
-				_damagePerSecond * seconds,
-				_source,
-				_faction,
-				position,
-				normal
-			));
+			return;
 		}
-	}
 
-	UpdateVisuals();
-	UpdateParticles(contact, normal);
-}
+		if (!GodotObject.IsInstanceValid(_emitter)
+			|| !GodotObject.IsInstanceValid(_source)
+			|| _emitter.IsQueuedForDeletion()
+			|| _source.IsQueuedForDeletion())
+		{
+			Stop();
+			return;
+		}
+
+		float seconds = (float)delta;
+
+		_hasAimPoint =
+			GodotObject.IsInstanceValid(_aimMount)
+			&& _aimMount.AimAtCameraCenter;
+
+		if (_hasAimPoint)
+		{
+			_aimPoint = _aimMount.GetCameraAimPoint(
+				_emitter.GlobalPosition,
+				_range
+			);
+		}
+
+		FollowEmitter();
+
+		_extendedLength = Mathf.Min(
+			_range,
+			_extendedLength + _extensionSpeed * seconds
+		);
+
+		Vector3 origin = GlobalPosition;
+		Vector3 direction = -GlobalBasis.Z.Normalized();
+
+		_ray.From = origin;
+		_ray.To = origin + direction * _extendedLength;
+
+		var hit = GetWorld3D().DirectSpaceState.IntersectRay(_ray);
+
+		_visibleLength = _extendedLength;
+
+		bool contact = hit.Count > 0;
+		Vector3 normal = -direction;
+
+		if (contact)
+		{
+			Vector3 position = hit["position"].AsVector3();
+
+			_visibleLength = origin.DistanceTo(position);
+			normal = hit["normal"].AsVector3();
+
+			GodotObject collider = hit["collider"].AsGodotObject();
+
+			if (collider is IDamageable damageable)
+			{
+				damageable.ApplyDamage(new DamageInfo(
+					_damagePerSecond * seconds,
+					_source,
+					_faction,
+					position,
+					normal
+				));
+			}
+		}
+
+		UpdateVisuals();
+		UpdateParticles(contact, normal);
+	}
 
 	// =========================================================
 	// Follows cosmetic ship motion and fades released beam visuals.
@@ -518,37 +545,39 @@ public override void _PhysicsProcess(double delta)
 		}
 	}
 
-	// =========================================================
-	// Follows the muzzle without inheriting its scale.
+		// =========================================================
+	// Anchors the beam to its muzzle and optionally points toward the crosshair.
 	private void FollowEmitter()
 	{
+		Vector3 origin = _emitter.GlobalPosition;
+
+		if (_hasAimPoint)
+		{
+			Vector3 offset = _aimPoint - origin;
+
+			if (offset.LengthSquared() > 0.0001f)
+			{
+				Vector3 direction = offset.Normalized();
+
+				Vector3 up =
+					Mathf.Abs(direction.Dot(Vector3.Up)) > 0.99f
+						? Vector3.Right
+						: Vector3.Up;
+
+				LookAtFromPosition(
+					origin,
+					origin + direction,
+					up
+				);
+
+				return;
+			}
+		}
+
 		GlobalTransform = new Transform3D(
 			_emitter.GlobalBasis.Orthonormalized(),
-			_emitter.GlobalPosition
+			origin
 		);
-	}
-
-	// =========================================================
-	// Stops damage immediately while letting visuals and particles finish.
-	public void Stop()
-	{
-		if (_releasing)
-		{
-			return;
-		}
-
-		_active = false;
-		_releasing = true;
-		_releaseElapsed = 0.0f;
-
-		SetPhysicsProcess(false);
-
-		if (_embers != null)
-		{
-			_embers.Emitting = false;
-			_muzzleParticles.Emitting = false;
-			_impactParticles.Emitting = false;
-		}
 	}
 
 	#endregion

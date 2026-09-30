@@ -26,6 +26,87 @@ public partial class WeaponMount : Node3D
 		private readonly RandomNumberGenerator _random = new();
 
 	public float CurrentSpreadDegrees { get; private set; }
+		private PhysicsRayQueryParameters3D _aimQuery;
+
+	#endregion
+
+		#region Camera Aiming
+
+	// =========================================================
+	// Finds the crosshair's world aim point within reach of the firing muzzle.
+	public Vector3 GetCameraAimPoint(
+		Vector3 muzzlePosition,
+		float maximumDistance
+	)
+	{
+		float distance = Mathf.Max(0.01f, maximumDistance);
+
+		Camera3D camera = GetViewport().GetCamera3D();
+
+		if (!GodotObject.IsInstanceValid(camera))
+		{
+			return muzzlePosition
+				- GlobalBasis.Z.Normalized() * distance;
+		}
+
+		Vector2 screenCenter =
+			GetViewport().GetVisibleRect().Size * 0.5f;
+
+		Vector3 origin = camera.ProjectRayOrigin(screenCenter);
+		Vector3 direction = camera.ProjectRayNormal(screenCenter);
+
+		// Intersect the camera ray with the muzzle's maximum-range sphere.
+		// This puts the empty-space aiming point at the weapon's actual reach.
+		Vector3 offset = origin - muzzlePosition;
+
+		float projection = offset.Dot(direction);
+
+		float discriminant =
+			projection * projection
+			- (offset.LengthSquared() - distance * distance);
+
+		if (discriminant < 0.0f)
+		{
+			return muzzlePosition + direction * distance;
+		}
+
+		float rayDistance =
+			-projection + Mathf.Sqrt(discriminant);
+
+		if (rayDistance <= 0.0f)
+		{
+			return muzzlePosition + direction * distance;
+		}
+
+		Vector3 aimPoint = origin + direction * rayDistance;
+
+		if (_aimQuery == null)
+		{
+			_aimQuery = new PhysicsRayQueryParameters3D
+			{
+				CollisionMask = 1u,
+				CollideWithBodies = true,
+				CollideWithAreas = false,
+				HitFromInside = true
+			};
+
+			ShipShield.ConfigureWeaponQuery(_aimQuery, _ship);
+		}
+
+		_aimQuery.From = origin;
+		_aimQuery.To = aimPoint;
+
+		var result = GetWorld3D().DirectSpaceState.IntersectRay(
+			_aimQuery
+		);
+
+		if (result.Count > 0)
+		{
+			aimPoint = result["position"].AsVector3();
+		}
+
+		return aimPoint;
+	}
 
 	#endregion
 
@@ -189,8 +270,8 @@ public partial class WeaponMount : Node3D
 		return true;
 	}
 
-		// =========================================================
-	// Launches toward the aiming point with the current weapon spread.
+			// =========================================================
+	// Launches toward the shared camera aiming point with weapon spread.
 	private void FireShot()
 	{
 		Marker3D muzzle = _muzzles[_muzzleIndex];
@@ -201,45 +282,16 @@ public partial class WeaponMount : Node3D
 
 		if (AimAtCameraCenter)
 		{
-			Camera3D camera = GetViewport().GetCamera3D();
+			Vector3 aimPoint = GetCameraAimPoint(
+				muzzle.GlobalPosition,
+				CameraAimDistance
+			);
 
-			if (GodotObject.IsInstanceValid(camera))
+			Vector3 offset = aimPoint - muzzle.GlobalPosition;
+
+			if (offset.LengthSquared() > 0.0001f)
 			{
-				Vector2 screenCenter =
-					GetViewport().GetVisibleRect().Size * 0.5f;
-
-				Vector3 origin = camera.ProjectRayOrigin(screenCenter);
-				Vector3 rayDirection = camera.ProjectRayNormal(screenCenter);
-
-				Vector3 aimPoint = origin
-					+ rayDirection * Mathf.Max(1.0f, CameraAimDistance);
-
-				PhysicsRayQueryParameters3D query =
-					PhysicsRayQueryParameters3D.Create(
-						origin,
-						aimPoint,
-						1u
-					);
-
-				query.HitFromInside = true;
-
-				ShipShield.ConfigureWeaponQuery(query, _ship);
-
-				var result = GetWorld3D().DirectSpaceState.IntersectRay(
-					query
-				);
-
-				if (result.Count > 0)
-				{
-					aimPoint = result["position"].AsVector3();
-				}
-
-				Vector3 offset = aimPoint - muzzle.GlobalPosition;
-
-				if (offset.LengthSquared() > 0.0001f)
-				{
-					direction = offset.Normalized();
-				}
+				direction = offset.Normalized();
 			}
 		}
 
@@ -315,8 +367,8 @@ public partial class WeaponMount : Node3D
 		).Normalized();
 	}
 
-	// =========================================================
-	// Creates beams once per trigger hold rather than once per frame.
+		// =========================================================
+	// Creates sustained beams and connects their optional camera aiming provider.
 	private void StartBeams()
 	{
 		if (_beams.Count > 0
@@ -329,9 +381,11 @@ public partial class WeaponMount : Node3D
 
 		foreach (Marker3D muzzle in _muzzles)
 		{
-			SustainedBeam beam = new SustainedBeam();
+			SustainedBeam beam = new();
 
 			AddChild(beam);
+
+			beam.SetAimMount(this);
 
 			beam.Configure(
 				Weapon,
