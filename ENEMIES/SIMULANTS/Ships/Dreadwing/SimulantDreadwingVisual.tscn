@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://bhcalgt0dkuwm" path="res://ENEMIES/SIMULANTS/Weapons/SimulantPulseCannon.tscn" id="1_365ka"]
 [ext_resource type="PackedScene" uid="uid://dxxlyf3m8qccd" path="res://ENEMIES/SIMULANTS/Ships/Dreadwing/Simulant_Dreadwing_Hull.glb" id="2_q2h1j"]
+[ext_resource type="Script" uid="uid://cle77mfe2h8rq" path="res://ENEMIES/CORE/Hardpoints/EnemyHardpoint.cs" id="3_3ggkq"]
 
 [node name="SimulantDreadwingVisual" type="Node3D" unique_id=687124649]
 transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0, 0)
@@ -20,3 +21,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.4716837, 1.8273329, -2.0217
 
 [node name="Hull" parent="." unique_id=1905829790 instance=ExtResource("2_q2h1j")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0031369529, -0.02109496, -0.02376779)
+
+[node name="SeekerCore" type="Node3D" parent="." unique_id=1889443214]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0287766, 0.23970374)
+script = ExtResource("3_3ggkq")
+Key = "seeker_core"
+Group = "core_weapon"
+
+[node name="Muzzle" type="Marker3D" parent="SeekerCore" unique_id=150257846]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.29569316, 0)

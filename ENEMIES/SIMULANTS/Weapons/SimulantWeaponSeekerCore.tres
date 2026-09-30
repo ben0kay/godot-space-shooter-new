@@ -1,9 +1,24 @@
 [gd_resource type="Resource" script_class="WeaponDefinition" format=3 uid="uid://nb740567d3jy"]
 
 [ext_resource type="Resource" uid="uid://dknpf6hm6nbgk" path="res://ENEMIES/SIMULANTS/Projectiles/SimulantSeekerCore.tres" id="1_8yyiv"]
+[ext_resource type="Script" uid="uid://b3bup8dw5uhch" path="res://PROJECTILES/Guidance/ProjectileGuidanceSettings.cs" id="1_em4uo"]
 [ext_resource type="Script" uid="uid://dk13qlucl75kd" path="res://Weapon/WeaponDefinition.cs" id="1_uo0ix"]
+[ext_resource type="Script" uid="uid://6wveafw5dvgq" path="res://Weapon/ProjectileLaunchOverrides.cs" id="2_h5he1"]
+
+[sub_resource type="Resource" id="Resource_4bg0w"]
+script = ExtResource("1_em4uo")
+AcquireRange = 400.0
+GuidanceDelaySeconds = 0.15
+metadata/_custom_type_script = "uid://b3bup8dw5uhch"
+
+[sub_resource type="Resource" id="Resource_3ggkq"]
+script = ExtResource("2_h5he1")
+OverrideGuidance = true
+Guidance = SubResource("Resource_4bg0w")
+metadata/_custom_type_script = "uid://6wveafw5dvgq"
 
 [resource]
 script = ExtResource("1_uo0ix")
 Projectile = ExtResource("1_8yyiv")
+LaunchOverrides = SubResource("Resource_3ggkq")
 metadata/_custom_type_script = "uid://dk13qlucl75kd"
