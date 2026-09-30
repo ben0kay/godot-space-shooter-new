@@ -67,10 +67,25 @@ public partial class PlayerFlightVisuals : Node
 
 	#region Setup
 
-	// =========================================================
-	// Groups ship visuals and caches the authored chase camera and cockpit marker.
+		// =========================================================
+	// Waits until the scene finishes entering the tree before regrouping visuals.
 	public override void _Ready()
 	{
+		SetProcess(false);
+		SetProcessInput(false);
+
+		CallDeferred(nameof(InitializeVisuals));
+	}
+
+	// =========================================================
+	// Creates the cosmetic pivot after the parent finishes setting up its children.
+	private void InitializeVisuals()
+	{
+		if (IsQueuedForDeletion())
+		{
+			return;
+		}
+
 		_ship = GetParent() as PlayerShip;
 
 		if (_ship == null)
@@ -79,23 +94,8 @@ public partial class PlayerFlightVisuals : Node
 				"PlayerFlightVisuals must be a child of PlayerShip."
 			);
 
-			SetProcess(false);
-			SetProcessInput(false);
 			return;
 		}
-
-		_visualPivot = new Node3D
-		{
-			Name = "FlightVisualPivot"
-		};
-
-		_ship.AddChild(_visualPivot);
-
-		MoveUnderPivot("Cyan_Interceptor_Mk2");
-		MoveUnderPivot("PrimaryWeapon");
-		MoveUnderPivot("SecondaryWeapon");
-		MoveUnderPivot("PlayerThrusters");
-		MoveUnderPivot("WingTrails");
 
 		_camera = _ship.GetNodeOrNull<Camera3D>("Camera3D");
 		_cockpitView = _ship.GetNodeOrNull<Marker3D>("CockpitView");
@@ -106,10 +106,28 @@ public partial class PlayerFlightVisuals : Node
 				"PlayerShip needs a Camera3D named Camera3D."
 			);
 
-			SetProcess(false);
-			SetProcessInput(false);
 			return;
 		}
+
+		_visualPivot = _ship.GetNodeOrNull<Node3D>(
+			"FlightVisualPivot"
+		);
+
+		if (_visualPivot == null)
+		{
+			_visualPivot = new Node3D
+			{
+				Name = "FlightVisualPivot"
+			};
+
+			_ship.AddChild(_visualPivot);
+		}
+
+		MoveUnderPivot("Cyan_Interceptor_Mk2");
+		MoveUnderPivot("PrimaryWeapon");
+		MoveUnderPivot("SecondaryWeapon");
+		MoveUnderPivot("PlayerThrusters");
+		MoveUnderPivot("WingTrails");
 
 		_thirdPersonRest = _camera.Transform;
 		_thirdPersonFov = _camera.Fov;
@@ -121,6 +139,9 @@ public partial class PlayerFlightVisuals : Node
 		}
 
 		SetCameraMode(StartInCockpit);
+
+		SetProcess(true);
+		SetProcessInput(true);
 	}
 
 	// =========================================================

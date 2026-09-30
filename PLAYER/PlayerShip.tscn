@@ -84,3 +84,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9750545, 0.5645851)
 
 [node name="FlightVisuals" type="Node" parent="." unique_id=823963804]
 script = ExtResource("12_nsdd8")
+PitchTiltDegrees = 10.0
+TurnBankDegrees = 18.0
+StrafeBankDegrees = 14.0
+RollTiltDegrees = 25.0
+ShipResponse = 6.0
