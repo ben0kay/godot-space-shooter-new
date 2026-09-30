@@ -163,45 +163,48 @@ public partial class Projectile : Area3D
 		ResolveHit(body, normal);
 	}
 
-	// Applies this shot's resolved damage and the projectile's impact effects.
-	private void ResolveHit(Node3D body, Vector3 normal)
+	// =========================================================
+// Applies damage with contact information and emits the projectile's impact effects.
+private void ResolveHit(Node3D body, Vector3 normal)
+{
+	if (
+		_hit
+		|| _definition == null
+		|| body == null
+		|| body == _source
+	)
 	{
-		if (
-			_hit
-			|| _definition == null
-			|| body == null
-			|| body == _source
-		)
-		{
-			return;
-		}
-
-		_hit = true;
-
-		CollisionObject3D source = GodotObject.IsInstanceValid(_source)
-			? _source
-			: null;
-
-		if (body is IDamageable target)
-		{
-			target.ApplyDamage(new DamageInfo(
-				_damage,
-				source,
-				_sourceFaction
-			));
-		}
-
-		WeaponEffects.Impact(
-			this,
-			GlobalPosition,
-			normal,
-			_definition.Effects,
-			_sourceFaction
-		);
-
-		WeaponEffects.FinishTrail(_trail);
-		QueueFree();
+		return;
 	}
+
+	_hit = true;
+
+	CollisionObject3D source = GodotObject.IsInstanceValid(_source)
+		? _source
+		: null;
+
+	if (body is IDamageable target)
+	{
+		target.ApplyDamage(new DamageInfo(
+			_damage,
+			source,
+			_sourceFaction,
+			GlobalPosition,
+			normal
+		));
+	}
+
+	WeaponEffects.Impact(
+		this,
+		GlobalPosition,
+		normal,
+		_definition.Effects,
+		_sourceFaction
+	);
+
+	WeaponEffects.FinishTrail(_trail);
+	QueueFree();
+}
 
 	// Removes an expired shot while its remaining trail particles finish.
 	private void Expire()

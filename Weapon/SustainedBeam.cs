@@ -407,67 +407,69 @@ public partial class SustainedBeam : Node3D
 	#region Simulation
 
 	// =========================================================
-	// Extends the beam and applies damage only along its current length.
-	public override void _PhysicsProcess(double delta)
+// Extends the beam and supplies surface contact information with sustained damage.
+public override void _PhysicsProcess(double delta)
+{
+	if (!_active)
 	{
-		if (!_active)
-		{
-			return;
-		}
-
-		if (!GodotObject.IsInstanceValid(_emitter)
-			|| !GodotObject.IsInstanceValid(_source)
-			|| _emitter.IsQueuedForDeletion()
-			|| _source.IsQueuedForDeletion())
-		{
-			Stop();
-			return;
-		}
-
-		float seconds = (float)delta;
-
-		FollowEmitter();
-
-		_extendedLength = Mathf.Min(
-			_range,
-			_extendedLength + _extensionSpeed * seconds
-		);
-
-		Vector3 origin = GlobalPosition;
-		Vector3 direction = -GlobalBasis.Z.Normalized();
-
-		_ray.From = origin;
-		_ray.To = origin + direction * _extendedLength;
-
-		var hit = GetWorld3D().DirectSpaceState.IntersectRay(_ray);
-
-		_visibleLength = _extendedLength;
-
-		bool contact = hit.Count > 0;
-		Vector3 normal = -direction;
-
-		if (contact)
-		{
-			Vector3 position = hit["position"].AsVector3();
-
-			_visibleLength = origin.DistanceTo(position);
-			normal = hit["normal"].AsVector3();
-
-			GodotObject collider = hit["collider"].AsGodotObject();
-
-			if (collider is IDamageable damageable)
-			{
-				damageable.ApplyDamage(new DamageInfo(
-					_damagePerSecond * seconds,
-					_source,
-					_faction
-				));
-			}
-		}
-
-		UpdateVisuals();
-		UpdateParticles(contact, normal);
+		return;
 	}
+
+	if (!GodotObject.IsInstanceValid(_emitter)
+		|| !GodotObject.IsInstanceValid(_source)
+		|| _emitter.IsQueuedForDeletion()
+		|| _source.IsQueuedForDeletion())
+	{
+		Stop();
+		return;
+	}
+
+	float seconds = (float)delta;
+
+	FollowEmitter();
+
+	_extendedLength = Mathf.Min(
+		_range,
+		_extendedLength + _extensionSpeed * seconds
+	);
+
+	Vector3 origin = GlobalPosition;
+	Vector3 direction = -GlobalBasis.Z.Normalized();
+
+	_ray.From = origin;
+	_ray.To = origin + direction * _extendedLength;
+
+	var hit = GetWorld3D().DirectSpaceState.IntersectRay(_ray);
+
+	_visibleLength = _extendedLength;
+
+	bool contact = hit.Count > 0;
+	Vector3 normal = -direction;
+
+	if (contact)
+	{
+		Vector3 position = hit["position"].AsVector3();
+
+		_visibleLength = origin.DistanceTo(position);
+		normal = hit["normal"].AsVector3();
+
+		GodotObject collider = hit["collider"].AsGodotObject();
+
+		if (collider is IDamageable damageable)
+		{
+			damageable.ApplyDamage(new DamageInfo(
+				_damagePerSecond * seconds,
+				_source,
+				_faction,
+				position,
+				normal
+			));
+		}
+	}
+
+	UpdateVisuals();
+	UpdateParticles(contact, normal);
+}
 
 	// =========================================================
 	// Follows cosmetic ship motion and fades released beam visuals.

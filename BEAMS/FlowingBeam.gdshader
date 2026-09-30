@@ -61,7 +61,7 @@ void vertex()
 }
 
 // =========================================================
-// Moves brighter energy bands from the muzzle toward the endpoint.
+// Draws the beam colour and moves bright energy bands toward its endpoint.
 void fragment()
 {
 	float travel = (
@@ -73,7 +73,7 @@ void fragment()
 
 	float brightness = 0.7 + band * band_strength;
 
-	ALBEDO = vec3(0.0);
-	EMISSION = beam_color.rgb * emission_energy * brightness;
-	ALPHA = opacity * release_alpha;
+	// Unshaded materials display their colour through ALBEDO.
+	ALBEDO = beam_color.rgb * emission_energy * brightness;
+	ALPHA = clamp(opacity * release_alpha, 0.0, 1.0);
 }
