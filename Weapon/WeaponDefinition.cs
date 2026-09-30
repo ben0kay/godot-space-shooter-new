@@ -42,4 +42,11 @@ public partial class WeaponDefinition : Resource
 	[Export] public WeaponEffectsProfile MuzzleEffects;
 
 	#endregion
+
+		#region Accuracy
+
+	// Null means no random projectile spread.
+	[Export] public WeaponAccuracySettings Accuracy;
+
+	#endregion
 }

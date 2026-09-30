@@ -15,6 +15,7 @@ script = ExtResource("1_definition")
 Scene = ExtResource("2_scene")
 Damage = 6.0
 Speed = 60.0
+Lifetime = 5.0
 CollisionRadius = 0.16
 EmissionEnergy = 3.0
 Effects = SubResource("Effects_pulse")

@@ -26,15 +26,20 @@ public partial class PlayerWeaponInput : Node
 
 	#region Setup
 
-	// =========================================================
-	// Caches the owning player ship.
+		// =========================================================
+	// Caches the player and fires after movement and accuracy have updated.
 	public override void _Ready()
 	{
+		ProcessPhysicsPriority = 20;
+
 		_ship = GetParent() as PlayerShip;
 
 		if (_ship == null)
 		{
-			GD.PushError("PlayerWeaponInput must be a child of PlayerShip.");
+			GD.PushError(
+				"PlayerWeaponInput must be a child of PlayerShip."
+			);
+
 			SetPhysicsProcess(false);
 		}
 	}

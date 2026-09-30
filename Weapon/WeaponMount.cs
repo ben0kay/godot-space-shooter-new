@@ -8,6 +8,8 @@ public partial class WeaponMount : Node3D
 
 	[Export] public WeaponDefinition Weapon;
 	[Export] public Faction ShooterFaction = Faction.Player;
+	[Export] public bool AimAtCameraCenter = false;
+	[Export] public float CameraAimDistance = 1000.0f;
 
 	#endregion
 
@@ -21,14 +23,23 @@ public partial class WeaponMount : Node3D
 	private int _muzzleIndex;
 	private float _cooldown;
 
+		private readonly RandomNumberGenerator _random = new();
+
+	public float CurrentSpreadDegrees { get; private set; }
+
 	#endregion
 
 	#region Setup
 
-	// =========================================================
-	// Finds the owning ship and caches this mount's authored muzzle markers.
+		// =========================================================
+	// Finds the owning ship and caches the authored muzzle markers.
 	public override void _Ready()
 	{
+		_random.Randomize();
+
+		// Update accuracy after movement and before player firing input.
+		ProcessPhysicsPriority = 10;
+
 		Node ancestor = GetParent();
 
 		while (ancestor != null)
@@ -50,6 +61,11 @@ public partial class WeaponMount : Node3D
 			}
 		}
 
+		CurrentSpreadDegrees = Mathf.Max(
+			0.0f,
+			Weapon?.Accuracy?.BaseSpreadDegrees ?? 0.0f
+		);
+
 		if (_ship == null || _muzzles.Count == 0)
 		{
 			GD.PushError(
@@ -58,8 +74,8 @@ public partial class WeaponMount : Node3D
 		}
 	}
 
-	// =========================================================
-	// Changes the equipped weapon and clears the previous weapon's firing state.
+		// =========================================================
+	// Changes the equipped weapon and resets its firing and accuracy state.
 	public void EquipWeapon(WeaponDefinition weapon)
 	{
 		StopFiring();
@@ -67,19 +83,58 @@ public partial class WeaponMount : Node3D
 		Weapon = weapon;
 		_cooldown = 0.0f;
 		_muzzleIndex = 0;
+
+		CurrentSpreadDegrees = Mathf.Max(
+			0.0f,
+			weapon?.Accuracy?.BaseSpreadDegrees ?? 0.0f
+		);
 	}
 
 	#endregion
 
 	#region Firing
 
-	// =========================================================
-	// Updates the projectile weapon's shot cooldown.
+		// =========================================================
+	// Updates shot cooldown and accuracy from actual ship movement.
 	public override void _PhysicsProcess(double delta)
 	{
+		float seconds = (float)delta;
+
 		_cooldown = Mathf.Max(
 			0.0f,
-			_cooldown - (float)delta
+			_cooldown - seconds
+		);
+
+		WeaponAccuracySettings accuracy = Weapon?.Accuracy;
+
+		if (accuracy == null
+			|| Weapon.Delivery != WeaponDefinition.DeliveryType.Projectile
+			|| !GodotObject.IsInstanceValid(_ship))
+		{
+			CurrentSpreadDegrees = 0.0f;
+			return;
+		}
+
+		float movementRatio = Mathf.Clamp(
+			_ship.GetRealVelocity().Length()
+				/ Mathf.Max(0.01f, accuracy.FullSpreadSpeed),
+			0.0f,
+			1.0f
+		);
+
+		float desiredSpread =
+			Mathf.Max(0.0f, accuracy.BaseSpreadDegrees)
+			+ Mathf.Max(0.0f, accuracy.MovementSpreadDegrees)
+				* movementRatio;
+
+		float blend = 1.0f - Mathf.Exp(
+			-Mathf.Max(0.0f, accuracy.Response) * seconds
+		);
+
+		CurrentSpreadDegrees = Mathf.Lerp(
+			CurrentSpreadDegrees,
+			desiredSpread,
+			blend
 		);
 	}
 
@@ -134,22 +189,76 @@ public partial class WeaponMount : Node3D
 		return true;
 	}
 
-	// =========================================================
-	// Launches a projectile from the next muzzle marker.
+		// =========================================================
+	// Launches toward the aiming point with the current weapon spread.
 	private void FireShot()
 	{
 		Marker3D muzzle = _muzzles[_muzzleIndex];
 
 		_muzzleIndex = (_muzzleIndex + 1) % _muzzles.Count;
 
+		Vector3 direction = -muzzle.GlobalBasis.Z.Normalized();
+
+		if (AimAtCameraCenter)
+		{
+			Camera3D camera = GetViewport().GetCamera3D();
+
+			if (GodotObject.IsInstanceValid(camera))
+			{
+				Vector2 screenCenter =
+					GetViewport().GetVisibleRect().Size * 0.5f;
+
+				Vector3 origin = camera.ProjectRayOrigin(screenCenter);
+				Vector3 rayDirection = camera.ProjectRayNormal(screenCenter);
+
+				Vector3 aimPoint = origin
+					+ rayDirection * Mathf.Max(1.0f, CameraAimDistance);
+
+				PhysicsRayQueryParameters3D query =
+					PhysicsRayQueryParameters3D.Create(
+						origin,
+						aimPoint,
+						1u
+					);
+
+				query.HitFromInside = true;
+
+				ShipShield.ConfigureWeaponQuery(query, _ship);
+
+				var result = GetWorld3D().DirectSpaceState.IntersectRay(
+					query
+				);
+
+				if (result.Count > 0)
+				{
+					aimPoint = result["position"].AsVector3();
+				}
+
+				Vector3 offset = aimPoint - muzzle.GlobalPosition;
+
+				if (offset.LengthSquared() > 0.0001f)
+				{
+					direction = offset.Normalized();
+				}
+			}
+		}
+
+		direction = ApplySpread(direction);
+
+		Vector3 up =
+			Mathf.Abs(direction.Dot(Vector3.Up)) > 0.99f
+				? Vector3.Right
+				: Vector3.Up;
+
 		Projectile projectile =
 			Weapon.ProjectileScene.Instantiate<Projectile>();
 
 		GetTree().CurrentScene.AddChild(projectile);
 
-		projectile.GlobalTransform = new Transform3D(
-			muzzle.GlobalBasis.Orthonormalized(),
-			muzzle.GlobalPosition
+		projectile.LookAtFromPosition(
+			muzzle.GlobalPosition,
+			muzzle.GlobalPosition + direction,
+			up
 		);
 
 		projectile.Configure(
@@ -164,6 +273,46 @@ public partial class WeaponMount : Node3D
 			Weapon.MuzzleEffects,
 			ShooterFaction
 		);
+	}
+
+		// =========================================================
+	// Samples a random direction uniformly inside the weapon's spread cone.
+	private Vector3 ApplySpread(Vector3 forward)
+	{
+		float angle = Mathf.DegToRad(
+			Mathf.Clamp(CurrentSpreadDegrees, 0.0f, 89.0f)
+		);
+
+		if (angle <= 0.0001f)
+		{
+			return forward;
+		}
+
+		Vector3 reference =
+			Mathf.Abs(forward.Dot(Vector3.Up)) > 0.99f
+				? Vector3.Right
+				: Vector3.Up;
+
+		Vector3 right = forward.Cross(reference).Normalized();
+		Vector3 up = right.Cross(forward).Normalized();
+
+		float cosine = Mathf.Lerp(
+			1.0f,
+			Mathf.Cos(angle),
+			_random.Randf()
+		);
+
+		float sine = Mathf.Sqrt(
+			Mathf.Max(0.0f, 1.0f - cosine * cosine)
+		);
+
+		float rotation = _random.Randf() * Mathf.Tau;
+
+		return (
+			forward * cosine
+			+ right * Mathf.Cos(rotation) * sine
+			+ up * Mathf.Sin(rotation) * sine
+		).Normalized();
 	}
 
 	// =========================================================

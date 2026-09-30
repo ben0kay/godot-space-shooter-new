@@ -89,65 +89,73 @@ private float _yawRate;
 		&& !_destroyed
 		&& !IsQueuedForDeletion();
 
+	private PlayerDash _dash;
+
+	public bool IsDashing => _dash?.IsDashing == true;
+
 	#endregion
 
 	#region Godot Events
 
-// =========================================================
-// Creates player collision, defence, presentation, and the shared enclosing shield.
-public override void _Ready()
-{
-	AddToGroup("player_ship");
-	AddToGroup("combat_targets");
-
-	AddChild(new CollisionShape3D
+	// =========================================================
+	// Creates collision, defence, presentation, and caches the dash controller.
+	public override void _Ready()
 	{
-		Name = "Collision",
-		Shape = new BoxShape3D
+		AddToGroup("player_ship");
+		AddToGroup("combat_targets");
+
+		_dash = GetNodeOrNull<PlayerDash>("Dash");
+
+		AddChild(new CollisionShape3D
 		{
-			Size = new Vector3(3.8f, 1.0f, 3.8f)
-		},
-		Position = new Vector3(0.0f, 0.06f, -0.225f)
-	});
-
-	if (Definition == null)
-	{
-		GD.PushError("Assign a PlayerShipDefinition to PlayerShip.");
-	}
-	else
-	{
-		Defence = new ShipDefence(
-			Definition.MaxShield,
-			Definition.MaxArmour,
-			Definition.MaxHull
-		);
-
-		AddChild(new PlayerDefenceHud
-		{
-			Name = "PlayerDefenceHud"
+			Name = "Collision",
+			Shape = new BoxShape3D
+			{
+				Size = new Vector3(3.8f, 1.0f, 3.8f)
+			},
+			Position = new Vector3(0.0f, 0.06f, -0.225f)
 		});
-	}
 
-	if (GetNodeOrNull<PlayerFlightVisuals>("FlightVisuals") == null)
-	{
-		AddChild(new PlayerFlightVisuals
+		if (Definition == null)
 		{
-			Name = "FlightVisuals"
-		});
-	}
+			GD.PushError(
+				"Assign a PlayerShipDefinition to PlayerShip."
+			);
+		}
+		else
+		{
+			Defence = new ShipDefence(
+				Definition.MaxShield,
+				Definition.MaxArmour,
+				Definition.MaxHull
+			);
 
-	if (Defence != null)
-	{
-		_shield = ShipShield.Attach(
-			this,
-			Defence,
-			CombatFaction,
-			Definition.ShieldVisuals
-		);
-	}
+			AddChild(new PlayerDefenceHud
+			{
+				Name = "PlayerDefenceHud"
+			});
+		}
 
-	Input.MouseMode = Input.MouseModeEnum.Captured;
-}
+		if (GetNodeOrNull<PlayerFlightVisuals>("FlightVisuals") == null)
+		{
+			AddChild(new PlayerFlightVisuals
+			{
+				Name = "FlightVisuals"
+			});
+		}
+
+		if (Defence != null)
+		{
+			_shield = ShipShield.Attach(
+				this,
+				Defence,
+				CombatFaction,
+				Definition.ShieldVisuals
+			);
+		}
+
+		Input.MouseMode = Input.MouseModeEnum.Captured;
+	}
 
 	// Handles mouse capture, relative steering, and right-Control descent.
 	public override void _Input(InputEvent inputEvent)
@@ -365,14 +373,40 @@ private void UpdateRotation(float seconds)
 	);
 }
 
-	// Applies normal flight or automatic forward thrust while Shift is held.
+		// =========================================================
+	// Applies direction-locked dash, normal flight, or held-Shift boost.
 	private void UpdateMovement(float seconds)
 	{
+		if (IsDashing)
+		{
+			IsBoosting = false;
+			StrafeInput = 0.0f;
+
+			// Reuse existing engine and camera boost presentation during dash.
+			BoostAmount = Mathf.MoveToward(
+				BoostAmount,
+				1.0f,
+				Mathf.Max(0.0f, BoostResponse) * seconds
+			);
+
+			Velocity = _dash.Direction * _dash.DashSpeed;
+
+			MoveAndSlide();
+
+			if (GetSlideCollisionCount() > 0)
+			{
+				_dash.EndDash();
+			}
+
+			return;
+		}
+
 		float thrust = 0.0f;
 		float strafe = 0.0f;
 		float rise = 0.0f;
 
-		bool controlsActive = Input.MouseMode == Input.MouseModeEnum.Captured;
+		bool controlsActive =
+			Input.MouseMode == Input.MouseModeEnum.Captured;
 
 		if (controlsActive)
 		{
@@ -398,12 +432,15 @@ private void UpdateRotation(float seconds)
 
 		StrafeInput = strafe;
 
-		float forwardSpeed = thrust >= 0.0f ? ForwardSpeed : ReverseSpeed;
+		float forwardSpeed =
+			thrust >= 0.0f ? ForwardSpeed : ReverseSpeed;
 
 		if (IsBoosting)
 		{
 			thrust = 1.0f;
-			forwardSpeed = ForwardSpeed * Mathf.Max(1.0f, BoostSpeedMultiplier);
+
+			forwardSpeed = ForwardSpeed
+				* Mathf.Max(1.0f, BoostSpeedMultiplier);
 		}
 
 		Vector3 targetVelocity =
@@ -417,15 +454,52 @@ private void UpdateRotation(float seconds)
 
 		if (IsBoosting)
 		{
-			response *= Mathf.Max(1.0f, BoostAccelerationMultiplier);
+			response *= Mathf.Max(
+				1.0f,
+				BoostAccelerationMultiplier
+			);
 		}
 
 		Velocity = Velocity.MoveToward(
 			targetVelocity,
-			response * seconds
+			Mathf.Max(0.0f, response) * seconds
 		);
 
 		MoveAndSlide();
+	}
+
+		// =========================================================
+	// Chooses current travel, requested movement, or forward as the dash direction.
+	public Vector3 GetDashDirection()
+	{
+		Vector3 travel = GetRealVelocity();
+
+		if (travel.LengthSquared() > 1.0f)
+		{
+			return travel.Normalized();
+		}
+
+		float thrust = 0.0f;
+		float strafe = 0.0f;
+		float rise = 0.0f;
+
+		if (Input.IsPhysicalKeyPressed(KEY_FORWARD)) thrust += 1.0f;
+		if (Input.IsPhysicalKeyPressed(KEY_REVERSE)) thrust -= 1.0f;
+
+		if (Input.IsPhysicalKeyPressed(KEY_STRAFE_LEFT)) strafe -= 1.0f;
+		if (Input.IsPhysicalKeyPressed(KEY_STRAFE_RIGHT)) strafe += 1.0f;
+
+		if (Input.IsMouseButtonPressed(MOUSE_ASCEND)) rise += 1.0f;
+		if (_rightCtrlHeld) rise -= 1.0f;
+
+		Vector3 requested =
+			-GlobalBasis.Z * thrust
+			+ GlobalBasis.X * strafe
+			+ GlobalBasis.Y * rise;
+
+		return requested.LengthSquared() > 0.0001f
+			? requested.Normalized()
+			: -GlobalBasis.Z.Normalized();
 	}
 
 	#endregion
