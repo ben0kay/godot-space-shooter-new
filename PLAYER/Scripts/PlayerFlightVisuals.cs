@@ -37,8 +37,8 @@ public partial class PlayerFlightVisuals : Node
 
 	#region Setup
 
-	// Groups the visible assembly and caches the existing camera once.
-	pub// Groups the visible assembly and wingtip emitters, then caches the camera.
+
+	// Groups the visible assembly and wingtip emitters, then caches the camera.
 public override void _Ready()
 {
 	_ship = GetParent() as PlayerShip;
