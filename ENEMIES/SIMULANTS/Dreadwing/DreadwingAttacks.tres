@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="EnemyAttackControllerDefinition" format=3 uid="uid://cpd4n7x3lvkk"]
+
+[ext_resource type="Script" uid="uid://dnknugvhnysd0" path="res://ENEMIES/CORE/Attacks/EnemyAttackControllerDefinition.cs" id="1_controller"]
+[ext_resource type="Script" uid="uid://c018bvm22iks8" path="res://ENEMIES/CORE/Attacks/EnemyAttackDefinition.cs" id="2_attack"]
+[ext_resource type="Resource" uid="uid://bw66vuhpdphfd" path="res://ENEMIES/SIMULANTS/WEAPONS/SimulantPulse.tres" id="3_weapon"]
+
+[sub_resource type="Resource" id="Attack_cannons"]
+script = ExtResource("2_attack")
+Key = "four_cannon_salvo"
+Channel = "cannons"
+Weight = 40.0
+Weapon = ExtResource("3_weapon")
+RangeMin = 8.0
+RangeMax = 95.0
+IntervalSeconds = 0.13
+
+[resource]
+script = ExtResource("1_controller")
+SelectionIntervalSeconds = 0.2
+Attacks = Array[ExtResource("2_attack")]([SubResource("Attack_cannons")])

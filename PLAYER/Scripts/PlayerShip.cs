@@ -1,6 +1,7 @@
 using System;
 using Godot;
 
+// Handles player flight, boost input, defence, and steering signals for visuals.
 public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 {
 	#region Definition
@@ -18,6 +19,7 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 
 	private const Key KEY_ROLL_LEFT = Key.X;
 	private const Key KEY_ROLL_RIGHT = Key.Z;
+	private const Key KEY_BOOST = Key.Shift;
 
 	private const MouseButton MOUSE_ASCEND = MouseButton.Right;
 	private const Key KEY_DESCEND = Key.Ctrl;
@@ -42,14 +44,31 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 
 	#endregion
 
+	#region Boost Settings
+
+	[Export] public float BoostSpeedMultiplier = 2.2f;
+	[Export] public float BoostAccelerationMultiplier = 1.8f;
+	[Export] public float BoostResponse = 4.0f;
+
+	#endregion
+
 	#region Runtime
 
 	private bool _rightCtrlHeld;
 	private bool _destroyed;
 	private Vector2 _mouseMovement;
 
+	public bool IsBoosting { get; private set; }
+	public float BoostAmount { get; private set; }
+
+	// Steering signals are normalized for presentation, independent of frame rate.
+	public float PitchInput { get; private set; }
+	public float YawInput { get; private set; }
+	public float StrafeInput { get; private set; }
+
 	public ShipDefence Defence { get; private set; }
 	public event Action DefenceChanged;
+
 	public Faction CombatFaction => Faction.Player;
 
 	public bool IsCombatTargetable =>
@@ -61,18 +80,24 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 
 	#region Godot Events
 
-	// Creates collision and initializes this ship's defence and HUD.
+	// Creates collision, defence, HUD, and the shared flight presentation.
 	public override void _Ready()
 	{
 		AddToGroup("player_ship");
 		AddToGroup("combat_targets");
-		BoxShape3D shape = new BoxShape3D();
-		shape.Size = new Vector3(3.8f, 1.0f, 3.8f);
 
-		CollisionShape3D collision = new CollisionShape3D();
-		collision.Name = "Collision";
-		collision.Shape = shape;
-		collision.Position = new Vector3(0, 0.06f, -0.225f);
+		BoxShape3D shape = new()
+		{
+			Size = new Vector3(3.8f, 1.0f, 3.8f)
+		};
+
+		CollisionShape3D collision = new()
+		{
+			Name = "Collision",
+			Shape = shape,
+			Position = new Vector3(0, 0.06f, -0.225f)
+		};
+
 		AddChild(collision);
 
 		if (Definition == null)
@@ -87,14 +112,24 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 				Definition.MaxHull
 			);
 
-			PlayerDefenceHud hud = new PlayerDefenceHud();
-			hud.Name = "PlayerDefenceHud";
-			AddChild(hud);
+			AddChild(new PlayerDefenceHud
+			{
+				Name = "PlayerDefenceHud"
+			});
+		}
+
+		if (GetNodeOrNull<PlayerFlightVisuals>("FlightVisuals") == null)
+		{
+			AddChild(new PlayerFlightVisuals
+			{
+				Name = "FlightVisuals"
+			});
 		}
 
 		Input.MouseMode = Input.MouseModeEnum.Captured;
 	}
 
+	// Handles mouse capture, relative steering, and right-Control descent.
 	public override void _Input(InputEvent inputEvent)
 	{
 		if (_destroyed)
@@ -108,32 +143,40 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 			{
 				Input.MouseMode = Input.MouseModeEnum.Visible;
 				_mouseMovement = Vector2.Zero;
+				_rightCtrlHeld = false;
 				return;
 			}
 
-			if (key.Keycode == KEY_DESCEND
+			if (
+				key.Keycode == KEY_DESCEND
 				&& key.Location == KEY_DESCEND_LOCATION
-				&& !key.Echo)
+				&& !key.Echo
+			)
 			{
 				_rightCtrlHeld = key.Pressed;
 			}
 		}
 
-		if (inputEvent is InputEventMouseButton button
+		if (
+			inputEvent is InputEventMouseButton button
 			&& button.Pressed
-			&& Input.MouseMode == Input.MouseModeEnum.Visible)
+			&& Input.MouseMode == Input.MouseModeEnum.Visible
+		)
 		{
 			Input.MouseMode = Input.MouseModeEnum.Captured;
 			return;
 		}
 
-		if (inputEvent is InputEventMouseMotion motion
-			&& Input.MouseMode == Input.MouseModeEnum.Captured)
+		if (
+			inputEvent is InputEventMouseMotion motion
+			&& Input.MouseMode == Input.MouseModeEnum.Captured
+		)
 		{
 			_mouseMovement += motion.ScreenRelative;
 		}
 	}
 
+	// Clears accumulated input when the application loses focus.
 	public override void _Notification(int what)
 	{
 		if (what == NotificationApplicationFocusOut)
@@ -143,19 +186,31 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 		}
 	}
 
+	// Restores the pointer when leaving gameplay.
 	public override void _ExitTree()
 	{
 		Input.MouseMode = Input.MouseModeEnum.Visible;
 	}
 
+	// Updates steering, boost, and physical movement.
 	public override void _PhysicsProcess(double delta)
 	{
+		float seconds = (float)delta;
+
 		if (_destroyed)
 		{
+			IsBoosting = false;
+			BoostAmount = Mathf.MoveToward(
+				BoostAmount,
+				0.0f,
+				BoostResponse * seconds
+			);
+
+			PitchInput = 0.0f;
+			YawInput = 0.0f;
+			StrafeInput = 0.0f;
 			return;
 		}
-
-		float seconds = (float)delta;
 
 		UpdateRotation(seconds);
 		UpdateMovement(seconds);
@@ -165,7 +220,7 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 
 	#region Defence
 
-	// Applies a projectile hit through shield, armour, and hull.
+	// Applies incoming damage through shield, armour, and hull.
 	public void ApplyDamage(DamageInfo damage)
 	{
 		if (Defence == null || _destroyed || damage.Amount <= 0.0f)
@@ -189,16 +244,28 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 
 	#region Flight Movement
 
+	// Rotates the physical ship and publishes normalized steering rates.
 	private void UpdateRotation(float seconds)
 	{
 		float keyboardRoll = 0.0f;
 
-		if (Input.IsPhysicalKeyPressed(KEY_ROLL_LEFT)) keyboardRoll -= 1.0f;
-		if (Input.IsPhysicalKeyPressed(KEY_ROLL_RIGHT)) keyboardRoll += 1.0f;
+		bool controlsActive = Input.MouseMode == Input.MouseModeEnum.Captured;
+
+		if (controlsActive)
+		{
+			if (Input.IsPhysicalKeyPressed(KEY_ROLL_LEFT)) keyboardRoll -= 1.0f;
+			if (Input.IsPhysicalKeyPressed(KEY_ROLL_RIGHT)) keyboardRoll += 1.0f;
+		}
 
 		float pitch = _mouseMovement.Y * MousePitchSensitivity;
 		float yaw = -_mouseMovement.X * MouseYawSensitivity;
 		float roll = Mathf.DegToRad(keyboardRoll * RollSpeed * seconds);
+
+		float referenceTurnRate = Mathf.DegToRad(60.0f);
+		float referenceTurnStep = referenceTurnRate * Mathf.Max(seconds, 0.0001f);
+
+		PitchInput = Mathf.Clamp(pitch / referenceTurnStep, -1.0f, 1.0f);
+		YawInput = Mathf.Clamp(yaw / referenceTurnStep, -1.0f, 1.0f);
 
 		RotateObjectLocal(Vector3.Right, pitch);
 		RotateObjectLocal(Vector3.Up, yaw);
@@ -207,35 +274,65 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 		_mouseMovement = Vector2.Zero;
 	}
 
+	// Applies normal flight or automatic forward thrust while Shift is held.
 	private void UpdateMovement(float seconds)
 	{
 		float thrust = 0.0f;
 		float strafe = 0.0f;
 		float rise = 0.0f;
 
-		if (Input.IsPhysicalKeyPressed(KEY_FORWARD)) thrust += 1.0f;
-		if (Input.IsPhysicalKeyPressed(KEY_REVERSE)) thrust -= 1.0f;
+		bool controlsActive = Input.MouseMode == Input.MouseModeEnum.Captured;
 
-		if (Input.IsPhysicalKeyPressed(KEY_STRAFE_LEFT)) strafe -= 1.0f;
-		if (Input.IsPhysicalKeyPressed(KEY_STRAFE_RIGHT)) strafe += 1.0f;
+		if (controlsActive)
+		{
+			if (Input.IsPhysicalKeyPressed(KEY_FORWARD)) thrust += 1.0f;
+			if (Input.IsPhysicalKeyPressed(KEY_REVERSE)) thrust -= 1.0f;
 
-		if (Input.IsMouseButtonPressed(MOUSE_ASCEND)) rise += 1.0f;
-		if (_rightCtrlHeld) rise -= 1.0f;
+			if (Input.IsPhysicalKeyPressed(KEY_STRAFE_LEFT)) strafe -= 1.0f;
+			if (Input.IsPhysicalKeyPressed(KEY_STRAFE_RIGHT)) strafe += 1.0f;
+
+			if (Input.IsMouseButtonPressed(MOUSE_ASCEND)) rise += 1.0f;
+			if (_rightCtrlHeld) rise -= 1.0f;
+		}
+
+		IsBoosting =
+			controlsActive
+			&& Input.IsPhysicalKeyPressed(KEY_BOOST);
+
+		BoostAmount = Mathf.MoveToward(
+			BoostAmount,
+			IsBoosting ? 1.0f : 0.0f,
+			Mathf.Max(0.0f, BoostResponse) * seconds
+		);
+
+		StrafeInput = strafe;
 
 		float forwardSpeed = thrust >= 0.0f ? ForwardSpeed : ReverseSpeed;
 
-		Vector3 forwardVelocity = -GlobalBasis.Z * thrust * forwardSpeed;
-		Vector3 strafeVelocity = GlobalBasis.X * strafe * StrafeSpeed;
-		Vector3 verticalVelocity = GlobalBasis.Y * rise * VerticalSpeed;
+		if (IsBoosting)
+		{
+			thrust = 1.0f;
+			forwardSpeed = ForwardSpeed * Mathf.Max(1.0f, BoostSpeedMultiplier);
+		}
 
 		Vector3 targetVelocity =
-			forwardVelocity + strafeVelocity + verticalVelocity;
+			-GlobalBasis.Z * thrust * forwardSpeed
+			+ GlobalBasis.X * strafe * StrafeSpeed
+			+ GlobalBasis.Y * rise * VerticalSpeed;
 
 		float response = targetVelocity == Vector3.Zero
 			? Deceleration
 			: Acceleration;
 
-		Velocity = Velocity.MoveToward(targetVelocity, response * seconds);
+		if (IsBoosting)
+		{
+			response *= Mathf.Max(1.0f, BoostAccelerationMultiplier);
+		}
+
+		Velocity = Velocity.MoveToward(
+			targetVelocity,
+			response * seconds
+		);
 
 		MoveAndSlide();
 	}

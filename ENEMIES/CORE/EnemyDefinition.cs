@@ -1,5 +1,6 @@
 using Godot;
 
+// Stores a ship type's identity, defence, movement, appearance, and attacks.
 [GlobalClass]
 public partial class EnemyDefinition : Resource
 {
@@ -30,6 +31,12 @@ public partial class EnemyDefinition : Resource
 
 	#endregion
 
+	#region Attacks
+
+	[Export] public EnemyAttackControllerDefinition AttackController;
+
+	#endregion
+
 	#region Shape
 
 	[Export] public PackedScene VisualScene;
@@ -47,7 +54,7 @@ public partial class EnemyDefinition : Resource
 	[Export] public Color EngineColor = new Color(1.0f, 0.56f, 0.15f);
 
 	#endregion
-	
+
 	#region Hardpoints
 
 	[Export]

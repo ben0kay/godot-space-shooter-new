@@ -1,5 +1,6 @@
 using Godot;
 
+// Builds an enemy ship from its definition and manages its defence and controllers.
 public partial class EnemyShip : CharacterBody3D, IDamageable, ICombatTarget
 {
 	#region Definition
@@ -24,7 +25,7 @@ public partial class EnemyShip : CharacterBody3D, IDamageable, ICombatTarget
 
 	#region Setup
 
-// Creates defence, visuals, collision, targeting, hardpoints, and movement.
+// Creates defence, visuals, collision, targeting, hardpoints, attacks, and movement.
 public override void _Ready()
 {
 	if (Definition == null)
@@ -63,6 +64,7 @@ public override void _Ready()
 	}
 
 	CreateHardpoints();
+	CreateAttackController();
 
 	if (Definition.MovementControllerScene == null)
 	{
@@ -80,6 +82,23 @@ public override void _Ready()
 
 	controller.Name = "MovementController";
 	controller.Initialize(this);
+	AddChild(controller);
+}
+
+// Creates this ship's attack runtime after its hardpoints have been registered.
+private void CreateAttackController()
+{
+	if (Definition.AttackController == null)
+	{
+		return;
+	}
+
+	EnemyAttackController controller = new()
+	{
+		Name = "AttackController"
+	};
+
+	controller.Initialize(this, Definition.AttackController);
 	AddChild(controller);
 }
 

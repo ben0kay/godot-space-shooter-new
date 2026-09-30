@@ -1,20 +1,28 @@
 using System.Collections.Generic;
 using Godot;
 
+// Loads and caches faction palettes for shared weapon and ship effects.
 public static class FactionPalettes
 {
+	#region Resources
+
 	private static readonly Dictionary<Faction, FactionPalette> _cache = new();
 
 	private static readonly Dictionary<Faction, string> _paths = new()
 	{
-		{ Faction.Player, "res://RESOURCES/Factions/PlayerPalette.tres" },
-		{ Faction.Rebel, "res://RESOURCES/Factions/RebelPalette.tres" },
-		{ Faction.Corporation, "res://RESOURCES/Factions/CorporationPalette.tres" },
-		{ Faction.Simulant, "res://RESOURCES/Factions/SimulantPalette.tres" }
+		{ Faction.Player, "res://ENEMIES/CORE/Factions/PlayerPalette.tres" },
+		{ Faction.Rebel, "res://ENEMIES/CORE/Factions/RebelPalette.tres" },
+		{ Faction.Corporation, "res://ENEMIES/CORE/Factions/CorporationPalette.tres" },
+		{ Faction.Simulant, "res://ENEMIES/CORE/Factions/SimulantPalette.tres" }
 	};
 
 	private static FactionPalette _fallback;
 
+	#endregion
+
+	#region Palette Access
+
+	// Loads a faction's palette once, using a fallback when no resource is available.
 	public static FactionPalette Get(Faction faction)
 	{
 		if (_cache.TryGetValue(faction, out FactionPalette cached))
@@ -43,4 +51,6 @@ public static class FactionPalettes
 		_cache[faction] = palette;
 		return palette;
 	}
+
+	#endregion
 }

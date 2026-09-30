@@ -1,18 +1,23 @@
 using System.Collections.Generic;
 using Godot;
 
+// Builds animated engine plumes and scales their appearance with movement and boost.
 public partial class PlayerThrusters : Node3D
 {
-	#region Settings
+#region Settings
 
-	[Export] public float PlumeLength = 3.0f;
-	[Export] public float CoreWidth = 0.18f;
-	[Export] public float GlowWidth = 0.48f;
-	[Export] public float IdleLength = 0.25f;
-	[Export] public float FullThrustLength = 1.25f;
-	[Export] public float ThrustResponse = 5.0f;
+[Export] public float PlumeLength = 3.0f;
+[Export] public float CoreWidth = 0.18f;
+[Export] public float GlowWidth = 0.48f;
+[Export] public float IdleLength = 0.25f;
+[Export] public float FullThrustLength = 1.25f;
+[Export] public float ThrustResponse = 5.0f;
 
-	#endregion
+[Export] public float BoostLengthMultiplier = 1.8f;
+[Export] public float BoostWidthMultiplier = 1.45f;
+[Export] public float BoostBrightnessMultiplier = 1.3f;
+
+#endregion
 
 	#region Runtime
 
@@ -78,12 +83,17 @@ void fragment() {
 		UpdatePlumes();
 	}
 
-	// Stretches the exhaust according to forward movement.
+	// Measures forward movement while the ship supplies its smoothed boost amount.
 	public override void _PhysicsProcess(double delta)
 	{
+		if (!GodotObject.IsInstanceValid(_ship))
+		{
+			return;
+		}
+
 		float forwardSpeed = Mathf.Max(
 			0.0f,
-			_ship.Velocity.Dot(-_ship.GlobalBasis.Z)
+			_ship.Velocity.Dot(-_ship.GlobalBasis.Z.Normalized())
 		);
 
 		float targetThrust = Mathf.Clamp(
@@ -105,23 +115,57 @@ void fragment() {
 
 	#region Plumes
 
-	// Applies current length and motion strength to both engine effects.
-	private void UpdatePlumes()
+	// Smoothly stretches, widens, and brightens exhaust during boost.
+private void UpdatePlumes()
+{
+	float boost = _ship.BoostAmount;
+
+	float length = Mathf.Lerp(
+		IdleLength,
+		FullThrustLength,
+		_thrust
+	);
+
+	length *= Mathf.Lerp(
+		1.0f,
+		BoostLengthMultiplier,
+		boost
+	);
+
+	float width = Mathf.Lerp(
+		1.0f,
+		BoostWidthMultiplier,
+		boost
+	);
+
+	float brightnessScale = Mathf.Lerp(
+		1.0f,
+		BoostBrightnessMultiplier,
+		boost
+	);
+
+	foreach (MeshInstance3D plume in _plumes)
 	{
-		float length = Mathf.Lerp(
-			IdleLength,
-			FullThrustLength,
-			_thrust
-		);
+		plume.Scale = new Vector3(width, width, length);
 
-		foreach (MeshInstance3D plume in _plumes)
+		if (plume.MaterialOverride is ShaderMaterial material)
 		{
-			plume.Scale = new Vector3(1.0f, 1.0f, length);
+			float baseBrightness = plume.Name.ToString() == "BrightCore"
+				? 3.0f
+				: 2.0f;
 
-			ShaderMaterial material = plume.MaterialOverride as ShaderMaterial;
-			material?.SetShaderParameter("thrust", _thrust);
+			material.SetShaderParameter(
+				"thrust",
+				Mathf.Max(_thrust, boost)
+			);
+
+			material.SetShaderParameter(
+				"brightness",
+				baseBrightness * brightnessScale
+			);
 		}
 	}
+}
 
 	// Adds a broad blue glow and a narrow white-blue centre.
 	private void CreateThruster(Marker3D marker)
