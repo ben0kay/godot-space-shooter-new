@@ -580,6 +580,37 @@ public void Configure(
 		);
 	}
 
+		// =========================================================
+	// Stops damage immediately while allowing beam visuals and particles to fade.
+	public void Stop()
+	{
+		if (_releasing)
+		{
+			return;
+		}
+
+		_active = false;
+		_releasing = true;
+		_releaseElapsed = 0.0f;
+
+		SetPhysicsProcess(false);
+
+		if (_embers != null)
+		{
+			_embers.Emitting = false;
+		}
+
+		if (_muzzleParticles != null)
+		{
+			_muzzleParticles.Emitting = false;
+		}
+
+		if (_impactParticles != null)
+		{
+			_impactParticles.Emitting = false;
+		}
+	}
+
 	#endregion
 
 	#region Presentation

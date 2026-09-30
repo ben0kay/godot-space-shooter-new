@@ -1,19 +1,23 @@
 using Godot;
 
-// Adds cosmetic ship pitch and banking, plus smooth movement-based camera offsets.
+// Handles cosmetic ship movement and toggles one camera between chase and cockpit views.
 public partial class PlayerFlightVisuals : Node
 {
-#region Ship Settings
+	#region Ship Settings
 
-[Export] public float PitchTiltDegrees = 6.0f;
-[Export] public float TurnBankDegrees = 8.0f;
-[Export] public float StrafeBankDegrees = 10.0f;
-[Export] public float RollTiltDegrees = 14.0f;
-[Export] public float ShipResponse = 8.0f;
+	[ExportGroup("Ship Visuals")]
 
-#endregion
+	[Export] public float PitchTiltDegrees = 6.0f;
+	[Export] public float TurnBankDegrees = 8.0f;
+	[Export] public float StrafeBankDegrees = 10.0f;
+	[Export] public float RollTiltDegrees = 14.0f;
+	[Export] public float ShipResponse = 8.0f;
 
-	#region Camera Settings
+	#endregion
+
+	#region Third Person Settings
+
+	[ExportGroup("Third Person Camera")]
 
 	[Export] public float MovingCameraBack = 0.6f;
 	[Export] public float BoostCameraBack = 2.1f;
@@ -24,55 +28,103 @@ public partial class PlayerFlightVisuals : Node
 
 	#endregion
 
-	#region Runtime
+	#region Cockpit Settings
+
+	[ExportGroup("Cockpit Camera")]
+
+	[Export] public Key ToggleCameraKey = Key.V;
+	[Export] public bool StartInCockpit = false;
+
+	[Export] public float CockpitFov = 90.0f;
+	[Export] public float CockpitNear = 0.03f;
+	[Export] public float CockpitSway = 0.015f;
+	[Export] public float CockpitTiltDegrees = 0.5f;
+	[Export] public float CockpitBoostFov = 3.0f;
+
+	[ExportGroup("Cockpit Placeholder")]
+
+	[Export] public bool BuildCockpitPlaceholder = true;
+
+	#endregion
+
+	#region References And Runtime
 
 	private PlayerShip _ship;
 	private Node3D _visualPivot;
 	private Camera3D _camera;
+	private Marker3D _cockpitView;
+	private Node3D _cockpitInterior;
 
-	private Vector3 _cameraRestPosition;
+	private Transform3D _thirdPersonRest;
+	private float _thirdPersonFov;
+	private float _thirdPersonNear;
+
 	private Vector3 _visualAngles;
+
+	public bool IsFirstPerson { get; private set; }
 
 	#endregion
 
 	#region Setup
 
+	// =========================================================
+	// Groups ship visuals and caches the authored chase camera and cockpit marker.
+	public override void _Ready()
+	{
+		_ship = GetParent() as PlayerShip;
+
+		if (_ship == null)
+		{
+			GD.PushError(
+				"PlayerFlightVisuals must be a child of PlayerShip."
+			);
+
+			SetProcess(false);
+			SetProcessInput(false);
+			return;
+		}
+
+		_visualPivot = new Node3D
+		{
+			Name = "FlightVisualPivot"
+		};
+
+		_ship.AddChild(_visualPivot);
+
+		MoveUnderPivot("Cyan_Interceptor_Mk2");
+		MoveUnderPivot("PrimaryWeapon");
+		MoveUnderPivot("SecondaryWeapon");
+		MoveUnderPivot("PlayerThrusters");
+		MoveUnderPivot("WingTrails");
+
+		_camera = _ship.GetNodeOrNull<Camera3D>("Camera3D");
+		_cockpitView = _ship.GetNodeOrNull<Marker3D>("CockpitView");
+
+		if (_camera == null)
+		{
+			GD.PushError(
+				"PlayerShip needs a Camera3D named Camera3D."
+			);
+
+			SetProcess(false);
+			SetProcessInput(false);
+			return;
+		}
+
+		_thirdPersonRest = _camera.Transform;
+		_thirdPersonFov = _camera.Fov;
+		_thirdPersonNear = _camera.Near;
+
+		if (_cockpitView != null && BuildCockpitPlaceholder)
+		{
+			CreateCockpitPlaceholder();
+		}
+
+		SetCameraMode(StartInCockpit);
+	}
 
 	// =========================================================
-// Groups the ship visuals and both weapon mounts, then caches the camera.
-public override void _Ready()
-{
-	_ship = GetParent() as PlayerShip;
-
-	if (_ship == null)
-	{
-		GD.PushError("PlayerFlightVisuals must be a child of PlayerShip.");
-		SetProcess(false);
-		return;
-	}
-
-	_visualPivot = new Node3D
-	{
-		Name = "FlightVisualPivot"
-	};
-
-	_ship.AddChild(_visualPivot);
-
-	MoveUnderPivot("Cyan_Interceptor_Mk2");
-	MoveUnderPivot("PrimaryWeapon");
-	MoveUnderPivot("SecondaryWeapon");
-	MoveUnderPivot("PlayerThrusters");
-	MoveUnderPivot("WingTrails");
-
-	_camera = _ship.GetNodeOrNull<Camera3D>("Camera3D");
-
-	if (_camera != null)
-	{
-		_cameraRestPosition = _camera.Position;
-	}
-}
-
-	// Moves a visual component while preserving its existing placement.
+	// Moves a visual component while preserving its authored placement.
 	private void MoveUnderPivot(string nodeName)
 	{
 		Node3D component = _ship.GetNodeOrNull<Node3D>(nodeName);
@@ -85,9 +137,68 @@ public override void _Ready()
 
 	#endregion
 
+	#region Camera Input
+
+	// =========================================================
+	// Toggles views once per key press while gameplay input is active.
+	public override void _Input(InputEvent inputEvent)
+	{
+		if (inputEvent is not InputEventKey key
+			|| !key.Pressed
+			|| key.Echo
+			|| key.PhysicalKeycode != ToggleCameraKey)
+		{
+			return;
+		}
+
+		if (!GodotObject.IsInstanceValid(_ship)
+			|| !_ship.IsCombatTargetable
+			|| Input.MouseMode != Input.MouseModeEnum.Captured)
+		{
+			return;
+		}
+
+		SetCameraMode(!IsFirstPerson);
+	}
+
+	// =========================================================
+	// Switches instantly between the authored chase view and cockpit view.
+	public void SetCameraMode(bool firstPerson)
+	{
+		if (!GodotObject.IsInstanceValid(_camera))
+		{
+			return;
+		}
+
+		if (firstPerson && !GodotObject.IsInstanceValid(_cockpitView))
+		{
+			GD.PushWarning(
+				"Add a CockpitView Marker3D under PlayerShip."
+			);
+
+			return;
+		}
+
+		IsFirstPerson = firstPerson;
+
+		if (_cockpitInterior != null)
+		{
+			_cockpitInterior.Visible = firstPerson;
+		}
+
+		_camera.Near = firstPerson
+			? Mathf.Max(0.01f, CockpitNear)
+			: _thirdPersonNear;
+
+		UpdateCamera(0.0f, true);
+	}
+
+	#endregion
+
 	#region Presentation
 
-	// Smooths cosmetic ship motion and the three camera-distance states.
+	// =========================================================
+	// Updates cosmetic ship movement and the selected camera view.
 	public override void _Process(double delta)
 	{
 		if (!GodotObject.IsInstanceValid(_ship))
@@ -101,64 +212,225 @@ public override void _Ready()
 		UpdateCamera(seconds);
 	}
 
-	// Adds smooth visual pitch and banking for turns, strafing, and manual rolls.
-private void UpdateShipVisuals(float seconds)
-{
-	float bankDegrees =
-		_ship.YawInput * TurnBankDegrees
-		- _ship.StrafeInput * StrafeBankDegrees
-		- _ship.RollInput * RollTiltDegrees;
+	// =========================================================
+	// Smooths cosmetic pitch, turning bank, strafe bank, and manual roll tilt.
+	private void UpdateShipVisuals(float seconds)
+	{
+		float bankDegrees =
+			_ship.YawInput * TurnBankDegrees
+			- _ship.StrafeInput * StrafeBankDegrees
+			- _ship.RollInput * RollTiltDegrees;
 
-	Vector3 desiredAngles = new(
-		Mathf.DegToRad(_ship.PitchInput * PitchTiltDegrees),
-		0.0f,
-		Mathf.DegToRad(bankDegrees)
-	);
+		Vector3 desiredAngles = new(
+			Mathf.DegToRad(_ship.PitchInput * PitchTiltDegrees),
+			0.0f,
+			Mathf.DegToRad(bankDegrees)
+		);
 
-	float blend = 1.0f - Mathf.Exp(
-		-Mathf.Max(0.0f, ShipResponse) * seconds
-	);
+		float blend = 1.0f - Mathf.Exp(
+			-Mathf.Max(0.0f, ShipResponse) * seconds
+		);
 
-	_visualAngles = _visualAngles.Lerp(desiredAngles, blend);
-	_visualPivot.Rotation = _visualAngles;
-}
+		_visualAngles = _visualAngles.Lerp(desiredAngles, blend);
+		_visualPivot.Rotation = _visualAngles;
+	}
 
-	// Pulls back with actual movement, then adds the boost distance and mild sway.
-	private void UpdateCamera(float seconds)
+	// =========================================================
+	// Applies chase-camera pullback or subtle cockpit motion using one camera.
+	private void UpdateCamera(float seconds, bool instant = false)
 	{
 		if (!GodotObject.IsInstanceValid(_camera))
 		{
 			return;
 		}
 
-		float movement = Mathf.Clamp(
-			_ship.Velocity.Length() / Mathf.Max(0.01f, _ship.ForwardSpeed),
-			0.0f,
-			1.0f
-		);
+		float blend = instant
+			? 1.0f
+			: 1.0f - Mathf.Exp(
+				-Mathf.Max(0.0f, CameraResponse) * seconds
+			);
 
-		float normalBack = movement * MovingCameraBack;
+		Vector3 desiredPosition;
+		Basis desiredBasis;
+		float desiredFov;
 
-		float back = Mathf.Lerp(
-			normalBack,
-			BoostCameraBack,
-			_ship.BoostAmount
-		);
+		if (IsFirstPerson
+			&& GodotObject.IsInstanceValid(_cockpitView))
+		{
+			// Convert the authored eye marker into the camera parent's space.
+			Transform3D cockpitTransform =
+				_ship.GlobalTransform.AffineInverse()
+				* _cockpitView.GlobalTransform;
 
-		Vector3 desiredPosition = _cameraRestPosition + new Vector3(
-			-_ship.YawInput * CameraSideSway,
-			-_ship.PitchInput * CameraPitchSway,
-			back
-		);
+			Basis cockpitBasis =
+				cockpitTransform.Basis.Orthonormalized();
 
-		float blend = 1.0f - Mathf.Exp(
-			-Mathf.Max(0.0f, CameraResponse) * seconds
-		);
+			Vector3 sway = new(
+				-_ship.YawInput * CockpitSway,
+				-_ship.PitchInput * CockpitSway,
+				0.0f
+			);
 
-		_camera.Position = _camera.Position.Lerp(
+			desiredPosition =
+				cockpitTransform.Origin + cockpitBasis * sway;
+
+			Vector3 tilt = new(
+				Mathf.DegToRad(
+					-_ship.PitchInput * CockpitTiltDegrees
+				),
+				0.0f,
+				Mathf.DegToRad(
+					-_ship.YawInput * CockpitTiltDegrees
+				)
+			);
+
+			desiredBasis =
+				cockpitBasis * Basis.FromEuler(tilt);
+
+			desiredFov = Mathf.Clamp(
+				CockpitFov
+					+ _ship.BoostAmount * CockpitBoostFov,
+				20.0f,
+				120.0f
+			);
+		}
+		else
+		{
+			float movement = Mathf.Clamp(
+				_ship.Velocity.Length()
+					/ Mathf.Max(0.01f, _ship.ForwardSpeed),
+				0.0f,
+				1.0f
+			);
+
+			float normalBack = movement * MovingCameraBack;
+
+			float back = Mathf.Lerp(
+				normalBack,
+				BoostCameraBack,
+				_ship.BoostAmount
+			);
+
+			desiredPosition =
+				_thirdPersonRest.Origin + new Vector3(
+					-_ship.YawInput * CameraSideSway,
+					-_ship.PitchInput * CameraPitchSway,
+					back
+				);
+
+			desiredBasis =
+				_thirdPersonRest.Basis.Orthonormalized();
+
+			desiredFov = _thirdPersonFov;
+		}
+
+		Vector3 position = _camera.Position.Lerp(
 			desiredPosition,
 			blend
 		);
+
+		Basis rotation = _camera.Basis.Orthonormalized().Slerp(
+			desiredBasis,
+			blend
+		);
+
+		_camera.Transform = new Transform3D(rotation, position);
+
+		_camera.Fov = Mathf.Lerp(
+			_camera.Fov,
+			desiredFov,
+			blend
+		);
+	}
+
+	#endregion
+
+	#region Cockpit Placeholder
+
+	// =========================================================
+	// Creates a small dashboard and canopy frame relative to the eye marker.
+	private void CreateCockpitPlaceholder()
+	{
+		_cockpitInterior = new Node3D
+		{
+			Name = "CockpitInterior",
+			Visible = false
+		};
+
+		_cockpitView.AddChild(_cockpitInterior);
+
+		StandardMaterial3D metal = new()
+		{
+			AlbedoColor = new Color(0.025f, 0.04f, 0.055f),
+			Metallic = 0.45f,
+			Roughness = 0.65f
+		};
+
+		StandardMaterial3D display = new()
+		{
+			AlbedoColor = new Color(0.1f, 0.65f, 0.8f),
+			ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+			EmissionEnabled = true,
+			Emission = new Color(0.1f, 0.65f, 0.8f),
+			EmissionEnergyMultiplier = 1.0f
+		};
+
+		AddCockpitBox(
+			"Dashboard",
+			new Vector3(1.05f, 0.16f, 0.28f),
+			new Vector3(0.0f, -0.38f, -0.65f),
+			metal
+		);
+
+		AddCockpitBox(
+			"Display",
+			new Vector3(0.3f, 0.065f, 0.012f),
+			new Vector3(0.0f, -0.33f, -0.50f),
+			display
+		);
+
+		AddCockpitBox(
+			"LeftFrame",
+			new Vector3(0.025f, 0.6f, 0.035f),
+			new Vector3(-0.48f, -0.04f, -0.55f),
+			metal
+		);
+
+		AddCockpitBox(
+			"RightFrame",
+			new Vector3(0.025f, 0.6f, 0.035f),
+			new Vector3(0.48f, -0.04f, -0.55f),
+			metal
+		);
+
+		AddCockpitBox(
+			"TopFrame",
+			new Vector3(0.985f, 0.025f, 0.035f),
+			new Vector3(0.0f, 0.26f, -0.55f),
+			metal
+		);
+	}
+
+	// =========================================================
+	// Adds one visual-only cockpit part without introducing collision.
+	private void AddCockpitBox(
+		string name,
+		Vector3 size,
+		Vector3 position,
+		Material material
+	)
+	{
+		_cockpitInterior.AddChild(new MeshInstance3D
+		{
+			Name = name,
+			Position = position,
+			Mesh = new BoxMesh
+			{
+				Size = size
+			},
+			MaterialOverride = material,
+			CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
+		});
 	}
 
 	#endregion
