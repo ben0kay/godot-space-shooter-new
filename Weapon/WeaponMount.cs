@@ -10,6 +10,7 @@ public partial class WeaponMount : Node3D
 	[Export] public Faction ShooterFaction = Faction.Player;
 	[Export] public bool AimAtCameraCenter = false;
 	[Export] public float CameraAimDistance = 1000.0f;
+	[Export] public WeaponMount ProjectileMuzzleProvider;
 
 	#endregion
 
@@ -270,13 +271,28 @@ public partial class WeaponMount : Node3D
 		return true;
 	}
 
-			// =========================================================
-	// Launches toward the shared camera aiming point with weapon spread.
+				// =========================================================
+	// Alternates projectile launches through local or borrowed muzzle markers.
 	private void FireShot()
 	{
-		Marker3D muzzle = _muzzles[_muzzleIndex];
+		List<Marker3D> muzzles = _muzzles;
 
-		_muzzleIndex = (_muzzleIndex + 1) % _muzzles.Count;
+		if (GodotObject.IsInstanceValid(ProjectileMuzzleProvider)
+			&& ProjectileMuzzleProvider._muzzles.Count > 0)
+		{
+			muzzles = ProjectileMuzzleProvider._muzzles;
+		}
+
+		if (muzzles.Count == 0)
+		{
+			return;
+		}
+
+		_muzzleIndex %= muzzles.Count;
+
+		Marker3D muzzle = muzzles[_muzzleIndex];
+
+		_muzzleIndex = (_muzzleIndex + 1) % muzzles.Count;
 
 		Vector3 direction = -muzzle.GlobalBasis.Z.Normalized();
 

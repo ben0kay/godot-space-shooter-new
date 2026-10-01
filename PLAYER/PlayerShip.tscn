@@ -7,7 +7,9 @@
 [ext_resource type="Resource" uid="uid://duk6me74e1i1y" path="res://Weapons/minigun.tres" id="3_faoyc"]
 [ext_resource type="Script" uid="uid://crafoydkr28bx" path="res://PLAYER/Scripts/PlayerWeaponInput.cs" id="4_faoyc"]
 [ext_resource type="Script" uid="uid://dicus7a88byl7" path="res://PLAYER/Scripts/PlayerThrusters.cs" id="6_5rg74"]
+[ext_resource type="Script" uid="uid://dk13qlucl75kd" path="res://Weapon/WeaponDefinition.cs" id="7_hbpo3"]
 [ext_resource type="Script" uid="uid://c4dvf21ox7pnp" path="res://PLAYER/WingtipTrail.cs" id="8_crfyu"]
+[ext_resource type="Resource" uid="uid://b2s0fvtl00ei3" path="res://PLAYER/Weapons/PlayerRocketLauncher.tres" id="9_q318l"]
 [ext_resource type="Resource" uid="uid://du3lcxvj4rjsm" path="res://PLAYER/Weapons/PlayerLaser.tres" id="9_sklyu"]
 [ext_resource type="Script" uid="uid://iws8wt11scwp" path="res://PLAYER/Scripts/PlayerDash.cs" id="10_jip12"]
 [ext_resource type="Script" uid="uid://c4t46gkn76s1r" path="res://PLAYER/Scripts/PlayerCrosshair.cs" id="11_nsdd8"]
@@ -38,6 +40,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.28, 0.36, -0.68)
 script = ExtResource("4_faoyc")
 PrimaryWeapon = NodePath("../PrimaryWeapon")
 SecondaryWeapon = NodePath("../SecondaryWeapon")
+SecondaryOptions = Array[ExtResource("7_hbpo3")]([ExtResource("9_sklyu"), ExtResource("9_q318l")])
 
 [node name="PlayerThrusters" type="Node3D" parent="." unique_id=1126257128]
 script = ExtResource("6_5rg74")
@@ -58,10 +61,11 @@ script = ExtResource("8_crfyu")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.4372416, 0.085373044, 1.9875399)
 script = ExtResource("8_crfyu")
 
-[node name="SecondaryWeapon" type="Node3D" parent="." unique_id=632114802]
+[node name="SecondaryWeapon" type="Node3D" parent="." unique_id=632114802 node_paths=PackedStringArray("ProjectileMuzzleProvider")]
 script = ExtResource("2_5lrhm")
 Weapon = ExtResource("9_sklyu")
 AimAtCameraCenter = true
+ProjectileMuzzleProvider = NodePath("../PrimaryWeapon")
 
 [node name="BeamMuzzle" type="Marker3D" parent="SecondaryWeapon" unique_id=109934333]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2641109, -2.5890062)

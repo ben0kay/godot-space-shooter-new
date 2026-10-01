@@ -321,13 +321,18 @@ public partial class Projectile : Area3D
 	}
 
 		// =========================================================
-	// Sends one explosion through the shared area-damage resolver.
+	// Applies one damage burst and starts its independent visual effect.
 	private void Detonate()
 	{
 		if (_detonation?.Area == null)
 		{
 			return;
 		}
+
+		float radius = Mathf.Max(
+			0.0f,
+			_detonation.Area.Radius
+		) * _explosionScale;
 
 		AttackAreaDamage.ApplyBurst(
 			this,
@@ -336,6 +341,14 @@ public partial class Projectile : Area3D
 			_explosionDamage,
 			_explosionScale,
 			_source,
+			_sourceFaction
+		);
+
+		ExplosionVisual.Spawn(
+			this,
+			GlobalPosition,
+			radius,
+			_detonation.Visuals,
 			_sourceFaction
 		);
 	}
