@@ -38,4 +38,17 @@ public partial class WeaponEffectsProfile : Resource
 	[Export] public float ImpactSpeed = 5.0f;
 
 	#endregion
+
+		#region Glow Trail
+
+	// Uses soft shader sprites instead of the normal sphere particles.
+	[Export] public bool UseGlowTrail = false;
+
+	[Export] public float GlowTrailWidth = 0.8f;
+	[Export] public Vector3 TrailOffset = Vector3.Zero;
+
+	// Bounds must encompass the distance travelled during the particle lifetime.
+	[Export] public float TrailBoundsRadius = 32.0f;
+
+	#endregion
 }

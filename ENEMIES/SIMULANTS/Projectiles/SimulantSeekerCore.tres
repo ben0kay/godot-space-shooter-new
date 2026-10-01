@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://mv26j0357h2" path="res://Weapon/WeaponEffectsProfile.cs" id="1_y5dae"]
 [ext_resource type="Script" uid="uid://dlnk3qn6ug8k8" path="res://PROJECTILES/ProjectileDetonationSettings.cs" id="2_iqx73"]
 [ext_resource type="PackedScene" uid="uid://bykb33nirbctc" path="res://PROJECTILES/Projectile.tscn" id="2_r4gln"]
+[ext_resource type="PackedScene" uid="uid://brxretrf3d2vk" path="res://ENEMIES/SIMULANTS/Projectiles/SimulantSeekerCore.glb" id="5_iqx73"]
 
 [sub_resource type="Resource" id="Resource_sf88o"]
 script = ExtResource("1_xqpc0")
@@ -36,4 +37,6 @@ CollisionRadius = 0.7
 EmissionEnergy = 2.0
 Effects = SubResource("Resource_485x1")
 Detonation = SubResource("Resource_nsdd8")
+VisualScene = ExtResource("5_iqx73")
+VisualSpinDegreesPerSecond = 180.0
 metadata/_custom_type_script = "uid://7oyb1xy2i35r"

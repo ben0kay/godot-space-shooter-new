@@ -54,4 +54,19 @@ public partial class ProjectileDefinition : Resource
 	[Export] public ProjectileDetonationSettings Detonation;
 
 	#endregion
+
+		#region Model Visual
+
+	// Optional imported model or visual scene; null uses the procedural visual.
+	[Export] public PackedScene VisualScene;
+
+	[Export] public float ModelScale = 1.0f;
+	[Export] public Vector3 ModelOffset = Vector3.Zero;
+	[Export] public Vector3 ModelRotationDegrees = Vector3.Zero;
+
+	// Axis is relative to the projectile: negative Z is its forward direction.
+	[Export] public Vector3 VisualSpinAxis = Vector3.Forward;
+	[Export] public float VisualSpinDegreesPerSecond = 0.0f;
+
+	#endregion
 }

@@ -23,6 +23,10 @@ public partial class Projectile : Area3D
 	private ProjectileDetonationSettings _detonation;
 	private float _explosionDamage;
 	private float _explosionScale;
+		private Node3D _visualSpinPivot;
+	private Vector3 _visualSpinAxis;
+	private float _visualSpinSpeed;
+	private float _visualSpinAngle;
 
 	#endregion
 
@@ -357,9 +361,65 @@ public partial class Projectile : Area3D
 
 	#region Appearance And Collision
 
-	// Creates the projectile's sphere or tracer using its resolved size scale.
+		// =========================================================
+	// Creates an imported model or procedural visual beneath a cosmetic spin pivot.
 	private void CreateVisual()
 	{
+		_visualSpinPivot = new Node3D
+		{
+			Name = "VisualSpinPivot"
+		};
+
+		AddChild(_visualSpinPivot);
+
+		_visualSpinAngle = 0.0f;
+
+		Vector3 axis = _definition.VisualSpinAxis;
+
+		_visualSpinAxis = axis.LengthSquared() > 0.0001f
+			? axis.Normalized()
+			: Vector3.Forward;
+
+		_visualSpinSpeed = Mathf.DegToRad(
+			_definition.VisualSpinDegreesPerSecond
+		);
+
+		if (_definition.VisualScene != null)
+		{
+			Node instance = _definition.VisualScene.Instantiate();
+
+			if (instance is Node3D model)
+			{
+				Node3D placement = new()
+				{
+					Name = "ModelPlacement",
+					Position = _definition.ModelOffset * _sizeScale,
+					RotationDegrees = _definition.ModelRotationDegrees,
+					Scale = Vector3.One
+						* Mathf.Max(0.001f, _definition.ModelScale)
+						* _sizeScale
+				};
+
+				_visualSpinPivot.AddChild(placement);
+				placement.AddChild(model);
+
+				SetVisualShadowsOff(model);
+
+				SetProcess(
+					Mathf.Abs(_visualSpinSpeed) > 0.0001f
+				);
+
+				return;
+			}
+
+			instance.Free();
+
+			GD.PushWarning(
+				"Projectile VisualScene needs a Node3D root. "
+				+ "Using the procedural visual instead."
+			);
+		}
+
 		Color color = _definition.Effects != null
 			? WeaponEffects.GetColor(_definition.Effects, _sourceFaction)
 			: _definition.Color;
@@ -409,13 +469,17 @@ public partial class Projectile : Area3D
 			};
 		}
 
-		AddChild(new MeshInstance3D
+		_visualSpinPivot.AddChild(new MeshInstance3D
 		{
 			Name = "Visual",
 			Mesh = mesh,
 			Position = position,
 			CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
 		});
+
+		SetProcess(
+			Mathf.Abs(_visualSpinSpeed) > 0.0001f
+		);
 	}
 
 	// Creates the projectile's scaled collision sphere.
@@ -429,6 +493,44 @@ public partial class Projectile : Area3D
 				Radius = _collisionRadius
 			}
 		});
+	}
+
+		// =========================================================
+	// Spins only the visual while guidance controls the projectile's root orientation.
+	public override void _Process(double delta)
+	{
+		if (_hit
+			|| !GodotObject.IsInstanceValid(_visualSpinPivot))
+		{
+			return;
+		}
+
+		_visualSpinAngle = Mathf.Wrap(
+			_visualSpinAngle + _visualSpinSpeed * (float)delta,
+			0.0f,
+			Mathf.Tau
+		);
+
+		_visualSpinPivot.Basis = new Basis(
+			_visualSpinAxis,
+			_visualSpinAngle
+		);
+	}
+
+	// =========================================================
+	// Disables shadow casting throughout an imported projectile visual.
+	private void SetVisualShadowsOff(Node node)
+	{
+		if (node is GeometryInstance3D geometry)
+		{
+			geometry.CastShadow =
+				GeometryInstance3D.ShadowCastingSetting.Off;
+		}
+
+		foreach (Node child in node.GetChildren())
+		{
+			SetVisualShadowsOff(child);
+		}
 	}
 
 	#endregion

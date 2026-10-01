@@ -2,6 +2,9 @@ using Godot;
 
 public static class WeaponEffects
 {
+
+		private static Shader _glowTrailShader;
+
 	#region Colour
 
 	// Resolves the effect colour without changing a shared resource.
@@ -80,7 +83,8 @@ public static class WeaponEffects
 
 	#region Trail
 
-	// Creates world-space particles that remain behind the moving projectile.
+		// =========================================================
+	// Creates world-space trail particles with optional soft shader glow.
 	public static GpuParticles3D CreateTrail(
 		Node3D projectile,
 		WeaponEffectsProfile profile,
@@ -104,13 +108,82 @@ public static class WeaponEffects
 
 		particles.Name = "Trail";
 		particles.OneShot = false;
+		particles.Position = profile.TrailOffset;
+		particles.CastShadow =
+			GeometryInstance3D.ShadowCastingSetting.Off;
+
+		float bounds = Mathf.Max(
+			1.0f,
+			profile.TrailBoundsRadius
+		);
+
+		particles.VisibilityAabb = new Aabb(
+			-Vector3.One * bounds,
+			Vector3.One * bounds * 2.0f
+		);
+
+		if (profile.UseGlowTrail)
+		{
+			if (_glowTrailShader == null)
+			{
+				_glowTrailShader = GD.Load<Shader>(
+					"res://Weapon/ProjectileGlowTrail.gdshader"
+				);
+			}
+
+			if (_glowTrailShader != null)
+			{
+				ShaderMaterial material = new()
+				{
+					Shader = _glowTrailShader
+				};
+
+				material.SetShaderParameter(
+					"energy_color",
+					GetColor(profile, faction)
+				);
+
+				material.SetShaderParameter(
+					"brightness",
+					Mathf.Max(0.0f, profile.EmissionEnergy)
+				);
+
+				float width = Mathf.Max(
+					0.01f,
+					profile.GlowTrailWidth
+				);
+
+				particles.DrawPass1 = new QuadMesh
+				{
+					Size = Vector2.One * width,
+					Material = material
+				};
+
+				if (particles.ProcessMaterial
+					is ParticleProcessMaterial process)
+				{
+					// Slight variation makes the wake less perfectly uniform.
+					process.EmissionShape =
+						ParticleProcessMaterial.EmissionShapeEnum.Sphere;
+
+					process.EmissionSphereRadius = width * 0.06f;
+					process.ScaleMin = 0.75f;
+					process.ScaleMax = 1.0f;
+				}
+			}
+			else
+			{
+				GD.PushError(
+					"Could not load ProjectileGlowTrail.gdshader."
+				);
+			}
+		}
 
 		projectile.AddChild(particles);
 		particles.Emitting = true;
 
 		return particles;
 	}
-
 	// Detaches the stopped trail so its existing particles can finish.
 	public static void FinishTrail(GpuParticles3D trail)
 	{
