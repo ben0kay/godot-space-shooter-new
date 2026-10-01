@@ -129,23 +129,12 @@ private void CreateBoundary(
 }
 
 
-	// =========================================================
-// Adds directional sunlight with shaded asteroid faces and a slightly warm tint.
+// =========================================================
+// Uses the shared sunlight builder for the sandbox.
+// =========================================================
 private void CreateLighting()
 {
-	DirectionalLight3D light = new DirectionalLight3D
-	{
-		Name = "DistantSun",
-		RotationDegrees = new Vector3(-35.0f, -30.0f, 0.0f),
-
-		LightColor = new Color(1.0f, 0.95f, 0.88f),
-		LightEnergy = Mathf.Max(0.0f, SunEnergy),
-
-		ShadowEnabled = true,
-		DirectionalShadowMaxDistance = 350.0f
-	};
-
-	AddChild(light);
+	SpaceEnvironment.AddSun(this, SunEnergy);
 }
 
 	#endregion
@@ -153,51 +142,17 @@ private void CreateLighting()
 	#region Space Environment
 
 // =========================================================
-// Reuses the sandbox's WorldEnvironment and assigns a procedural space sky.
+// Uses the shared sky builder with this sandbox's saved settings.
+// =========================================================
 private void CreateSpaceEnvironment()
 {
-	Shader shader = GD.Load<Shader>(
-		"res://ENVIRONMENT/SpaceSky.gdshader"
+	SpaceEnvironment.ConfigureSky(
+		this,
+		StarBrightness,
+		NebulaStrength,
+		AmbientEnergy
 	);
-
-	if (shader == null)
-	{
-		GD.PushError("Could not load ENVIRONMENT/SpaceSky.gdshader.");
-		return;
-	}
-
-	ShaderMaterial skyMaterial = new ShaderMaterial
-	{
-		Shader = shader
-	};
-
-	skyMaterial.SetShaderParameter(
-		"star_brightness",
-		Mathf.Max(0.0f, StarBrightness)
-	);
-
-	skyMaterial.SetShaderParameter(
-		"nebula_strength",
-		Mathf.Max(0.0f, NebulaStrength)
-	);
-
-	Sky sky = new Sky
-	{
-		SkyMaterial = skyMaterial
-	};
-
-	WorldEnvironment worldEnvironment =
-		GetNodeOrNull<WorldEnvironment>("WorldEnvironment");
-
-	if (worldEnvironment == null)
-	{
-		worldEnvironment = new WorldEnvironment
-		{
-			Name = "WorldEnvironment"
-		};
-
-		AddChild(worldEnvironment);
-	}
+}
 
 	// Duplicate the existing resource so its saved glow settings are preserved.
 	Godot.Environment environment =

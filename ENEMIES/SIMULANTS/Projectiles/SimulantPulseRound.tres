@@ -19,4 +19,3 @@ Lifetime = 5.0
 CollisionRadius = 0.16
 EmissionEnergy = 3.0
 Effects = SubResource("Effects_pulse")
-DamageType = 2

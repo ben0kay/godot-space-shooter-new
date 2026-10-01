@@ -1,25 +1,8 @@
 [gd_resource type="Resource" script_class="ProjectileDefinition" format=3 uid="uid://b6jvpfjhrym8w"]
 
 [ext_resource type="Script" uid="uid://7oyb1xy2i35r" path="res://PROJECTILES/ProjectileDefinition.cs" id="1_projectile"]
-[ext_resource type="Script" uid="uid://w1sd4d63ten5" path="res://COMBAT/Effects/ExplosionVisualSettings.cs" id="2_n08v2"]
 [ext_resource type="PackedScene" uid="uid://bykb33nirbctc" path="res://PROJECTILES/Projectile.tscn" id="2_scene"]
 [ext_resource type="Script" uid="uid://mv26j0357h2" path="res://Weapon/WeaponEffectsProfile.cs" id="3_effects"]
-[ext_resource type="Script" uid="uid://bftvrvagryaoc" path="res://COMBAT/Areas/AttackAreaDefinition.cs" id="4_area"]
-[ext_resource type="Script" uid="uid://dlnk3qn6ug8k8" path="res://PROJECTILES/ProjectileDetonationSettings.cs" id="5_detonation"]
-
-[sub_resource type="Resource" id="Resource_area"]
-script = ExtResource("4_area")
-
-[sub_resource type="Resource" id="Resource_hbpo3"]
-script = ExtResource("2_n08v2")
-RadiusScale = 0.65
-metadata/_custom_type_script = "uid://w1sd4d63ten5"
-
-[sub_resource type="Resource" id="Resource_detonation"]
-script = ExtResource("5_detonation")
-Area = SubResource("Resource_area")
-Damage = 18.0
-Visuals = SubResource("Resource_hbpo3")
 
 [sub_resource type="Resource" id="Resource_effects"]
 script = ExtResource("3_effects")
@@ -44,5 +27,3 @@ EmissionEnergy = 2.0
 VisualLength = 0.8
 VisualWidth = 0.16
 Effects = SubResource("Resource_effects")
-Detonation = SubResource("Resource_detonation")
-DamageType = 3
