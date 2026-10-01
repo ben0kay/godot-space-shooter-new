@@ -45,3 +45,4 @@ VisualLength = 0.8
 VisualWidth = 0.16
 Effects = SubResource("Resource_effects")
 Detonation = SubResource("Resource_detonation")
+DamageType = 3

@@ -41,4 +41,5 @@ Effects = SubResource("Resource_485x1")
 Detonation = SubResource("Resource_nsdd8")
 VisualScene = ExtResource("5_iqx73")
 VisualSpinDegreesPerSecond = 180.0
+DamageType = 2
 metadata/_custom_type_script = "uid://7oyb1xy2i35r"

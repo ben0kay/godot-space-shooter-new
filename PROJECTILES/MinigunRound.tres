@@ -26,3 +26,4 @@ Color = Color(1, 0.85, 0.15, 1)
 VisualLength = 0.9
 VisualWidth = 0.035
 Effects = SubResource("Effects_round")
+DamageType = 1
