@@ -14,11 +14,9 @@ public partial class EnemyDefinition : Resource
 
 	#endregion
 
-	#region Defence
+		#region Defence
 
-	[Export] public float MaxShield = 0.0f;
-	[Export] public float MaxArmour = 0.0f;
-	[Export] public float MaxHull = 24.0f;
+	[Export] public EnemyDefenceStats Defence;
 	[Export] public ShieldVisualSettings ShieldVisuals;
 
 	#endregion

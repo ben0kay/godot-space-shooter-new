@@ -22,84 +22,105 @@ public partial class EnemyShip : CharacterBody3D, IDamageable, ICombatTarget
 		&& !IsQueuedForDeletion();
 	public System.Collections.Generic.List<EnemyHardpoint> Hardpoints { get; } = new();
 	private ShipShield _shield;
+
+		private float _shieldRechargeRate;
+
 	#endregion
 
 	#region Setup
 
-// =========================================================
-// Creates defence, visuals, collision, controllers, and the shared shield.
-public override void _Ready()
-{
-	if (Definition == null)
+	// =========================================================
+	// Creates defence, visuals, collision, controllers, and the shared shield.
+	public override void _Ready()
 	{
-		GD.PushError($"{Name} needs an EnemyDefinition.");
-		return;
-	}
+		// Recharge processing starts only after this ship loses shield.
+		SetPhysicsProcess(false);
 
-	_defence = new ShipDefence(
-		Definition.MaxShield,
-		Definition.MaxArmour,
-		Definition.MaxHull
-	);
-
-	AddToGroup("combat_targets");
-
-	if (Definition.VisualScene != null)
-	{
-		Node3D visual = Definition.VisualScene.Instantiate<Node3D>();
-
-		visual.Name = "Visual";
-
-		AddChild(visual);
-	}
-	else
-	{
-		CreateVisuals();
-	}
-
-	CreateCollision();
-
-	if (Definition.Ranges != null)
-	{
-		Targeting = new EnemyTargeting
+		if (Definition == null || Definition.Defence == null)
 		{
-			Name = "Targeting"
-		};
+			GD.PushError(
+				$"{Name} needs an EnemyDefinition with Defence assigned."
+			);
 
-		Targeting.Initialize(this);
-		AddChild(Targeting);
+			return;
+		}
+
+		EnemyDefenceStats stats = Definition.Defence;
+
+		_defence = new ShipDefence(
+			stats.MaxShield,
+			stats.MaxArmour,
+			stats.MaxHull
+		);
+
+		_shieldRechargeRate = Mathf.Max(
+			0.0f,
+			stats.ShieldRechargeRate
+		);
+
+		AddToGroup("combat_targets");
+
+		if (Definition.VisualScene != null)
+		{
+			Node3D visual =
+				Definition.VisualScene.Instantiate<Node3D>();
+
+			visual.Name = "Visual";
+
+			AddChild(visual);
+		}
+		else
+		{
+			CreateVisuals();
+		}
+
+		CreateCollision();
+
+		if (Definition.Ranges != null)
+		{
+			Targeting = new EnemyTargeting
+			{
+				Name = "Targeting"
+			};
+
+			Targeting.Initialize(this);
+			AddChild(Targeting);
+		}
+
+		CreateHardpoints();
+
+		_shield = ShipShield.Attach(
+			this,
+			_defence,
+			CombatFaction,
+			Definition.ShieldVisuals
+		);
+
+		CreateAttackController();
+
+		if (Definition.MovementControllerScene == null)
+		{
+			return;
+		}
+
+		if (Definition.Handling == null || Definition.Ranges == null)
+		{
+			GD.PushError(
+				$"{Name} needs Handling and Ranges for movement."
+			);
+
+			return;
+		}
+
+		EnemyMovementController controller =
+			Definition.MovementControllerScene
+				.Instantiate<EnemyMovementController>();
+
+		controller.Name = "MovementController";
+		controller.Initialize(this);
+
+		AddChild(controller);
 	}
-
-	CreateHardpoints();
-
-	_shield = ShipShield.Attach(
-		this,
-		_defence,
-		CombatFaction,
-		Definition.ShieldVisuals
-	);
-
-	CreateAttackController();
-
-	if (Definition.MovementControllerScene == null)
-	{
-		return;
-	}
-
-	if (Definition.Handling == null || Definition.Ranges == null)
-	{
-		GD.PushError($"{Name} needs Handling and Ranges for movement.");
-		return;
-	}
-
-	EnemyMovementController controller =
-		Definition.MovementControllerScene.Instantiate<EnemyMovementController>();
-
-	controller.Name = "MovementController";
-	controller.Initialize(this);
-
-	AddChild(controller);
-}
 
 // Creates this ship's attack runtime after its hardpoints have been registered.
 private void CreateAttackController()
@@ -150,29 +171,37 @@ private void RegisterHardpoints(Node parent)
 
 	#region Damage
 
-// =========================================================
-// Resolves layered damage, updates the shield feedback, and removes destroyed enemies.
-public void ApplyDamage(DamageInfo damage)
-{
-	if (_defence == null
-		|| _defence.Destroyed
-		|| damage.Amount <= 0.0f
-		|| IsQueuedForDeletion())
+	// =========================================================
+	// Resolves damage, updates shield feedback, and activates recharge when needed.
+	public void ApplyDamage(DamageInfo damage)
 	{
-		return;
+		if (_defence == null
+			|| _defence.Destroyed
+			|| damage.Amount <= 0.0f
+			|| IsQueuedForDeletion())
+		{
+			return;
+		}
+
+		float shieldBefore = _defence.Shield;
+
+		_defence.ApplyDamage(damage.Amount);
+
+		_shield?.NotifyDamage(shieldBefore, damage);
+
+		if (_defence.Destroyed)
+		{
+			SetPhysicsProcess(false);
+			QueueFree();
+			return;
+		}
+
+		if (_shieldRechargeRate > 0.0f
+			&& _defence.Shield < _defence.MaxShield)
+		{
+			SetPhysicsProcess(true);
+		}
 	}
-
-	float shieldBefore = _defence.Shield;
-
-	_defence.ApplyDamage(damage.Amount);
-
-	_shield?.NotifyDamage(shieldBefore, damage);
-
-	if (_defence.Destroyed)
-	{
-		QueueFree();
-	}
-}
 
 	#endregion
 
@@ -280,6 +309,39 @@ public void ApplyDamage(DamageInfo damage)
 		visual.Mesh = mesh;
 
 		AddChild(visual);
+	}
+
+	#endregion
+
+		#region Shield Recovery
+
+	// =========================================================
+	// Recharges damaged shields and stops processing when recovery is complete.
+	public override void _PhysicsProcess(double delta)
+	{
+		if (_defence == null
+			|| _defence.Destroyed
+			|| IsQueuedForDeletion()
+			|| _shieldRechargeRate <= 0.0f)
+		{
+			SetPhysicsProcess(false);
+			return;
+		}
+
+		bool changed = _defence.RechargeShield(
+			_shieldRechargeRate * (float)delta
+		);
+
+		if (changed)
+		{
+			// Restores shield visibility and collision when recovering from zero.
+			_shield?.Refresh();
+		}
+
+		if (_defence.Shield >= _defence.MaxShield)
+		{
+			SetPhysicsProcess(false);
+		}
 	}
 
 	#endregion

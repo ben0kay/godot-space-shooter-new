@@ -55,4 +55,29 @@ public sealed class ShipDefence
 	}
 
 	#endregion
+
+		#region Recovery
+
+	// =========================================================
+	// Restores shield up to its maximum and returns whether the value changed.
+	public bool RechargeShield(float amount)
+	{
+		if (Destroyed
+			|| amount <= 0.0f
+			|| Shield >= MaxShield)
+		{
+			return false;
+		}
+
+		float previous = Shield;
+
+		Shield = Mathf.Min(
+			MaxShield,
+			Shield + amount
+		);
+
+		return Shield > previous;
+	}
+
+	#endregion
 }

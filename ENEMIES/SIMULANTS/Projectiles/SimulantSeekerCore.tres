@@ -20,11 +20,13 @@ metadata/_custom_type_script = "uid://dlnk3qn6ug8k8"
 [sub_resource type="Resource" id="Resource_485x1"]
 script = ExtResource("1_y5dae")
 ParticleRadius = 0.12
-TrailParticles = 40
-TrailLifetime = 0.7
+TrailParticles = 80
+TrailLifetime = 0.45
 ImpactParticles = 24
 ImpactLifetime = 0.45
 ImpactSpeed = 8.0
+UseGlowTrail = true
+GlowTrailWidth = 1.0
 metadata/_custom_type_script = "uid://mv26j0357h2"
 
 [resource]

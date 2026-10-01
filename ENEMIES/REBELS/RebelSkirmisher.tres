@@ -1,11 +1,18 @@
 [gd_resource type="Resource" script_class="EnemyDefinition" format=3 uid="uid://csvl4g0yb3iy7"]
 
 [ext_resource type="Script" uid="uid://bxv2gm5hx3d6i" path="res://ENEMIES/CORE/EnemyDefinition.cs" id="1_43br7"]
+[ext_resource type="Script" uid="uid://cdmpdcwofk7h" path="res://ENEMIES/CORE/EnemyDefenceStats.cs" id="1_ugbnu"]
+[ext_resource type="Script" uid="uid://bu8ndi4ho15n3" path="res://ENEMIES/CORE/Hardpoints/HardpointDefinition.cs" id="2_6mh7x"]
+
+[sub_resource type="Resource" id="Resource_wd60s"]
+script = ExtResource("1_ugbnu")
+MaxArmour = 60.0
+MaxHull = 42.0
+metadata/_custom_type_script = "uid://cdmpdcwofk7h"
 
 [resource]
 script = ExtResource("1_43br7")
 DisplayName = "Rebel Skirmisher"
 Faction = 2
-MaxArmour = 60.0
-MaxHull = 42.0
+Defence = SubResource("Resource_wd60s")
 metadata/_custom_type_script = "uid://bxv2gm5hx3d6i"
