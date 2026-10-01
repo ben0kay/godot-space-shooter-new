@@ -48,8 +48,8 @@ public partial class PlayerCockpit : Node
 	private Node3D _root;
 	private readonly List<CockpitPanel> _panels = new();
 
-	private Label _flightReadout;
-	private Label _defenceReadout;
+private CockpitInstrument _flightInstrument;
+private CockpitInstrument _defenceInstrument;
 	private Label _weaponReadout;
 
 	private bool _initialized;
@@ -84,104 +84,113 @@ public partial class PlayerCockpit : Node
 	}
 
 	// =========================================================
-	// Creates independent frame and screen roots at the cockpit eye position.
-	private bool InitializeCockpit()
+// Builds the cockpit frame and connects the three screens to player systems.
+private bool InitializeCockpit()
+{
+	Node3D pivot = _ship.GetNodeOrNull<Node3D>(
+		"FlightVisualPivot"
+	);
+
+	Marker3D eye = _ship.GetNodeOrNull<Marker3D>(
+		"CockpitView"
+	);
+
+	if (pivot == null || eye == null || _flight == null)
 	{
-		Node3D pivot = _ship.GetNodeOrNull<Node3D>(
-			"FlightVisualPivot"
-		);
+		return false;
+	}
 
-		Marker3D eye = _ship.GetNodeOrNull<Marker3D>(
-			"CockpitView"
-		);
+	_root = new Node3D
+	{
+		Name = "CockpitSystems",
+		Visible = false
+	};
 
-		if (pivot == null || eye == null || _flight == null)
+	pivot.AddChild(_root);
+
+	_root.Transform =
+		_ship.GlobalTransform.AffineInverse()
+		* eye.GlobalTransform;
+
+	if (BuildPlaceholderFrame)
+	{
+		BuildFrame();
+	}
+
+	CockpitPanel left = CreatePanel(
+		"FlightScreen",
+		LeftScreenPosition,
+		LeftScreenRotationDegrees
+	);
+
+	left.AddReadout("01  /  FLIGHT SYSTEMS", 25);
+	_flightInstrument = left.AddInstrument(_ship, false);
+	left.AddReadout("TAB  INTERACT     /     V  CAMERA", 17);
+
+	CockpitPanel centre = CreatePanel(
+		"DefenceScreen",
+		CentreScreenPosition,
+		CentreScreenRotationDegrees
+	);
+
+	centre.AddReadout("02  /  SHIP INTEGRITY", 25);
+	_defenceInstrument = centre.AddInstrument(_ship, true);
+	centre.AddReadout("SHIELD  /  ARMOUR  /  HULL", 17);
+
+	CockpitPanel right = CreatePanel(
+		"WeaponScreen",
+		RightScreenPosition,
+		RightScreenRotationDegrees
+	);
+
+	right.AddReadout("03  /  WEAPON SYSTEMS", 25);
+
+	right.AddReadout(
+		"PRIMARY  /  " + GetWeaponTitle(
+			_weapons?.PrimaryWeapon?.Weapon
+		),
+		19
+	);
+
+	_weaponReadout = right.AddReadout("", 19);
+	right.AddReadout("SECONDARY SELECTION", 17);
+
+	if (_weapons != null)
+	{
+		for (int index = 0;
+			index < _weapons.SecondaryOptions.Count;
+			index++)
 		{
-			return false;
-		}
+			WeaponDefinition definition =
+				_weapons.SecondaryOptions[index];
 
-		_root = new Node3D
-		{
-			Name = "CockpitSystems",
-			Visible = false
-		};
-
-		pivot.AddChild(_root);
-
-		_root.Transform =
-			_ship.GlobalTransform.AffineInverse()
-			* eye.GlobalTransform;
-
-		if (BuildPlaceholderFrame)
-		{
-			BuildFrame();
-		}
-
-		CockpitPanel left = CreatePanel(
-			"FlightScreen",
-			LeftScreenPosition,
-			LeftScreenRotationDegrees
-		);
-
-		left.AddReadout("FLIGHT SYSTEMS", 30);
-		_flightReadout = left.AddReadout("");
-		left.AddReadout("TAB  /  INTERACT", 22);
-		left.AddReadout("V    /  CAMERA", 22);
-
-		CockpitPanel centre = CreatePanel(
-			"DefenceScreen",
-			CentreScreenPosition,
-			CentreScreenRotationDegrees
-		);
-
-		centre.AddReadout("SHIP INTEGRITY", 30);
-		_defenceReadout = centre.AddReadout("");
-
-		CockpitPanel right = CreatePanel(
-			"WeaponScreen",
-			RightScreenPosition,
-			RightScreenRotationDegrees
-		);
-
-		right.AddReadout("SECONDARY WEAPON", 30);
-		_weaponReadout = right.AddReadout("", 22);
-
-		if (_weapons != null)
-		{
-			for (int index = 0;
-				index < _weapons.SecondaryOptions.Count;
-				index++)
+			if (definition == null)
 			{
-				WeaponDefinition definition =
-					_weapons.SecondaryOptions[index];
+				continue;
+			}
 
-				if (definition == null)
+			int optionIndex = index;
+
+			Button button = right.AddButton(
+				GetWeaponTitle(definition)
+			);
+
+			button.Pressed += () =>
+			{
+				if (!_ship.CockpitInteractionActive)
 				{
-					continue;
+					return;
 				}
 
-				int optionIndex = index;
-
-				Button button = right.AddButton(
-					GetWeaponTitle(definition)
-				);
-
-				button.Pressed += () =>
-				{
-					if (!_ship.CockpitInteractionActive)
-					{
-						return;
-					}
-
-					_weapons.SelectSecondary(optionIndex);
-					RefreshReadouts();
-				};
-			}
+				_weapons.SelectSecondary(optionIndex);
+				RefreshReadouts();
+			};
 		}
-
-		RefreshReadouts();
-		return true;
 	}
+
+	RefreshReadouts();
+	return true;
+}
 
 	// =========================================================
 	// Adds a reusable panel with its own authored position and angle.
@@ -206,65 +215,141 @@ public partial class PlayerCockpit : Node
 	}
 
 	// =========================================================
-	// Builds only the temporary cockpit housing, separate from the panels.
-	private void BuildFrame()
+// Builds layered consoles, a central hood, and illuminated canopy supports.
+private void BuildFrame()
+{
+	Node3D frame = new()
 	{
-		Node3D frame = new()
+		Name = "PlaceholderFrame"
+	};
+
+	_root.AddChild(frame);
+
+	StandardMaterial3D metal = new()
+	{
+		AlbedoColor = new Color(0.035f, 0.045f, 0.055f),
+		Metallic = 0.65f,
+		Roughness = 0.45f
+	};
+
+	StandardMaterial3D silver = new()
+	{
+		AlbedoColor = new Color(0.24f, 0.28f, 0.32f),
+		Metallic = 0.8f,
+		Roughness = 0.35f
+	};
+
+	StandardMaterial3D light = new()
+	{
+		AlbedoColor = new Color(0.1f, 0.8f, 0.95f),
+		ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+		EmissionEnabled = true,
+		Emission = new Color(0.1f, 0.8f, 0.95f),
+		EmissionEnergyMultiplier = 1.2f
+	};
+
+	Vector3[] positions =
+	{
+		LeftScreenPosition,
+		CentreScreenPosition,
+		RightScreenPosition
+	};
+
+	Vector3[] rotations =
+	{
+		LeftScreenRotationDegrees,
+		CentreScreenRotationDegrees,
+		RightScreenRotationDegrees
+	};
+
+	for (int index = 0; index < positions.Length; index++)
+	{
+		Node3D console = new()
 		{
-			Name = "PlaceholderFrame"
+			Name = $"Console{index}",
+			Position = positions[index],
+			RotationDegrees = rotations[index]
 		};
 
-		_root.AddChild(frame);
-
-		StandardMaterial3D metal = new()
-		{
-			AlbedoColor = new Color(0.055f, 0.065f, 0.075f),
-			Metallic = 0.75f,
-			Roughness = 0.40f
-		};
-
-		StandardMaterial3D light = new()
-		{
-			AlbedoColor = new Color(0.1f, 0.8f, 0.95f),
-			ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-			EmissionEnabled = true,
-			Emission = new Color(0.1f, 0.8f, 0.95f),
-			EmissionEnergyMultiplier = 1.5f
-		};
+		frame.AddChild(console);
 
 		AddFramePart(
-			frame, "Dashboard",
-			new Vector3(1.95f, 0.12f, 0.22f),
-			new Vector3(0.0f, -0.56f, -0.94f),
+			console, "ConsoleBody",
+			new Vector3(
+				ScreenSize.X + 0.12f,
+				ScreenSize.Y + 0.12f,
+				0.20f
+			),
+			new Vector3(0.0f, -0.015f, -0.16f),
 			Vector3.Zero, metal
 		);
 
 		AddFramePart(
-			frame, "DashboardLight",
-			new Vector3(1.80f, 0.012f, 0.012f),
-			new Vector3(0.0f, -0.49f, -0.81f),
-			Vector3.Zero, light
+			console, "LowerSilverTrim",
+			new Vector3(ScreenSize.X + 0.09f, 0.025f, 0.055f),
+			new Vector3(0.0f, -ScreenSize.Y * 0.5f - 0.045f, -0.06f),
+			Vector3.Zero, silver
 		);
 
-		for (int side = -1; side <= 1; side += 2)
-		{
-			AddFramePart(
-				frame, $"CanopyPillar{side}",
-				new Vector3(0.035f, 0.95f, 0.045f),
-				new Vector3(side * 0.77f, 0.12f, -0.95f),
-				new Vector3(0.0f, 0.0f, side * 24.0f),
-				metal
-			);
-
-			AddFramePart(
-				frame, $"CanopyLight{side}",
-				new Vector3(0.009f, 0.70f, 0.012f),
-				new Vector3(side * 0.77f, 0.12f, -0.92f),
-				new Vector3(0.0f, 0.0f, side * 24.0f),
-				light
-			);
-		}
+		AddFramePart(
+			console, "LowerLight",
+			new Vector3(ScreenSize.X * 0.75f, 0.006f, 0.012f),
+			new Vector3(0.0f, -ScreenSize.Y * 0.5f - 0.023f, -0.025f),
+			Vector3.Zero, light
+		);
 	}
+
+	AddFramePart(
+		frame, "DashboardBase",
+		new Vector3(2.02f, 0.12f, 0.35f),
+		new Vector3(0.0f, -0.62f, -1.0f),
+		Vector3.Zero, metal
+	);
+
+	AddFramePart(
+		frame, "CentralHood",
+		new Vector3(0.32f, 0.10f, 0.20f),
+		new Vector3(0.0f, -0.15f, -1.04f),
+		new Vector3(-12.0f, 0.0f, 0.0f),
+		metal
+	);
+
+	for (int strip = 0; strip < 3; strip++)
+	{
+		AddFramePart(
+			frame, $"CentralVent{strip}",
+			new Vector3(0.21f, 0.006f, 0.012f),
+			new Vector3(0.0f, -0.175f + strip * 0.022f, -0.925f),
+			Vector3.Zero, light
+		);
+	}
+
+	for (int side = -1; side <= 1; side += 2)
+	{
+		Vector3 pillarRotation = new(0.0f, 0.0f, side * 24.0f);
+
+		AddFramePart(
+			frame, $"CanopyPillar{side}",
+			new Vector3(0.065f, 1.05f, 0.075f),
+			new Vector3(side * 0.80f, 0.13f, -0.96f),
+			pillarRotation, metal
+		);
+
+		AddFramePart(
+			frame, $"CanopyTrim{side}",
+			new Vector3(0.018f, 0.96f, 0.018f),
+			new Vector3(side * 0.80f, 0.13f, -0.913f),
+			pillarRotation, silver
+		);
+
+		AddFramePart(
+			frame, $"CanopyLight{side}",
+			new Vector3(0.007f, 0.72f, 0.009f),
+			new Vector3(side * 0.80f, 0.13f, -0.900f),
+			pillarRotation, light
+		);
+	}
+}
 
 	// =========================================================
 	// Creates one visual frame piece without gameplay collision.
@@ -340,43 +425,31 @@ public partial class PlayerCockpit : Node
 	}
 
 	// =========================================================
-	// Reads existing ship state without owning or duplicating gameplay stats.
-	private void RefreshReadouts()
+// Refreshes live instruments and highlights the equipped secondary weapon.
+private void RefreshReadouts()
+{
+	_flightInstrument?.QueueRedraw();
+	_defenceInstrument?.QueueRedraw();
+
+	int selected = _weapons?.SecondaryIndex ?? -1;
+
+	_weaponReadout.Text =
+		_weapons != null
+		&& selected >= 0
+		&& selected < _weapons.SecondaryOptions.Count
+			? "SECONDARY  /  " + GetWeaponTitle(
+				_weapons.SecondaryOptions[selected]
+			)
+			: "SECONDARY  /  UNASSIGNED";
+
+	foreach (CockpitPanel panel in _panels)
 	{
-		_flightReadout.Text =
-			$"SPEED   {_ship.Velocity.Length():0.0}\n"
-			+ $"BOOST   {_ship.BoostAmount * 100.0f:0}%\n"
-			+ (_ship.CockpitInteractionActive
-				? "MODE    COCKPIT"
-				: "MODE    FLIGHT");
-
-		ShipDefence defence = _ship.Defence;
-
-		_defenceReadout.Text = defence == null
-			? "DEFENCE OFFLINE"
-			: $"SHIELD   {defence.Shield:0} / {defence.MaxShield:0}\n"
-			+ $"ARMOUR   {defence.Armour:0} / {defence.MaxArmour:0}\n"
-			+ $"HULL     {defence.Hull:0} / {defence.MaxHull:0}";
-
-		int selected = _weapons?.SecondaryIndex ?? -1;
-
-		_weaponReadout.Text =
-			_weapons != null
-			&& selected >= 0
-			&& selected < _weapons.SecondaryOptions.Count
-				? "ACTIVE: " + GetWeaponTitle(
-					_weapons.SecondaryOptions[selected]
-				)
-				: "NO SECONDARY EQUIPPED";
-
-		foreach (CockpitPanel panel in _panels)
+		if (_visible)
 		{
-			if (_visible)
-			{
-				panel.Refresh();
-			}
+			panel.Refresh();
 		}
 	}
+}
 
 	// =========================================================
 	// Uses resource names or filenames as temporary equipment labels.

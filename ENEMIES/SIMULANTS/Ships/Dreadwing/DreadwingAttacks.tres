@@ -2,8 +2,8 @@
 
 [ext_resource type="Script" uid="uid://dnknugvhnysd0" path="res://ENEMIES/CORE/Attacks/EnemyAttackControllerDefinition.cs" id="1_controller"]
 [ext_resource type="Script" uid="uid://c018bvm22iks8" path="res://ENEMIES/CORE/Attacks/EnemyAttackDefinition.cs" id="2_attack"]
-[ext_resource type="Resource" uid="uid://bw66vuhpdphfd" path="res://ENEMIES/SIMULANTS/Weapons/SimulantPulse.tres" id="3_pulse"]
-[ext_resource type="Resource" uid="uid://nb740567d3jy" path="res://ENEMIES/SIMULANTS/Weapons/SimulantWeaponSeekerCore.tres" id="4_seeker"]
+[ext_resource type="Resource" uid="uid://bw66vuhpdphfd" path="res://ENEMIES/SIMULANTS/WEAPONS/SimulantPulse.tres" id="3_pulse"]
+[ext_resource type="Resource" uid="uid://nb740567d3jy" path="res://ENEMIES/SIMULANTS/WEAPONS/SimulantWeaponSeekerCore.tres" id="4_seeker"]
 
 [sub_resource type="Resource" id="Attack_cannons"]
 script = ExtResource("2_attack")

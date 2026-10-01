@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="SectorDefinition" format=3 uid="uid://dlk1b3hlbqvgv"]
+
+[ext_resource type="Script" uid="uid://dcyugw4lrj6u" path="res://WORLD/Sectors/Core/SectorDefinition.cs" id="1_killa"]
+
+[resource]
+script = ExtResource("1_killa")
+Key = "mining_belt"
+DisplayName = "Mining Belt"
+Connections = Array[String](["hq"])
+GenerationSeed = 2
+metadata/_custom_type_script = "uid://dcyugw4lrj6u"

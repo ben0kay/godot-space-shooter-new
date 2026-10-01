@@ -4,12 +4,12 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://cu278g8fet35q"
-path="res://.godot/imported/Simulant_PulseCannon.glb-7d9a18cef703f1ccb3872597f1c102fa.scn"
+path="res://.godot/imported/Simulant_PulseCannon.glb-bc5ef3c15adb76d21737cec43b68dcfd.scn"
 
 [deps]
 
-source_file="res://ENEMIES/SIMULANTS/Weapons/Simulant_PulseCannon.glb"
-dest_files=["res://.godot/imported/Simulant_PulseCannon.glb-7d9a18cef703f1ccb3872597f1c102fa.scn"]
+source_file="res://ENEMIES/SIMULANTS/WEAPONS/Simulant_PulseCannon.glb"
+dest_files=["res://.godot/imported/Simulant_PulseCannon.glb-bc5ef3c15adb76d21737cec43b68dcfd.scn"]
 
 [params]
 
