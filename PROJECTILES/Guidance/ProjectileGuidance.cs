@@ -23,28 +23,31 @@ public sealed class ProjectileGuidance
 	#region Setup
 
 	// =========================================================
-	// Connects shared settings and staggers this projectile's target searches.
-	public ProjectileGuidance(
-		Node3D projectile,
-		CollisionObject3D source,
-		Faction sourceFaction,
-		ProjectileGuidanceSettings settings
-	)
-	{
-		_projectile = projectile;
-		_source = source;
-		_sourceFaction = sourceFaction;
-		_settings = settings;
+// Connects guidance settings and staggers target searches.
+// =========================================================
+public ProjectileGuidance(
+    Node3D projectile,
+    CollisionObject3D source,
+    Faction sourceFaction,
+    ProjectileGuidanceSettings settings
+)
+{
+    _projectile = projectile;
+    _source = source;
+    _sourceFaction = sourceFaction;
+    _settings = settings;
 
-		_delayRemaining = Mathf.Max(
-			0.0f,
-			settings.GuidanceDelaySeconds
-		);
+    _delayRemaining = Mathf.Max(
+        0.0f,
+        settings.GuidanceDelaySeconds
+    );
 
-		_searchTimer =
-			(projectile.GetInstanceId() % 10) / 10.0f
-			* Mathf.Max(0.02f, settings.ReacquireIntervalSeconds);
-	}
+    _searchTimer = UpdateStagger.Offset(
+        projectile,
+        Mathf.Max(0.02f, settings.ReacquireIntervalSeconds),
+        10
+    );
+}
 
 	// =========================================================
 	// Accepts the firing ship's target without requiring an acquisition cone check.

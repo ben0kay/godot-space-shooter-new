@@ -14,16 +14,19 @@ public partial class EnemyMovementController : Node
 
 	#region Setup
 
-	// Stores a reference to the enemy ship controlled by this component.
-	public void Initialize(EnemyShip ship)
-	{
-		Ship = ship;
+	// =========================================================
+// Stores the ship and staggers its initial asteroid probe.
+// =========================================================
+public void Initialize(EnemyShip ship)
+{
+    Ship = ship;
 
-		// Different ships begin their probes at different points in the interval.
-		_asteroidProbeTimer =
-			(ship.GetInstanceId() % 10) / 10.0f
-			* EnemyUpdateConfig.AsteroidProbeInterval;
-	}
+    _asteroidProbeTimer = UpdateStagger.Offset(
+        ship,
+        EnemyUpdateConfig.AsteroidProbeInterval,
+        10
+    );
+}
 
 	// Finds the ship's visual node so it can pitch and bank independently.
 	public override void _Ready()

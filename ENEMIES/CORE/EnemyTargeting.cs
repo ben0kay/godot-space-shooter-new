@@ -7,14 +7,19 @@ public partial class EnemyTargeting : Node
 
 	public Node3D Target { get; private set; }
 
-	public void Initialize(EnemyShip ship)
-	{
-		_ship = ship;
+	// =========================================================
+// Stores the ship and staggers its initial target search.
+// =========================================================
+public void Initialize(EnemyShip ship)
+{
+    _ship = ship;
 
-		_searchTimer =
-			(ship.GetInstanceId() % 10) / 10.0f
-			* EnemyUpdateConfig.TargetSearchInterval;
-	}
+    _searchTimer = UpdateStagger.Offset(
+        ship,
+        EnemyUpdateConfig.TargetSearchInterval,
+        10
+    );
+}
 
 	public override void _PhysicsProcess(double delta)
 	{

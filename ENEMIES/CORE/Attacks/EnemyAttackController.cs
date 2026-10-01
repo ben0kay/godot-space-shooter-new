@@ -37,67 +37,71 @@ public partial class EnemyAttackController : Node
 
 	#region Setup
 
-	// Caches each attack's hardpoints and staggers this ship's selection checks.
-	public void Initialize(
-		EnemyShip ship,
-		EnemyAttackControllerDefinition definition
-	)
-	{
-		_ship = ship;
-		_definition = definition;
+// =========================================================
+// Caches attack hardpoints and staggers initial selection.
+// =========================================================
+public void Initialize(
+    EnemyShip ship,
+    EnemyAttackControllerDefinition definition
+)
+{
+    _ship = ship;
+    _definition = definition;
 
-		_random.Randomize();
+    _random.Randomize();
 
-		// Fire after movement and hardpoint aiming have updated.
-		ProcessPhysicsPriority = 20;
+    // Fire after movement and hardpoint aiming have updated.
+    ProcessPhysicsPriority = 20;
 
-		_selectionTimer =
-			(ship.GetInstanceId() % 10) / 10.0f
-			* Mathf.Max(0.02f, definition.SelectionIntervalSeconds);
+    _selectionTimer = UpdateStagger.Offset(
+        ship,
+        Mathf.Max(0.02f, definition.SelectionIntervalSeconds),
+        10
+    );
 
-		foreach (EnemyAttackDefinition attack in definition.Attacks)
-		{
-			if (attack == null)
-			{
-				continue;
-			}
+    foreach (EnemyAttackDefinition attack in definition.Attacks)
+    {
+        if (attack == null)
+        {
+            continue;
+        }
 
-			if (attack.Weapon?.ProjectileScene == null)
-			{
-				GD.PushError(
-					$"{ship.Name}: attack '{attack.Key}' needs a weapon "
-					+ "with a ProjectileScene."
-				);
+        if (attack.Weapon?.ProjectileScene == null)
+        {
+            GD.PushError(
+                $"{ship.Name}: attack '{attack.Key}' needs a weapon "
+                + "with a ProjectileScene."
+            );
 
-				continue;
-			}
+            continue;
+        }
 
-			AttackState state = new()
-			{
-				Definition = attack
-			};
+        AttackState state = new()
+        {
+            Definition = attack
+        };
 
-			foreach (EnemyHardpoint mount in ship.Hardpoints)
-			{
-				if (mount.Group == attack.HardpointGroup)
-				{
-					state.Mounts.Add(mount);
-				}
-			}
+        foreach (EnemyHardpoint mount in ship.Hardpoints)
+        {
+            if (mount.Group == attack.HardpointGroup)
+            {
+                state.Mounts.Add(mount);
+            }
+        }
 
-			if (state.Mounts.Count == 0)
-			{
-				GD.PushError(
-					$"{ship.Name}: attack '{attack.Key}' could not find "
-					+ $"hardpoint group '{attack.HardpointGroup}'."
-				);
+        if (state.Mounts.Count == 0)
+        {
+            GD.PushError(
+                $"{ship.Name}: attack '{attack.Key}' could not find "
+                + $"hardpoint group '{attack.HardpointGroup}'."
+            );
 
-				continue;
-			}
+            continue;
+        }
 
-			_attacks.Add(state);
-		}
-	}
+        _attacks.Add(state);
+    }
+}
 
 	#endregion
 
