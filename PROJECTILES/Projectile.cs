@@ -20,6 +20,9 @@ public partial class Projectile : Area3D
 	private ProjectileGuidance _guidance;
 
 	private bool _hit;
+	private ProjectileDetonationSettings _detonation;
+	private float _explosionDamage;
+	private float _explosionScale;
 
 	#endregion
 
@@ -49,6 +52,7 @@ public partial class Projectile : Area3D
 		}
 
 		ProjectileLaunchOverrides launch = weapon.LaunchOverrides;
+		ConfigureDetonation(launch);
 
 		_damage = Mathf.Max(
 			0.0f,
@@ -134,6 +138,31 @@ public partial class Projectile : Area3D
 		BodyEntered += OnBodyEntered;
 	}
 
+		// =========================================================
+	// Resolves explosion defaults and weapon overrides without modifying resources.
+	private void ConfigureDetonation(ProjectileLaunchOverrides launch)
+	{
+		_detonation = launch != null && launch.OverrideDetonation
+			? launch.Detonation
+			: _definition.Detonation;
+
+		if (_detonation == null)
+		{
+			return;
+		}
+
+		_explosionDamage = Mathf.Max(
+			0.0f,
+			launch != null && launch.OverrideExplosionDamage
+				? launch.ExplosionDamage
+				: _detonation.Damage
+		);
+
+		_explosionScale =
+			Mathf.Max(0.01f, _detonation.AreaScale)
+			* Mathf.Max(0.01f, launch?.ExplosionScale ?? 1.0f);
+	}
+
 	#endregion
 
 	#region Flight And Impact
@@ -208,52 +237,63 @@ public partial class Projectile : Area3D
 	}
 
 	// =========================================================
-// Applies a projectile impact while ignoring the firing ship's shield.
-private void ResolveHit(Node3D body, Vector3 normal)
-{
-	if (_hit
-		|| _definition == null
-		|| body == null
-		|| body == _source)
+	// Applies direct impact, optional explosion damage, and the projectile's effects.
+	private void ResolveHit(Node3D body, Vector3 normal)
 	{
-		return;
-	}
+		if (_hit
+			|| _definition == null
+			|| body == null
+			|| body == _source)
+		{
+			return;
+		}
 
-	if (body is ShipShield ownShield && ownShield.Ship == _source)
-	{
-		return;
-	}
+		if (body is ShipShield ownShield
+			&& ownShield.Ship == _source)
+		{
+			return;
+		}
 
-	_hit = true;
+		_hit = true;
 
-	CollisionObject3D source = GodotObject.IsInstanceValid(_source)
-		? _source
-		: null;
+		CollisionObject3D source =
+			GodotObject.IsInstanceValid(_source)
+				? _source
+				: null;
 
-	if (body is IDamageable target)
-	{
-		target.ApplyDamage(new DamageInfo(
-			_damage,
-			source,
-			_sourceFaction,
+		// Resolve the explosion before direct damage can destroy cover.
+		if (_detonation?.OnImpact == true)
+		{
+			Detonate();
+		}
+
+		if (GodotObject.IsInstanceValid(body)
+			&& !body.IsQueuedForDeletion()
+			&& body is IDamageable target)
+		{
+			target.ApplyDamage(new DamageInfo(
+				_damage,
+				source,
+				_sourceFaction,
+				GlobalPosition,
+				normal
+			));
+		}
+
+		WeaponEffects.Impact(
+			this,
 			GlobalPosition,
-			normal
-		));
+			normal,
+			_definition.Effects,
+			_sourceFaction
+		);
+
+		WeaponEffects.FinishTrail(_trail);
+		QueueFree();
 	}
 
-	WeaponEffects.Impact(
-		this,
-		GlobalPosition,
-		normal,
-		_definition.Effects,
-		_sourceFaction
-	);
-
-	WeaponEffects.FinishTrail(_trail);
-	QueueFree();
-}
-
-	// Removes an expired shot while its remaining trail particles finish.
+		// =========================================================
+	// Optionally detonates an expired shot, then releases its remaining trail.
 	private void Expire()
 	{
 		if (_hit)
@@ -263,8 +303,41 @@ private void ResolveHit(Node3D body, Vector3 normal)
 
 		_hit = true;
 
+		if (_detonation?.OnLifetimeEnd == true)
+		{
+			Detonate();
+
+			WeaponEffects.Impact(
+				this,
+				GlobalPosition,
+				Vector3.Up,
+				_definition.Effects,
+				_sourceFaction
+			);
+		}
+
 		WeaponEffects.FinishTrail(_trail);
 		QueueFree();
+	}
+
+		// =========================================================
+	// Sends one explosion through the shared area-damage resolver.
+	private void Detonate()
+	{
+		if (_detonation?.Area == null)
+		{
+			return;
+		}
+
+		AttackAreaDamage.ApplyBurst(
+			this,
+			_detonation.Area,
+			GlobalPosition,
+			_explosionDamage,
+			_explosionScale,
+			_source,
+			_sourceFaction
+		);
 	}
 
 	#endregion

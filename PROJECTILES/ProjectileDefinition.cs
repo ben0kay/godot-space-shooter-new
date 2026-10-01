@@ -47,4 +47,11 @@ public partial class ProjectileDefinition : Resource
 	[Export] public ProjectileGuidanceSettings Guidance;
 
 	#endregion
+
+		#region Detonation
+
+	// Null means this projectile has no explosion.
+	[Export] public ProjectileDetonationSettings Detonation;
+
+	#endregion
 }

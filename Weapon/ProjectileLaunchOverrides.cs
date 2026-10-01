@@ -40,4 +40,18 @@ public partial class ProjectileLaunchOverrides : Resource
 	[Export] public ProjectileGuidanceSettings Guidance;
 
 	#endregion
+
+		#region Detonation
+
+	// Enabling this with a null resource disables the projectile's explosion.
+	[Export] public bool OverrideDetonation = false;
+	[Export] public ProjectileDetonationSettings Detonation;
+
+	[Export] public bool OverrideExplosionDamage = false;
+	[Export] public float ExplosionDamage = 20.0f;
+
+	// Multiplies the detonation's area scale independently of projectile size.
+	[Export] public float ExplosionScale = 1.0f;
+
+	#endregion
 }

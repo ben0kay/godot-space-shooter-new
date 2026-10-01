@@ -368,8 +368,8 @@ public partial class PlayerFlightVisuals : Node
 
 	#region Cockpit Placeholder
 
-	// =========================================================
-	// Creates a small dashboard and canopy frame relative to the eye marker.
+		// =========================================================
+	// Builds the cockpit at the eye marker, then attaches it to the ship's visual pivot.
 	private void CreateCockpitPlaceholder()
 	{
 		_cockpitInterior = new Node3D
@@ -430,6 +430,9 @@ public partial class PlayerFlightVisuals : Node
 			new Vector3(0.0f, 0.26f, -0.55f),
 			metal
 		);
+
+		// Follow the same cosmetic pitch and bank as the hull and guns.
+		_cockpitInterior.Reparent(_visualPivot, true);
 	}
 
 	// =========================================================
