@@ -64,19 +64,29 @@ public partial class PlayerDefenceHud : CanvasLayer
 	}
 
 	// =========================================================
-	// Refreshes flight information ten times per second.
-	public override void _Process(double delta)
+// Shows the screen HUD in third person and refreshes it ten times per second.
+public override void _Process(double delta)
+{
+	PlayerFlightVisuals flight =
+		_ship.GetNodeOrNull<PlayerFlightVisuals>("FlightVisuals");
+
+	_canvas.Visible = flight?.IsFirstPerson != true;
+
+	if (!_canvas.Visible)
 	{
-		_refreshRemaining -= (float)delta;
-
-		if (_refreshRemaining > 0.0f)
-		{
-			return;
-		}
-
-		_refreshRemaining = 0.1f;
-		Refresh();
+		return;
 	}
+
+	_refreshRemaining -= (float)delta;
+
+	if (_refreshRemaining > 0.0f)
+	{
+		return;
+	}
+
+	_refreshRemaining = 0.1f;
+	Refresh();
+}
 
 	// =========================================================
 	// Disconnects the defence event when the HUD is removed.

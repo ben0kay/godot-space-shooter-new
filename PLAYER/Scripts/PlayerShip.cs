@@ -93,6 +93,8 @@ private float _yawRate;
 
 	public bool IsDashing => _dash?.IsDashing == true;
 
+	public bool CockpitInteractionActive { get; private set; }
+
 	#endregion
 
 	#region Godot Events
@@ -157,52 +159,49 @@ private float _yawRate;
 		Input.MouseMode = Input.MouseModeEnum.Captured;
 	}
 
-	// Handles mouse capture, relative steering, and right-Control descent.
-	public override void _Input(InputEvent inputEvent)
+	// =========================================================
+// Handles flight mouse capture and steering while respecting cockpit UI control.
+public override void _Input(InputEvent inputEvent)
+{
+	if (_destroyed || CockpitInteractionActive)
 	{
-		if (_destroyed)
+		return;
+	}
+
+	if (inputEvent is InputEventKey key)
+	{
+		if (key.Keycode == KEY_RELEASE_MOUSE
+			&& key.Pressed
+			&& !key.Echo)
 		{
+			Input.MouseMode = Input.MouseModeEnum.Visible;
+			_mouseMovement = Vector2.Zero;
+			_rightCtrlHeld = false;
 			return;
 		}
 
-		if (inputEvent is InputEventKey key)
+		if (key.Keycode == KEY_DESCEND
+			&& key.Location == KEY_DESCEND_LOCATION
+			&& !key.Echo)
 		{
-			if (key.Keycode == KEY_RELEASE_MOUSE && key.Pressed && !key.Echo)
-			{
-				Input.MouseMode = Input.MouseModeEnum.Visible;
-				_mouseMovement = Vector2.Zero;
-				_rightCtrlHeld = false;
-				return;
-			}
-
-			if (
-				key.Keycode == KEY_DESCEND
-				&& key.Location == KEY_DESCEND_LOCATION
-				&& !key.Echo
-			)
-			{
-				_rightCtrlHeld = key.Pressed;
-			}
-		}
-
-		if (
-			inputEvent is InputEventMouseButton button
-			&& button.Pressed
-			&& Input.MouseMode == Input.MouseModeEnum.Visible
-		)
-		{
-			Input.MouseMode = Input.MouseModeEnum.Captured;
-			return;
-		}
-
-		if (
-			inputEvent is InputEventMouseMotion motion
-			&& Input.MouseMode == Input.MouseModeEnum.Captured
-		)
-		{
-			_mouseMovement += motion.ScreenRelative;
+			_rightCtrlHeld = key.Pressed;
 		}
 	}
+
+	if (inputEvent is InputEventMouseButton button
+		&& button.Pressed
+		&& Input.MouseMode == Input.MouseModeEnum.Visible)
+	{
+		Input.MouseMode = Input.MouseModeEnum.Captured;
+		return;
+	}
+
+	if (inputEvent is InputEventMouseMotion motion
+		&& Input.MouseMode == Input.MouseModeEnum.Captured)
+	{
+		_mouseMovement += motion.ScreenRelative;
+	}
+}
 
 // =========================================================
 // Clears held input and steering momentum when the application loses focus.
@@ -228,30 +227,47 @@ public override void _Notification(int what)
 		Input.MouseMode = Input.MouseModeEnum.Visible;
 	}
 
-	// Updates steering, boost, and physical movement.
-	public override void _PhysicsProcess(double delta)
+	// =========================================================
+// Updates flight normally or preserves existing travel during cockpit interaction.
+public override void _PhysicsProcess(double delta)
+{
+	float seconds = (float)delta;
+
+	if (_destroyed)
 	{
-		float seconds = (float)delta;
+		IsBoosting = false;
 
-		if (_destroyed)
-		{
-			IsBoosting = false;
-			BoostAmount = Mathf.MoveToward(
-				BoostAmount,
-				0.0f,
-				BoostResponse * seconds
-			);
+		BoostAmount = Mathf.MoveToward(
+			BoostAmount,
+			0.0f,
+			Mathf.Max(0.0f, BoostResponse) * seconds
+		);
 
-			PitchInput = 0.0f;
-			YawInput = 0.0f;
-			StrafeInput = 0.0f;
-			RollInput = 0.0f;
-			return;
-		}
-
-		UpdateRotation(seconds);
-		UpdateMovement(seconds);
+		PitchInput = 0.0f;
+		YawInput = 0.0f;
+		StrafeInput = 0.0f;
+		RollInput = 0.0f;
+		return;
 	}
+
+	if (CockpitInteractionActive)
+	{
+		IsBoosting = false;
+
+		BoostAmount = Mathf.MoveToward(
+			BoostAmount,
+			0.0f,
+			Mathf.Max(0.0f, BoostResponse) * seconds
+		);
+
+		// Keep collision handling active while coasting at existing velocity.
+		MoveAndSlide();
+		return;
+	}
+
+	UpdateRotation(seconds);
+	UpdateMovement(seconds);
+}
 
 	#endregion
 
@@ -503,4 +519,33 @@ private void UpdateRotation(float seconds)
 	}
 
 	#endregion
+
+	// =========================================================
+// Transfers mouse control between flight and cockpit UI without stopping travel.
+public void SetCockpitInteraction(bool active)
+{
+	CockpitInteractionActive = active && IsCombatTargetable;
+
+	_mouseMovement = Vector2.Zero;
+	_rightCtrlHeld = false;
+
+	_pitchRate = 0.0f;
+	_yawRate = 0.0f;
+
+	PitchInput = 0.0f;
+	YawInput = 0.0f;
+	StrafeInput = 0.0f;
+	RollInput = 0.0f;
+
+	IsBoosting = false;
+
+	if (CockpitInteractionActive)
+	{
+		_dash?.EndDash();
+	}
+
+	Input.MouseMode = CockpitInteractionActive || !IsCombatTargetable
+		? Input.MouseModeEnum.Visible
+		: Input.MouseModeEnum.Captured;
+}
 }

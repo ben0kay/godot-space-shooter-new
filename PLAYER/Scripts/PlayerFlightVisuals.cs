@@ -179,26 +179,37 @@ public partial class PlayerFlightVisuals : Node
 	#region Camera Input
 
 	// =========================================================
-	// Toggles views once per key press while gameplay input is active.
-	public override void _Input(InputEvent inputEvent)
+// Toggles camera view and returns cockpit interaction to flight when leaving it.
+public override void _Input(InputEvent inputEvent)
+{
+	if (inputEvent is not InputEventKey key
+		|| !key.Pressed
+		|| key.Echo
+		|| key.PhysicalKeycode != ToggleCameraKey)
 	{
-		if (inputEvent is not InputEventKey key
-			|| !key.Pressed
-			|| key.Echo
-			|| key.PhysicalKeycode != ToggleCameraKey)
-		{
-			return;
-		}
-
-		if (!GodotObject.IsInstanceValid(_ship)
-			|| !_ship.IsCombatTargetable
-			|| Input.MouseMode != Input.MouseModeEnum.Captured)
-		{
-			return;
-		}
-
-		SetCameraMode(!IsFirstPerson);
+		return;
 	}
+
+	if (!GodotObject.IsInstanceValid(_ship)
+		|| !_ship.IsCombatTargetable)
+	{
+		return;
+	}
+
+	if (Input.MouseMode != Input.MouseModeEnum.Captured
+		&& !_ship.CockpitInteractionActive)
+	{
+		return;
+	}
+
+	if (_ship.CockpitInteractionActive)
+	{
+		_ship.SetCockpitInteraction(false);
+	}
+
+	SetCameraMode(!IsFirstPerson);
+	GetViewport().SetInputAsHandled();
+}
 
 	// =========================================================
 	// Switches instantly between the authored chase view and cockpit view.
