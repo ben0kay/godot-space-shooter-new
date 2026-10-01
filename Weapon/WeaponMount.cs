@@ -271,77 +271,84 @@ public partial class WeaponMount : Node3D
 		return true;
 	}
 
-				// =========================================================
-	// Alternates projectile launches through local or borrowed muzzle markers.
-	private void FireShot()
+	// =========================================================
+// Alternates projectile launches and gives the active sector ownership of them.
+private void FireShot()
+{
+	List<Marker3D> muzzles = _muzzles;
+
+	if (GodotObject.IsInstanceValid(ProjectileMuzzleProvider)
+		&& ProjectileMuzzleProvider._muzzles.Count > 0)
 	{
-		List<Marker3D> muzzles = _muzzles;
-
-		if (GodotObject.IsInstanceValid(ProjectileMuzzleProvider)
-			&& ProjectileMuzzleProvider._muzzles.Count > 0)
-		{
-			muzzles = ProjectileMuzzleProvider._muzzles;
-		}
-
-		if (muzzles.Count == 0)
-		{
-			return;
-		}
-
-		_muzzleIndex %= muzzles.Count;
-
-		Marker3D muzzle = muzzles[_muzzleIndex];
-
-		_muzzleIndex = (_muzzleIndex + 1) % muzzles.Count;
-
-		Vector3 direction = -muzzle.GlobalBasis.Z.Normalized();
-
-		if (AimAtCameraCenter)
-		{
-			Vector3 aimPoint = GetCameraAimPoint(
-				muzzle.GlobalPosition,
-				CameraAimDistance
-			);
-
-			Vector3 offset = aimPoint - muzzle.GlobalPosition;
-
-			if (offset.LengthSquared() > 0.0001f)
-			{
-				direction = offset.Normalized();
-			}
-		}
-
-		direction = ApplySpread(direction);
-
-		Vector3 up =
-			Mathf.Abs(direction.Dot(Vector3.Up)) > 0.99f
-				? Vector3.Right
-				: Vector3.Up;
-
-		Projectile projectile =
-			Weapon.ProjectileScene.Instantiate<Projectile>();
-
-		GetTree().CurrentScene.AddChild(projectile);
-
-		projectile.LookAtFromPosition(
-			muzzle.GlobalPosition,
-			muzzle.GlobalPosition + direction,
-			up
-		);
-
-		projectile.Configure(
-			Weapon,
-			_ship,
-			ShooterFaction,
-			_ship.Velocity
-		);
-
-		WeaponEffects.Muzzle(
-			muzzle,
-			Weapon.MuzzleEffects,
-			ShooterFaction
-		);
+		muzzles = ProjectileMuzzleProvider._muzzles;
 	}
+
+	if (muzzles.Count == 0)
+	{
+		return;
+	}
+
+	Node parent = WorldSector.GetContentParent(this);
+
+	if (!GodotObject.IsInstanceValid(parent))
+	{
+		return;
+	}
+
+	_muzzleIndex %= muzzles.Count;
+
+	Marker3D muzzle = muzzles[_muzzleIndex];
+
+	_muzzleIndex = (_muzzleIndex + 1) % muzzles.Count;
+
+	Vector3 direction = -muzzle.GlobalBasis.Z.Normalized();
+
+	if (AimAtCameraCenter)
+	{
+		Vector3 aimPoint = GetCameraAimPoint(
+			muzzle.GlobalPosition,
+			CameraAimDistance
+		);
+
+		Vector3 offset = aimPoint - muzzle.GlobalPosition;
+
+		if (offset.LengthSquared() > 0.0001f)
+		{
+			direction = offset.Normalized();
+		}
+	}
+
+	direction = ApplySpread(direction);
+
+	Vector3 up =
+		Mathf.Abs(direction.Dot(Vector3.Up)) > 0.99f
+			? Vector3.Right
+			: Vector3.Up;
+
+	Projectile projectile =
+		Weapon.ProjectileScene.Instantiate<Projectile>();
+
+	parent.AddChild(projectile);
+
+	projectile.LookAtFromPosition(
+		muzzle.GlobalPosition,
+		muzzle.GlobalPosition + direction,
+		up
+	);
+
+	projectile.Configure(
+		Weapon,
+		_ship,
+		ShooterFaction,
+		_ship.Velocity
+	);
+
+	WeaponEffects.Muzzle(
+		muzzle,
+		Weapon.MuzzleEffects,
+		ShooterFaction
+	);
+}
 
 		// =========================================================
 	// Samples a random direction uniformly inside the weapon's spread cone.

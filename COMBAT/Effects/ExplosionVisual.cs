@@ -45,7 +45,7 @@ public partial class ExplosionVisual : Node3D
 			return;
 		}
 
-		Node scene = context.GetTree().CurrentScene;
+		Node scene = WorldSector.GetContentParent(context);
 
 		if (!GodotObject.IsInstanceValid(scene))
 		{

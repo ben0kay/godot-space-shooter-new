@@ -35,7 +35,7 @@ public static class WeaponEffects
 		}
 
 		Burst(
-			emitter.GetTree().CurrentScene,
+			WorldSector.GetContentParent(emitter),
 			emitter.GlobalTransform,
 			profile,
 			faction,
@@ -67,7 +67,7 @@ public static class WeaponEffects
 		}
 
 		Burst(
-			projectile.GetTree().CurrentScene,
+			WorldSector.GetContentParent(projectile),
 			new Transform3D(Basis.Identity, position),
 			profile,
 			faction,
@@ -193,7 +193,7 @@ public static class WeaponEffects
 		}
 
 		trail.Emitting = false;
-		trail.Reparent(trail.GetTree().CurrentScene, true);
+		trail.Reparent(WorldSector.GetContentParent(trail), true);
 
 		trail.GetTree().CreateTimer(trail.Lifetime + 0.1).Timeout += () =>
 		{

@@ -107,7 +107,7 @@ private const int MaximumActiveDustBursts = 8;
 			return;
 		}
 
-		Node scene = context.GetTree().CurrentScene;
+		Node scene = WorldSector.GetContentParent(context);
 
 		if (scene == null)
 		{
@@ -244,7 +244,7 @@ public static void Dust(
 		return;
 	}
 
-	Node scene = context.GetTree().CurrentScene;
+	Node scene = WorldSector.GetContentParent(context);
 
 	if (scene == null)
 	{
