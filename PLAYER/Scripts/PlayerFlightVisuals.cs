@@ -28,8 +28,20 @@ public partial class PlayerFlightVisuals : Node
 
 	[ExportSubgroup("Movement Follow")]
 
+/// <summary>
+/// Maximum sideways camera displacement caused by player strafing.
+/// </summary>
 [Export] public float CameraStrafeOffset = 0.8f;
+
+/// <summary>
+/// Maximum vertical camera displacement caused by ascending or descending.
+/// </summary>
 [Export] public float CameraVerticalOffset = 0.45f;
+
+/// <summary>
+/// How quickly the camera catches up to movement-based offsets.
+/// Higher values make the camera follow more tightly.
+/// </summary>
 [Export] public float MovementFollowResponse = 4.0f;
 
 	#endregion

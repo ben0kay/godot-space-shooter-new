@@ -5,6 +5,9 @@ render_mode disable_fog;
 
 uniform float star_brightness = 1.4;
 uniform float nebula_strength = 0.025;
+uniform bool planet_enabled = true;
+uniform vec3 planet_direction = vec3(0.55, 0.25, -1.0);
+uniform float planet_radius = 0.95;
 
 // =========================================================
 // Generates repeatable random values for a star cell.
@@ -57,6 +60,78 @@ vec3 star_layer(
 	float brightness = mix(0.35, 1.0, random.y);
 
 	return tint * star * brightness;
+}
+
+// =========================================================
+// Draws a distant shaded planet and a thin atmospheric limb.
+// The planet belongs to the sky and has no gameplay collision.
+// =========================================================
+vec3 draw_planet(vec3 ray, vec3 background)
+{
+	if (!planet_enabled)
+	{
+		return background;
+	}
+
+	vec3 centre = normalize(planet_direction) * 3.0;
+	float radius = clamp(planet_radius, 0.1, 2.0);
+
+	float projected = dot(ray, centre);
+	float discriminant =
+		projected * projected
+		- dot(centre, centre)
+		+ radius * radius;
+
+	if (projected <= 0.0 || discriminant <= 0.0)
+	{
+		return background;
+	}
+
+	float distance_to_surface =
+		projected - sqrt(discriminant);
+
+	vec3 normal = normalize(
+		ray * distance_to_surface - centre
+	);
+
+	vec3 sunlight = normalize(vec3(-0.7, 0.6, 0.4));
+
+	float illumination = max(dot(normal, sunlight), 0.0);
+
+	float bands = sin(
+		normal.y * 27.0
+		+ sin(normal.x * 11.0) * 1.8
+		+ sin(normal.z * 17.0)
+	);
+
+	vec3 surface = mix(
+		vec3(0.035, 0.09, 0.14),
+		vec3(0.15, 0.28, 0.34),
+		bands * 0.5 + 0.5
+	);
+
+	float clouds = smoothstep(
+		0.55,
+		0.9,
+		sin(normal.x * 31.0 + normal.z * 19.0)
+			* sin(normal.y * 23.0)
+	);
+
+	surface = mix(
+		surface,
+		vec3(0.48, 0.6, 0.65),
+		clouds * 0.65
+	);
+
+	float limb = pow(
+		1.0 - max(dot(normal, -ray), 0.0),
+		4.0
+	);
+
+	return surface * (0.035 + illumination * 0.9)
+		+ vec3(0.08, 0.38, 0.65)
+			* limb
+			* (0.08 + illumination);
 }
 
 // =========================================================
@@ -119,5 +194,8 @@ void sky()
 		+ vec3(0.3, 0.1, 0.4) * purple_cloud
 	) * cloud_detail * nebula_strength;
 
-	COLOR = haze + stars * star_brightness;
+	COLOR = draw_planet(
+	direction,
+	haze + stars * star_brightness
+);
 }
