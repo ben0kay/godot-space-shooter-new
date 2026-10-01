@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://dlgkviqw4iclg"]
+
+[ext_resource type="PackedScene" uid="uid://cqt3qu6fub14m" path="res://PLAYER/PlayerShip.tscn" id="1_o2lj1"]
+[ext_resource type="PackedScene" uid="uid://dsugn4j7goyug" path="res://ENVIRONMENT/SpaceEnvironment.tscn" id="2_wpdsr"]
+[ext_resource type="PackedScene" uid="uid://p1ljdismfhqg" path="res://WORLD/Structures/HQ/StartingHQ.tscn" id="3_vhcrb"]
+
+[node name="HQSector" type="Node3D" unique_id=1156159610]
+
+[node name="PlayerShip" parent="." unique_id=1589947766 instance=ExtResource("1_o2lj1")]
+
+[node name="SpaceEnvironment" parent="." unique_id=1122803755 instance=ExtResource("2_wpdsr")]
+
+[node name="StartingHQ" parent="." unique_id=1867535214 instance=ExtResource("3_vhcrb")]

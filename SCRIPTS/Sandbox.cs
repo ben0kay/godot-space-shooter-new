@@ -154,37 +154,6 @@ private void CreateSpaceEnvironment()
 	);
 }
 
-	// Duplicate the existing resource so its saved glow settings are preserved.
-	Godot.Environment environment =
-		worldEnvironment.Environment != null
-			? (Godot.Environment)worldEnvironment.Environment.Duplicate()
-			: new Godot.Environment();
-
-	environment.BackgroundMode = Godot.Environment.BGMode.Sky;
-	environment.Sky = sky;
-
-	// Use a little controlled ambient light rather than illuminating rocks from the star sky.
-	environment.AmbientLightSource =
-		Godot.Environment.AmbientSource.Color;
-
-	environment.AmbientLightColor = new Color(
-		0.32f, 0.4f, 0.55f
-	);
-
-	environment.AmbientLightEnergy = Mathf.Max(
-		0.0f,
-		AmbientEnergy
-	);
-
-	environment.ReflectedLightSource =
-		Godot.Environment.ReflectionSource.Disabled;
-
-	environment.FogEnabled = false;
-	environment.VolumetricFogEnabled = false;
-
-	worldEnvironment.Environment = environment;
-}
-
 #endregion
 
 	#region Asteroid Spawning
