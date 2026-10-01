@@ -19,13 +19,13 @@ public partial class EnemyMovementController : Node
 // =========================================================
 public void Initialize(EnemyShip ship)
 {
-    Ship = ship;
+	Ship = ship;
 
-    _asteroidProbeTimer = UpdateStagger.Offset(
-        ship,
-        EnemyUpdateConfig.AsteroidProbeInterval,
-        10
-    );
+	_asteroidProbeTimer = UpdateStagger.Offset(
+		ship,
+		EnemyUpdateConfig.AsteroidProbeInterval,
+		10
+	);
 }
 
 	// Finds the ship's visual node so it can pitch and bank independently.

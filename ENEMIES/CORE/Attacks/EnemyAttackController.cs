@@ -69,7 +69,7 @@ public void Initialize(
         if (attack.Weapon?.ProjectileScene == null)
         {
             GD.PushError(
-                $"{ship.Name}: attack '{attack.Key}' needs a weapon "
+				$"{ship.Name}: attack '{attack.Key}' needs a weapon "
                 + "with a ProjectileScene."
             );
 
@@ -92,8 +92,8 @@ public void Initialize(
         if (state.Mounts.Count == 0)
         {
             GD.PushError(
-                $"{ship.Name}: attack '{attack.Key}' could not find "
-                + $"hardpoint group '{attack.HardpointGroup}'."
+				$"{ship.Name}: attack '{attack.Key}' could not find "
+				+ $"hardpoint group '{attack.HardpointGroup}'."
             );
 
             continue;

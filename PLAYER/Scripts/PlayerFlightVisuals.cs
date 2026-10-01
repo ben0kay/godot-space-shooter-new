@@ -257,112 +257,126 @@ public partial class PlayerFlightVisuals : Node
 	}
 
 	// =========================================================
-	// Applies chase-camera pullback or subtle cockpit motion using one camera.
-	private void UpdateCamera(float seconds, bool instant = false)
-	{
-		if (!GodotObject.IsInstanceValid(_camera))
-		{
-			return;
-		}
+// Follows the ship's visual motion in cockpit view and applies
+// smooth camera pullback and sway in third-person view.
+// =========================================================
+private void UpdateCamera(float seconds, bool instant = false)
+{
+    if (!GodotObject.IsInstanceValid(_camera))
+    {
+        return;
+    }
 
-		float blend = instant
-			? 1.0f
-			: 1.0f - Mathf.Exp(
-				-Mathf.Max(0.0f, CameraResponse) * seconds
-			);
+    float blend = instant
+        ? 1.0f
+        : 1.0f - Mathf.Exp(
+            -Mathf.Max(0.0f, CameraResponse) * seconds
+        );
 
-		Vector3 desiredPosition;
-		Basis desiredBasis;
-		float desiredFov;
+    Vector3 desiredPosition;
+    Basis desiredBasis;
+    float desiredFov;
 
-		if (IsFirstPerson
-			&& GodotObject.IsInstanceValid(_cockpitView))
-		{
-			// Convert the authored eye marker into the camera parent's space.
-			Transform3D cockpitTransform =
-				_ship.GlobalTransform.AffineInverse()
-				* _cockpitView.GlobalTransform;
+    bool cockpitActive =
+        IsFirstPerson
+        && GodotObject.IsInstanceValid(_cockpitView)
+        && GodotObject.IsInstanceValid(_visualPivot);
 
-			Basis cockpitBasis =
-				cockpitTransform.Basis.Orthonormalized();
+    if (cockpitActive)
+    {
+        // Read the authored eye position relative to the ship.
+        Transform3D eyeRest =
+            _ship.GlobalTransform.AffineInverse()
+            * _cockpitView.GlobalTransform;
 
-			Vector3 sway = new(
-				-_ship.YawInput * CockpitSway,
-				-_ship.PitchInput * CockpitSway,
-				0.0f
-			);
+        // Apply the same cosmetic pitch and bank as the cockpit.
+        Transform3D cockpitTransform =
+            _visualPivot.Transform * eyeRest;
 
-			desiredPosition =
-				cockpitTransform.Origin + cockpitBasis * sway;
+        Basis cockpitBasis =
+            cockpitTransform.Basis.Orthonormalized();
 
-			Vector3 tilt = new(
-				Mathf.DegToRad(
-					-_ship.PitchInput * CockpitTiltDegrees
-				),
-				0.0f,
-				Mathf.DegToRad(
-					-_ship.YawInput * CockpitTiltDegrees
-				)
-			);
+        Vector3 sway = new(
+            -_ship.YawInput * CockpitSway,
+            -_ship.PitchInput * CockpitSway,
+            0.0f
+        );
 
-			desiredBasis =
-				cockpitBasis * Basis.FromEuler(tilt);
+        desiredPosition =
+            cockpitTransform.Origin + cockpitBasis * sway;
 
-			desiredFov = Mathf.Clamp(
-				CockpitFov
-					+ _ship.BoostAmount * CockpitBoostFov,
-				20.0f,
-				120.0f
-			);
-		}
-		else
-		{
-			float movement = Mathf.Clamp(
-				_ship.Velocity.Length()
-					/ Mathf.Max(0.01f, _ship.ForwardSpeed),
-				0.0f,
-				1.0f
-			);
+        Vector3 tilt = new(
+            Mathf.DegToRad(
+                -_ship.PitchInput * CockpitTiltDegrees
+            ),
+            0.0f,
+            Mathf.DegToRad(
+                -_ship.YawInput * CockpitTiltDegrees
+            )
+        );
 
-			float normalBack = movement * MovingCameraBack;
+        desiredBasis =
+            cockpitBasis * Basis.FromEuler(tilt);
 
-			float back = Mathf.Lerp(
-				normalBack,
-				BoostCameraBack,
-				_ship.BoostAmount
-			);
+        desiredFov = Mathf.Clamp(
+            CockpitFov
+                + _ship.BoostAmount * CockpitBoostFov,
+            20.0f,
+            120.0f
+        );
+    }
+    else
+    {
+        float movement = Mathf.Clamp(
+            _ship.Velocity.Length()
+                / Mathf.Max(0.01f, _ship.ForwardSpeed),
+            0.0f,
+            1.0f
+        );
 
-			desiredPosition =
-				_thirdPersonRest.Origin + new Vector3(
-					-_ship.YawInput * CameraSideSway,
-					-_ship.PitchInput * CameraPitchSway,
-					back
-				);
+        float normalBack = movement * MovingCameraBack;
 
-			desiredBasis =
-				_thirdPersonRest.Basis.Orthonormalized();
+        float back = Mathf.Lerp(
+            normalBack,
+            BoostCameraBack,
+            _ship.BoostAmount
+        );
 
-			desiredFov = _thirdPersonFov;
-		}
+        desiredPosition =
+            _thirdPersonRest.Origin + new Vector3(
+                -_ship.YawInput * CameraSideSway,
+                -_ship.PitchInput * CameraPitchSway,
+                back
+            );
 
-		Vector3 position = _camera.Position.Lerp(
-			desiredPosition,
-			blend
-		);
+        desiredBasis =
+            _thirdPersonRest.Basis.Orthonormalized();
 
-		Basis rotation = _camera.Basis.Orthonormalized().Slerp(
-			desiredBasis,
-			blend
-		);
+        desiredFov = _thirdPersonFov;
+    }
 
-		_camera.Transform = new Transform3D(rotation, position);
+    // Ship visuals are already smoothed. Follow them directly
+	// in cockpit view so the camera doesn't lag behind the hull.
+	float transformBlend = cockpitActive ? 1.0f : blend;
 
-		_camera.Fov = Mathf.Lerp(
-			_camera.Fov,
-			desiredFov,
-			blend
-		);
-	}
+	Vector3 position = _camera.Position.Lerp(
+		desiredPosition,
+		transformBlend
+	);
+
+	Basis rotation = _camera.Basis.Orthonormalized().Slerp(
+		desiredBasis,
+		transformBlend
+	);
+
+	_camera.Transform = new Transform3D(rotation, position);
+
+	_camera.Fov = Mathf.Lerp(
+		_camera.Fov,
+		desiredFov,
+		blend
+	);
+}
 
 	#endregion
 

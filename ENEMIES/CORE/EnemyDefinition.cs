@@ -6,6 +6,8 @@ public partial class EnemyDefinition : Resource
 {
 	#region Identity
 
+	[ExportGroup("Identity")]
+
 	[Export] public string DisplayName = "Enemy Ship";
 	[Export] public Faction Faction = Faction.Neutral;
 	[Export] public EnemyRole Role = EnemyRole.Fighter;
@@ -13,6 +15,22 @@ public partial class EnemyDefinition : Resource
 	[Export] public EnemyRank Rank = EnemyRank.Common;
 
 	#endregion
+
+	#region Doctrine
+
+[ExportGroup("Doctrine")]
+
+[Export] public FactionDoctrine DoctrineOverride;
+
+// =========================================================
+// Uses this ship type's override or its shared faction doctrine.
+// =========================================================
+public FactionDoctrine GetDoctrine()
+{
+	return DoctrineOverride ?? FactionDoctrines.Get(Faction);
+}
+
+#endregion
 
 		#region Defence
 

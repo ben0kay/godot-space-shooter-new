@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="FactionDoctrine" format=3 uid="uid://dq4j4t0mdo3ct"]
+
+[ext_resource type="Script" uid="uid://ceovtc5b6xjil" path="res://ENEMIES/CORE/Doctrine/FactionDoctrine.cs" id="1_ubfdt"]
+
+[resource]
+script = ExtResource("1_ubfdt")
+metadata/_custom_type_script = "uid://wiwlig41xmw3"
