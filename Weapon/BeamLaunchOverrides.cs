@@ -23,4 +23,11 @@ public partial class BeamLaunchOverrides : Resource
 	[Export] public float ExtensionSpeed = 1000.0f;
 
 	#endregion
+
+		#region Damage Classification
+
+	[Export] public bool OverrideDamageType = false;
+	[Export] public DamageType DamageType = global::DamageType.Neutral;
+
+	#endregion
 }

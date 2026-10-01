@@ -45,6 +45,7 @@ public partial class SustainedBeam : Node3D
 		private WeaponMount _aimMount;
 	private Vector3 _aimPoint;
 	private bool _hasAimPoint;
+	private DamageType _damageType;
 
 	#endregion
 
@@ -85,6 +86,10 @@ public void Configure(
 	_faction = faction;
 
 	BeamLaunchOverrides overrides = weapon.BeamOverrides;
+
+	_damageType = overrides != null && overrides.OverrideDamageType
+		? overrides.DamageType
+		: _definition.DamageType;
 
 	_range = Mathf.Max(
 		0.01f,
@@ -420,7 +425,7 @@ public void Configure(
 	#region Simulation
 
 		// =========================================================
-	// Updates aim, extends the beam, and applies damage along its actual muzzle ray.
+	// Extends the aimed beam and delivers typed damage at its contact point.
 	public override void _PhysicsProcess(double delta)
 	{
 		if (!_active)
@@ -487,7 +492,8 @@ public void Configure(
 					_source,
 					_faction,
 					position,
-					normal
+					normal,
+					_damageType
 				));
 			}
 		}

@@ -172,7 +172,7 @@ private void RegisterHardpoints(Node parent)
 	#region Damage
 
 	// =========================================================
-	// Resolves damage, updates shield feedback, and activates recharge when needed.
+	// Resolves typed damage, updates shield feedback, and enables recovery.
 	public void ApplyDamage(DamageInfo damage)
 	{
 		if (_defence == null
@@ -185,7 +185,7 @@ private void RegisterHardpoints(Node parent)
 
 		float shieldBefore = _defence.Shield;
 
-		_defence.ApplyDamage(damage.Amount);
+		_defence.ApplyDamage(damage.Amount, damage.Type);
 
 		_shield?.NotifyDamage(shieldBefore, damage);
 

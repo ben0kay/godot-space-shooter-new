@@ -69,4 +69,10 @@ public partial class ProjectileDefinition : Resource
 	[Export] public float VisualSpinDegreesPerSecond = 0.0f;
 
 	#endregion
+
+	#region Damage Classification
+
+	[Export] public DamageType DamageType = global::DamageType.Neutral;
+
+	#endregion
 }

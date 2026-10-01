@@ -258,31 +258,31 @@ public override void _Notification(int what)
 	#region Defence
 
 	// =========================================================
-// Resolves defence damage and informs the shield visual of actual shield loss.
-public void ApplyDamage(DamageInfo damage)
-{
-	if (Defence == null || _destroyed || damage.Amount <= 0.0f)
+	// Resolves typed defence damage and informs shield visuals and the HUD.
+	public void ApplyDamage(DamageInfo damage)
 	{
-		return;
+		if (Defence == null || _destroyed || damage.Amount <= 0.0f)
+		{
+			return;
+		}
+
+		float shieldBefore = Defence.Shield;
+
+		Defence.ApplyDamage(damage.Amount, damage.Type);
+
+		_shield?.NotifyDamage(shieldBefore, damage);
+		DefenceChanged?.Invoke();
+
+		if (Defence.Destroyed)
+		{
+			_destroyed = true;
+			Velocity = Vector3.Zero;
+
+			Input.MouseMode = Input.MouseModeEnum.Visible;
+
+			GD.Print("Player ship destroyed.");
+		}
 	}
-
-	float shieldBefore = Defence.Shield;
-
-	Defence.ApplyDamage(damage.Amount);
-
-	_shield?.NotifyDamage(shieldBefore, damage);
-	DefenceChanged?.Invoke();
-
-	if (Defence.Destroyed)
-	{
-		_destroyed = true;
-		Velocity = Vector3.Zero;
-
-		Input.MouseMode = Input.MouseModeEnum.Visible;
-
-		GD.Print("Player ship destroyed.");
-	}
-}
 
 	#endregion
 

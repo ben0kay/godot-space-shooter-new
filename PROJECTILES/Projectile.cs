@@ -27,6 +27,9 @@ public partial class Projectile : Area3D
 	private Vector3 _visualSpinAxis;
 	private float _visualSpinSpeed;
 	private float _visualSpinAngle;
+		private DamageType _damageType;
+	private DamageType _explosionDamageType;
+
 
 	#endregion
 
@@ -142,10 +145,14 @@ public partial class Projectile : Area3D
 		BodyEntered += OnBodyEntered;
 	}
 
-		// =========================================================
-	// Resolves explosion defaults and weapon overrides without modifying resources.
+	// =========================================================
+	// Resolves direct-impact classification and independent explosion settings.
 	private void ConfigureDetonation(ProjectileLaunchOverrides launch)
 	{
+		_damageType = launch != null && launch.OverrideDamageType
+			? launch.DamageType
+			: _definition.DamageType;
+
 		_detonation = launch != null && launch.OverrideDetonation
 			? launch.Detonation
 			: _definition.Detonation;
@@ -161,6 +168,11 @@ public partial class Projectile : Area3D
 				? launch.ExplosionDamage
 				: _detonation.Damage
 		);
+
+		_explosionDamageType =
+			launch != null && launch.OverrideExplosionDamageType
+				? launch.ExplosionDamageType
+				: _detonation.DamageType;
 
 		_explosionScale =
 			Mathf.Max(0.01f, _detonation.AreaScale)
@@ -240,8 +252,8 @@ public partial class Projectile : Area3D
 		ResolveHit(body, normal);
 	}
 
-	// =========================================================
-	// Applies direct impact, optional explosion damage, and the projectile's effects.
+		// =========================================================
+	// Applies typed impact and explosion damage, then releases projectile effects.
 	private void ResolveHit(Node3D body, Vector3 normal)
 	{
 		if (_hit
@@ -265,7 +277,6 @@ public partial class Projectile : Area3D
 				? _source
 				: null;
 
-		// Resolve the explosion before direct damage can destroy cover.
 		if (_detonation?.OnImpact == true)
 		{
 			Detonate();
@@ -280,7 +291,8 @@ public partial class Projectile : Area3D
 				source,
 				_sourceFaction,
 				GlobalPosition,
-				normal
+				normal,
+				_damageType
 			));
 		}
 
@@ -324,8 +336,8 @@ public partial class Projectile : Area3D
 		QueueFree();
 	}
 
-		// =========================================================
-	// Applies one damage burst and starts its independent visual effect.
+	// =========================================================
+	// Applies the independently classified explosion and starts its visual effect.
 	private void Detonate()
 	{
 		if (_detonation?.Area == null)
@@ -345,7 +357,8 @@ public partial class Projectile : Area3D
 			_explosionDamage,
 			_explosionScale,
 			_source,
-			_sourceFaction
+			_sourceFaction,
+			_explosionDamageType
 		);
 
 		ExplosionVisual.Spawn(

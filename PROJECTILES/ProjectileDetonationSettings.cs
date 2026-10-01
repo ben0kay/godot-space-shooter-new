@@ -25,4 +25,11 @@ public partial class ProjectileDetonationSettings : Resource
 	[Export] public ExplosionVisualSettings Visuals;
 
 	#endregion
+
+    	#region Damage Classification
+
+	// Independent of the projectile's direct-impact type.
+	[Export] public DamageType DamageType = global::DamageType.Neutral;
+
+	#endregion
 }

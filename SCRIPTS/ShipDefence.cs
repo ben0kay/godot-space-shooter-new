@@ -1,5 +1,6 @@
 using Godot;
 
+// Holds one ship's current defence and resolves typed damage across its layers.
 public sealed class ShipDefence
 {
 	#region Values
@@ -18,7 +19,8 @@ public sealed class ShipDefence
 
 	#region Setup
 
-	// Creates full defence layers from a ship's maximum values.
+	// =========================================================
+	// Creates independent runtime defence from the ship's maximum values.
 	public ShipDefence(float maxShield, float maxArmour, float maxHull)
 	{
 		MaxShield = Mathf.Max(0.0f, maxShield);
@@ -34,32 +36,96 @@ public sealed class ShipDefence
 
 	#region Damage
 
-	// Carries excess damage through shield, armour, then hull.
-	public void ApplyDamage(float amount)
+	// =========================================================
+	// Resolves each layer using remaining base damage and that layer's multiplier.
+	public void ApplyDamage(
+		float amount,
+		DamageType type = DamageType.Neutral
+	)
 	{
 		if (amount <= 0.0f || Destroyed)
 		{
 			return;
 		}
 
-		float shieldDamage = Mathf.Min(Shield, amount);
-		Shield -= shieldDamage;
-		amount -= shieldDamage;
+		DamageTypeStats stats = DamageRules.GetStats(type);
 
-		float armourDamage = Mathf.Min(Armour, amount);
-		Armour -= armourDamage;
-		amount -= armourDamage;
+		float shield = Shield;
+		float armour = Armour;
+		float hull = Hull;
 
-		float hullDamage = Mathf.Min(Hull, amount);
-		Hull -= hullDamage;
+		ApplyLayer(
+			ref shield,
+			ref amount,
+			stats?.ShieldMultiplier ?? 1.0f
+		);
+
+		ApplyLayer(
+			ref armour,
+			ref amount,
+			stats?.ArmourMultiplier ?? 1.0f
+		);
+
+		ApplyLayer(
+			ref hull,
+			ref amount,
+			stats?.HullMultiplier ?? 1.0f
+		);
+
+		Shield = shield;
+		Armour = armour;
+		Hull = hull;
+	}
+
+	// =========================================================
+	// Deducts the base damage consumed by a layer before passing overflow onward.
+	private static void ApplyLayer(
+		ref float layer,
+		ref float remainingDamage,
+		float multiplier
+	)
+	{
+		if (layer <= 0.0f || remainingDamage <= 0.0f)
+		{
+			return;
+		}
+
+		multiplier = Mathf.Max(0.0f, multiplier);
+
+		if (multiplier == 0.0f)
+		{
+			remainingDamage = 0.0f;
+			return;
+		}
+
+		float damageToBreak = layer / multiplier;
+
+		if (remainingDamage >= damageToBreak)
+		{
+			layer = 0.0f;
+
+			remainingDamage = Mathf.Max(
+				0.0f,
+				remainingDamage - damageToBreak
+			);
+		}
+		else
+		{
+			layer = Mathf.Max(
+				0.0f,
+				layer - remainingDamage * multiplier
+			);
+
+			remainingDamage = 0.0f;
+		}
 	}
 
 	#endregion
 
-		#region Recovery
+	#region Recovery
 
 	// =========================================================
-	// Restores shield up to its maximum and returns whether the value changed.
+	// Restores shield up to its maximum and reports whether the value changed.
 	public bool RechargeShield(float amount)
 	{
 		if (Destroyed

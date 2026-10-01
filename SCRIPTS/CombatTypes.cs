@@ -1,9 +1,11 @@
 using Godot;
 
-// Carries damage ownership and optional world-space surface contact information.
+// Carries damage amount, type, ownership, and optional surface contact information.
 public readonly struct DamageInfo
 {
 	public readonly float Amount;
+	public readonly DamageType Type;
+
 	public readonly CollisionObject3D Source;
 	public readonly Faction SourceFaction;
 
@@ -12,16 +14,19 @@ public readonly struct DamageInfo
 	public readonly Vector3 ImpactNormal;
 
 	// =========================================================
-	// Records damage and optional contact information without requiring every caller to provide it.
+	// Records damage while allowing older callers to default to neutral damage.
 	public DamageInfo(
 		float amount,
 		CollisionObject3D source,
 		Faction sourceFaction,
 		Vector3? impactPosition = null,
-		Vector3? impactNormal = null
+		Vector3? impactNormal = null,
+		DamageType type = DamageType.Neutral
 	)
 	{
 		Amount = amount;
+		Type = type;
+
 		Source = source;
 		SourceFaction = sourceFaction;
 

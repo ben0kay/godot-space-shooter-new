@@ -54,4 +54,18 @@ public partial class ProjectileLaunchOverrides : Resource
 	[Export] public float ExplosionScale = 1.0f;
 
 	#endregion
+
+		#region Damage Classification
+
+	[Export] public bool OverrideDamageType = false;
+	[Export] public DamageType DamageType = global::DamageType.Neutral;
+
+	#endregion
+
+		#region Explosion Classification
+
+	[Export] public bool OverrideExplosionDamageType = false;
+	[Export] public DamageType ExplosionDamageType = global::DamageType.Neutral;
+
+	#endregion
 }

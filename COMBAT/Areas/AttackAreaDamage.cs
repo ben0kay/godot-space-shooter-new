@@ -7,8 +7,8 @@ public static class AttackAreaDamage
 {
 	#region Burst Resolution
 
-	// =========================================================
-	// Applies one spherical burst and returns the number of recipients damaged.
+		// =========================================================
+	// Applies one typed spherical burst after resolving cover and distance falloff.
 	public static int ApplyBurst(
 		Node3D context,
 		AttackAreaDefinition definition,
@@ -16,7 +16,8 @@ public static class AttackAreaDamage
 		float damage,
 		float areaScale,
 		CollisionObject3D source,
-		Faction sourceFaction
+		Faction sourceFaction,
+		DamageType damageType = DamageType.Neutral
 	)
 	{
 		if (!GodotObject.IsInstanceValid(context)
@@ -50,8 +51,6 @@ public static class AttackAreaDamage
 		List<CollisionObject3D> recipients =
 			CollectRecipients(space, query);
 
-		// Resolve amounts before damaging anything so destroyed cover
-		// does not change the result for later recipients in this burst.
 		List<PendingHit> pending = new();
 
 		foreach (CollisionObject3D recipient in recipients)
@@ -107,7 +106,6 @@ public static class AttackAreaDamage
 				continue;
 			}
 
-			// Points back toward the explosion, like an incoming surface normal.
 			Vector3 normal = distance > 0.001f
 				? -offset / distance
 				: Vector3.Up;
@@ -136,7 +134,8 @@ public static class AttackAreaDamage
 					GodotObject.IsInstanceValid(source) ? source : null,
 					sourceFaction,
 					position,
-					hit.Normal
+					hit.Normal,
+					damageType
 				));
 
 				damaged++;

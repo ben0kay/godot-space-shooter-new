@@ -69,5 +69,11 @@ public partial class BeamDefinition : Resource
 	[Export] public int MuzzleAmount = 12;
 	[Export] public int ImpactAmount = 24;
 
+	#region Damage Classification
+
+	[Export] public DamageType DamageType = global::DamageType.Neutral;
+
+	#endregion
+
 	#endregion
 }
