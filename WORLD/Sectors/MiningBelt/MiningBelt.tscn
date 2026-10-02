@@ -20,3 +20,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 180)
 script = ExtResource("3_n3oj4")
 AsteroidScene = ExtResource("2_yty73")
 Definition = ExtResource("5_2acvy")
+
+[node name="AsteroidField2" type="Node3D" parent="." unique_id=1927297808]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1800, 100, -1200)
+script = ExtResource("3_n3oj4")
+AsteroidScene = ExtResource("2_yty73")
+Definition = ExtResource("5_2acvy")
+FieldKey = "belt_outer"
+SeedOffset = 1
