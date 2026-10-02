@@ -30,7 +30,7 @@ public partial class WorldSector : Node3D
 		if (!GodotObject.IsInstanceValid(context)
 			|| !context.IsInsideTree())
 		{
-			return null;
+			return null;s
 		}
 
 		Node ancestor = context;

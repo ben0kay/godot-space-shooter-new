@@ -1,33 +1,17 @@
-[gd_resource type="Resource" script_class="BeamDefinition" format=3]
+[gd_resource type="Resource" script_class="WeaponDefinition" format=3]
 
-[ext_resource type="Script" path="res://Weapon/BeamDefinition.cs" id="1_beam"]
+[ext_resource type="Script" path="res://Weapon/WeaponDefinition.cs" id="1_weapon"]
+[ext_resource type="Resource" path="res://BEAMS/MiningBeam.tres" id="2_beam"]
+[ext_resource type="Script" path="res://MINING/Core/MiningSettings.cs" id="3_mining"]
+
+[sub_resource type="Resource" id="Mining_player"]
+script = ExtResource("3_mining")
+UnitsPerSecond = 4.0
+Strength = 1.0
 
 [resource]
-script = ExtResource("1_beam")
-Range = 100.0
-Width = 0.055
-ExtensionSpeed = 1200.0
-DamagePerSecond = 0.0
-ReleaseDuration = 0.1
-CollisionMask = 1
-UseFactionPalette = false
-EnergyColor = Color(1, 0.78, 0.12, 1)
-CoreColor = Color(1, 0.96, 0.68, 1)
-EmissionEnergy = 1.0
-GlowWidthMultiplier = 2.5
-GlowOpacity = 0.08
-WobbleAmount = 0.008
-WobbleWavelength = 8.0
-WobbleSpeed = 10.0
-PulseAmount = 0.04
-PulseSpeed = 14.0
-BandSpacing = 6.0
-BandSpeed = 24.0
-BandStrength = 0.25
-ParticlesEnabled = true
-EmberAmount = 16
-EmberLifetime = 0.25
-EmberSize = 0.025
-EmberSpeed = 0.5
-MuzzleAmount = 6
-ImpactAmount = 18
+resource_name = "Mining Beam"
+script = ExtResource("1_weapon")
+Delivery = 1
+Beam = ExtResource("2_beam")
+Mining = SubResource("Mining_player")
