@@ -11,16 +11,27 @@ public partial class ShipCommandView : Control
 	public int DragSlot = -1;
 	public Vector2 DragPosition;
 
+    	// Remains unassigned until a real wallet supplies the balance.
+	public long? Credits;
+
 	public static readonly Rect2 SortBounds =
 		new(50.0f, 805.0f, 180.0f, 44.0f);
+
+        	public static readonly Rect2 DropBounds =
+		new(434.0f, 805.0f, 180.0f, 44.0f);
 
 	#endregion
 
 	#region Appearance
 
-	private static readonly Color Background = new("#020a0e");
-	private static readonly Color Panel = new("#041015");
-	private static readonly Color PanelLight = new("#0a262d");
+	private static readonly Color Background =
+		new(0.008f, 0.028f, 0.04f, 0.76f);
+
+	private static readonly Color Panel =
+		new(0.015f, 0.045f, 0.06f, 0.56f);
+
+	private static readonly Color PanelLight =
+		new(0.025f, 0.15f, 0.18f, 0.70f);
 	private static readonly Color Outline = new("#005b69");
 	private static readonly Color Accent = new("#00e8f2");
 	private static readonly Color Core = new("#beffff");
@@ -55,8 +66,8 @@ public partial class ShipCommandView : Control
 		SetPhysicsProcess(false);
 	}
 
-	// =========================================================
-	// Draws the common frame and the currently selected inventory page.
+		// =========================================================
+	// Draws a translucent command frame, navigation tabs, and the selected page.
 	public override void _Draw()
 	{
 		if (_font == null || Cargo == null)
@@ -64,17 +75,50 @@ public partial class ShipCommandView : Control
 			return;
 		}
 
-		DrawRect(new Rect2(Vector2.Zero, Size), Background);
-		DrawRect(new Rect2(1, 1, 1758, 938), Outline, false, 2);
+		DrawCutPanel(
+			new Rect2(3, 3, 1754, 934),
+			Background,
+			new Color(TextColor, 0.65f),
+			32.0f
+		);
 
-		DrawLine(new Vector2(50, 118), new Vector2(1710, 118), Outline);
+		DrawCutPanel(
+			new Rect2(12, 12, 1736, 916),
+			new Color(0, 0, 0, 0),
+			new Color(Accent, 0.28f),
+			28.0f
+		);
 
-		Write("SHIP COMMAND", new Vector2(54, 52), 30, Core);
+		DrawCornerBrackets(
+			new Rect2(37, 37, 1686, 866),
+			new Color(Core, 0.65f),
+			22.0f
+		);
+
+		// Small header icon and title.
+		DrawCutPanel(
+			new Rect2(50, 28, 44, 44),
+			PanelLight,
+			Accent,
+			9.0f
+		);
+
+		WriteCentered("+", new Rect2(50, 28, 44, 44), 26, Core);
+		Write("SHIP COMMAND", new Vector2(110, 53), 30, Core);
+
 		Write(
 			"PERSONAL VESSEL  /  " + Tabs[ActiveTab],
-			new Vector2(54, 80),
+			new Vector2(110, 79),
 			15,
-			Muted
+			TextColor
+		);
+
+		Write("CREDITS", new Vector2(1500, 40), 13, Muted);
+		Write(
+			Credits.HasValue ? Credits.Value.ToString("N0") : "—",
+			new Vector2(1500, 65),
+			22,
+			Core
 		);
 
 		for (int index = 0; index < Tabs.Length; index++)
@@ -82,21 +126,37 @@ public partial class ShipCommandView : Control
 			Rect2 bounds = TabBounds(index);
 			bool selected = index == ActiveTab;
 
-			DrawRect(bounds, selected ? PanelLight : Panel);
-			DrawRect(
+			DrawCutPanel(
 				bounds,
+				selected ? PanelLight : Panel,
 				selected ? Accent : Outline,
-				false,
-				selected ? 2.0f : 1.0f
+				8.0f,
+				selected
 			);
 
 			WriteCentered(
 				Tabs[index],
 				bounds,
 				16,
-				selected ? Core : Muted
+				selected ? Core : TextColor
 			);
 		}
+
+		DrawLine(
+			new Vector2(50, 140),
+			new Vector2(1710, 140),
+			new Color(Accent, 0.35f),
+			1,
+			true
+		);
+
+		DrawLine(
+			new Vector2(50, 140),
+			new Vector2(310, 140),
+			Accent,
+			2,
+			true
+		);
 
 		if (ActiveTab == 0)
 		{
@@ -104,12 +164,7 @@ public partial class ShipCommandView : Control
 		}
 		else
 		{
-			Write(
-				Tabs[ActiveTab],
-				new Vector2(50, 185),
-				24,
-				Core
-			);
+			Write(Tabs[ActiveTab], new Vector2(50, 185), 24, Core);
 
 			Write(
 				"INTERFACE NOT INSTALLED",
@@ -119,11 +174,17 @@ public partial class ShipCommandView : Control
 			);
 		}
 
+		DrawLine(
+			new Vector2(50, 875),
+			new Vector2(1710, 875),
+			Outline
+		);
+
 		Write(
 			"E / ESC  CLOSE     •     DRAG STACKS TO MOVE",
 			new Vector2(50, 905),
 			16,
-			Muted
+			TextColor
 		);
 
 		if (DragSlot >= 0)
@@ -132,8 +193,8 @@ public partial class ShipCommandView : Control
 		}
 	}
 
-	// =========================================================
-	// Draws cargo slots, the inspector, capacity, and available actions.
+		// =========================================================
+	// Draws cargo contents, capacity, and actions available for the selected stack.
 	private void DrawCargoPage()
 	{
 		Write("CARGO HOLD", new Vector2(50, 176), 20, Core);
@@ -146,27 +207,38 @@ public partial class ShipCommandView : Control
 		DrawInspector();
 
 		float capacity = Cargo.MaximumMass;
+
 		float fraction = capacity > 0.0f
 			? Mathf.Clamp(Cargo.UsedMass / capacity, 0.0f, 1.0f)
-			: 0.0f;
+			: Cargo.UsedMass > 0.0f ? 1.0f : 0.0f;
+
+		Color capacityColour = Cargo.IsOverCapacity
+			? new Color(1.0f, 0.55f, 0.15f)
+			: CargoColor;
+
+		string capacityTitle = Cargo.IsOverCapacity
+			? "OVER CAPACITY"
+			: "CAPACITY";
 
 		Write(
-			$"CAPACITY  {Cargo.UsedMass:0.0} / {capacity:0.0}",
+			$"{capacityTitle}  {Cargo.UsedMass:0.0} / {capacity:0.0}",
 			new Vector2(50, 729),
 			17,
-			TextColor
+			capacityColour
 		);
 
 		DrawRect(new Rect2(50, 750, 792, 12), PanelLight);
-		DrawRect(new Rect2(50, 750, 792 * fraction, 12), CargoColor);
+		DrawRect(new Rect2(50, 750, 792 * fraction, 12), capacityColour);
 		DrawRect(new Rect2(50, 750, 792, 12), Outline, false);
+
+		bool canDrop = !Cargo.GetSlot(SelectedSlot).IsEmpty;
 
 		DrawButton(SortBounds, "SORT", true);
 		DrawButton(new Rect2(242, 805, 180, 44), "TRANSFER", false);
-		DrawButton(new Rect2(434, 805, 180, 44), "DROP", false);
+		DrawButton(DropBounds, "DROP", canDrop);
 
 		Write(
-			"TRANSFER / DROP REQUIRE STORAGE AND WORLD PICKUPS",
+			"DROP RELEASES THE SELECTED STACK INTO SPACE",
 			new Vector2(890, 805),
 			15,
 			Muted
@@ -174,35 +246,48 @@ public partial class ShipCommandView : Control
 	}
 
 	// =========================================================
-	// Draws one cargo slot with its item icon, label, and stored amount.
+	// Draws clipped cargo cells with illuminated selection and coloured item icons.
 	private void DrawSlot(int index)
 	{
 		Rect2 bounds = SlotBounds(index);
 		CargoSlot slot = Cargo.GetSlot(index);
 		bool selected = index == SelectedSlot;
 
-		DrawRect(bounds, selected ? PanelLight : Panel);
-		DrawRect(
+		DrawCutPanel(
 			bounds,
+			selected ? PanelLight : Panel,
 			selected ? Accent : Outline,
-			false,
-			selected ? 2.0f : 1.0f
+			7.0f,
+			selected
 		);
+
+		if (selected)
+		{
+			DrawCornerBrackets(
+				new Rect2(
+					bounds.Position + new Vector2(3, 3),
+					bounds.Size - new Vector2(6, 6)
+				),
+				Core,
+				10.0f
+			);
+		}
 
 		if (slot.IsEmpty)
 		{
 			Vector2 centre = bounds.GetCenter();
+			Color emptyColour = new(Muted, 0.45f);
 
 			DrawLine(
-				centre - new Vector2(5, 0),
-				centre + new Vector2(5, 0),
-				Muted
+				centre - new Vector2(6, 0),
+				centre + new Vector2(6, 0),
+				emptyColour
 			);
 
 			DrawLine(
-				centre - new Vector2(0, 5),
-				centre + new Vector2(0, 5),
-				Muted
+				centre - new Vector2(0, 6),
+				centre + new Vector2(0, 6),
+				emptyColour
 			);
 
 			return;
@@ -216,7 +301,10 @@ public partial class ShipCommandView : Control
 
 		WriteCentered(
 			title,
-			new Rect2(bounds.Position + new Vector2(4, 5), new Vector2(84, 18)),
+			new Rect2(
+				bounds.Position + new Vector2(4, 5),
+				new Vector2(84, 18)
+			),
 			12,
 			new Color(TextColor, alpha)
 		);
@@ -226,6 +314,15 @@ public partial class ShipCommandView : Control
 			bounds.Position + new Vector2(46, 49),
 			24.0f,
 			alpha
+		);
+
+		// Small item-coloured identification strip.
+		DrawLine(
+			bounds.Position + new Vector2(10, 88),
+			bounds.Position + new Vector2(34, 88),
+			new Color(slot.Item.IconColor, alpha),
+			2,
+			true
 		);
 
 		string amount = FormatAmount(slot.Amount);
@@ -245,34 +342,51 @@ public partial class ShipCommandView : Control
 		);
 	}
 
-	// =========================================================
-	// Displays the selected item's identity, description, and cargo properties.
+		// =========================================================
+	// Presents the selected item in a technical preview with cargo information.
 	private void DrawInspector()
 	{
 		Rect2 bounds = new(890, 165, 820, 550);
 
-		DrawRect(bounds, Panel);
-		DrawRect(bounds, Outline, false);
+		DrawCutPanel(bounds, Panel, Outline, 16.0f);
 
-		Write("ITEM INSPECTOR", new Vector2(908, 195), 19, Core);
+		Write("ITEM DETAILS", new Vector2(908, 195), 19, Core);
 		DrawLine(new Vector2(908, 210), new Vector2(1692, 210), Outline);
+
+		Rect2 preview = new(908, 226, 230, 198);
+
+		DrawCutPanel(
+			preview,
+			new Color(0.01f, 0.04f, 0.06f, 0.35f),
+			Outline,
+			12.0f
+		);
+
+		DrawTechnicalGrid(new Rect2(922, 240, 202, 170));
+
+		DrawCornerBrackets(
+			new Rect2(918, 236, 210, 178),
+			new Color(Accent, 0.45f),
+			12.0f
+		);
 
 		CargoSlot slot = Cargo.GetSlot(SelectedSlot);
 
 		if (slot.IsEmpty)
 		{
+			WriteCentered("—", preview, 40, Muted);
+
 			Write(
 				"NO ITEM SELECTED",
-				new Vector2(908, 260),
+				new Vector2(1160, 280),
 				24,
 				Muted
 			);
 
-			Write(
+			WriteWrapped(
 				"Select a stored item to inspect its properties.",
-				new Vector2(908, 300),
-				18,
-				TextColor
+				new Vector2(1160, 320),
+				510.0f
 			);
 
 			return;
@@ -280,36 +394,55 @@ public partial class ShipCommandView : Control
 
 		ItemDefinition item = slot.Item;
 
-		DrawItemIcon(item, new Vector2(965, 280), 42.0f);
+		DrawItemIcon(item, preview.GetCenter(), 68.0f);
 
-		Write(item.DisplayName, new Vector2(1030, 260), 27, Core);
+		Write(item.DisplayName, new Vector2(1160, 265), 25, Core);
+
 		Write(
 			$"{item.Layer} / {item.Type}".ToUpperInvariant(),
-			new Vector2(1030, 291),
-			16,
-			Muted
+			new Vector2(1160, 295),
+			15,
+			Accent
 		);
 
-		Write("DESCRIPTION", new Vector2(908, 360), 16, Accent);
-		WriteWrapped(item.Description, new Vector2(908, 394), 760.0f);
+		WriteWrapped(
+			item.Description,
+			new Vector2(1160, 335),
+			510.0f
+		);
 
-		Write("CARGO DETAILS", new Vector2(908, 510), 16, Accent);
+		Write("CARGO DETAILS", new Vector2(908, 470), 16, Accent);
+		DrawLine(new Vector2(908, 485), new Vector2(1692, 485), Outline);
 
-		Write("Unit mass", new Vector2(908, 548), 18, TextColor);
-		Write($"{item.UnitMass:0.##}", new Vector2(1510, 548), 18, Core);
+		Write("Unit mass", new Vector2(908, 520), 18, TextColor);
+		Write($"{item.UnitMass:0.##}", new Vector2(1510, 520), 18, Core);
 
-		Write("Stack limit", new Vector2(908, 580), 18, TextColor);
-		Write($"{item.StackMaximum:0.##}", new Vector2(1510, 580), 18, Core);
+		Write("Stack limit", new Vector2(908, 552), 18, TextColor);
+		Write($"{item.StackMaximum:0.##}", new Vector2(1510, 552), 18, Core);
 
-		Write("Stored amount", new Vector2(908, 612), 18, TextColor);
-		Write($"{slot.Amount:0.##}", new Vector2(1510, 612), 18, Core);
+		Write("Stored amount", new Vector2(908, 584), 18, TextColor);
+		Write($"{slot.Amount:0.##}", new Vector2(1510, 584), 18, Core);
 
-		Write("Stack mass", new Vector2(908, 644), 18, TextColor);
+		Write("Stack mass", new Vector2(908, 616), 18, TextColor);
 		Write(
 			$"{slot.Amount * item.UnitMass:0.##}",
-			new Vector2(1510, 644),
+			new Vector2(1510, 616),
 			18,
 			Core
+		);
+
+		float fullness = Mathf.Clamp(
+			slot.Amount / Mathf.Max(1.0f, item.StackMaximum),
+			0.0f,
+			1.0f
+		);
+
+		Write("STACK UTILIZATION", new Vector2(908, 664), 13, Muted);
+
+		DrawRect(new Rect2(908, 678, 784, 6), PanelLight);
+		DrawRect(
+			new Rect2(908, 678, 784 * fullness, 6),
+			item.IconColor
 		);
 	}
 
@@ -452,18 +585,22 @@ public partial class ShipCommandView : Control
 		DrawLine(points[4], centre, colour, 1, true);
 	}
 
-	// =========================================================
-	// Draws a vector action button with an explicit enabled appearance.
+		// =========================================================
+	// Draws a clipped action button with a distinct disabled appearance.
 	private void DrawButton(Rect2 bounds, string title, bool enabled)
 	{
-		DrawRect(bounds, enabled ? PanelLight : Panel);
-		DrawRect(bounds, enabled ? Outline : Muted.Darkened(0.65f), false);
+		DrawCutPanel(
+			bounds,
+			enabled ? PanelLight : Panel,
+			enabled ? Outline : new Color(Muted, 0.35f),
+			8.0f
+		);
 
 		WriteCentered(
 			title,
 			bounds,
 			17,
-			enabled ? Core : Muted.Darkened(0.35f)
+			enabled ? Core : Muted
 		);
 	}
 
@@ -550,6 +687,111 @@ public partial class ShipCommandView : Control
 			? $"×{amount:0.##}"
 			: $"×{Mathf.Floor(amount):0}";
 	}
+
+    	#region Sci-Fi Frames
+
+	// =========================================================
+	// Draws a translucent panel with clipped corners and an optional soft outline.
+	private void DrawCutPanel(
+		Rect2 bounds,
+		Color fill,
+		Color border,
+		float cut = 12.0f,
+		bool highlighted = false
+	)
+	{
+		float left = bounds.Position.X;
+		float top = bounds.Position.Y;
+		float right = left + bounds.Size.X;
+		float bottom = top + bounds.Size.Y;
+
+		cut = Mathf.Clamp(
+			cut,
+			0.0f,
+			Mathf.Min(bounds.Size.X, bounds.Size.Y) * 0.5f
+		);
+
+		Vector2[] points =
+		{
+			new(left + cut, top),
+			new(right - cut, top),
+			new(right, top + cut),
+			new(right, bottom - cut),
+			new(right - cut, bottom),
+			new(left + cut, bottom),
+			new(left, bottom - cut),
+			new(left, top + cut)
+		};
+
+		DrawColoredPolygon(points, fill);
+
+		for (int index = 0; index < points.Length; index++)
+		{
+			Vector2 start = points[index];
+			Vector2 end = points[(index + 1) % points.Length];
+
+			if (highlighted)
+			{
+				DrawLine(start, end, new Color(border, 0.05f), 9, true);
+				DrawLine(start, end, new Color(border, 0.12f), 4, true);
+			}
+
+			DrawLine(start, end, border, highlighted ? 1.8f : 1.0f, true);
+		}
+	}
+
+	// =========================================================
+	// Draws short illuminated brackets at the four corners of a rectangular area.
+	private void DrawCornerBrackets(
+		Rect2 bounds,
+		Color colour,
+		float length = 16.0f
+	)
+	{
+		Vector2 topLeft = bounds.Position;
+		Vector2 topRight = bounds.Position + new Vector2(bounds.Size.X, 0);
+		Vector2 bottomLeft = bounds.Position + new Vector2(0, bounds.Size.Y);
+		Vector2 bottomRight = bounds.End;
+
+		DrawLine(topLeft, topLeft + Vector2.Right * length, colour, 2, true);
+		DrawLine(topLeft, topLeft + Vector2.Down * length, colour, 2, true);
+
+		DrawLine(topRight, topRight + Vector2.Left * length, colour, 2, true);
+		DrawLine(topRight, topRight + Vector2.Down * length, colour, 2, true);
+
+		DrawLine(bottomLeft, bottomLeft + Vector2.Right * length, colour, 2, true);
+		DrawLine(bottomLeft, bottomLeft + Vector2.Up * length, colour, 2, true);
+
+		DrawLine(bottomRight, bottomRight + Vector2.Left * length, colour, 2, true);
+		DrawLine(bottomRight, bottomRight + Vector2.Up * length, colour, 2, true);
+	}
+
+	// =========================================================
+	// Adds a faint technical grid within a preview rectangle.
+	private void DrawTechnicalGrid(Rect2 bounds, float spacing = 28.0f)
+	{
+		Color colour = new(0.20f, 0.65f, 0.72f, 0.07f);
+
+		for (float x = bounds.Position.X; x <= bounds.End.X; x += spacing)
+		{
+			DrawLine(
+				new Vector2(x, bounds.Position.Y),
+				new Vector2(x, bounds.End.Y),
+				colour
+			);
+		}
+
+		for (float y = bounds.Position.Y; y <= bounds.End.Y; y += spacing)
+		{
+			DrawLine(
+				new Vector2(bounds.Position.X, y),
+				new Vector2(bounds.End.X, y),
+				colour
+			);
+		}
+	}
+
+	#endregion
 
 	#endregion
 }

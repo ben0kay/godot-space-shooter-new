@@ -50,7 +50,7 @@ public partial class ShipCommandHud : CanvasLayer
 
 		_backdrop = new ColorRect
 		{
-			Color = new Color(0.0f, 0.015f, 0.025f, 0.82f),
+			Color = new Color(0.0f, 0.015f, 0.025f, 0.20f),
 			MouseFilter = Control.MouseFilterEnum.Ignore,
 			Visible = false
 		};
@@ -177,10 +177,14 @@ public partial class ShipCommandHud : CanvasLayer
 	}
 
 	// =========================================================
-	// Selects a tab, invokes Sort, or begins a possible stack drag.
+	// Selects tabs and slots, sorts cargo, or releases a selected stack into space.
 	private void PressPointer()
 	{
 		Vector2 pointer = _view.GetLocalMousePosition();
+
+		_pressedSlot = -1;
+		_dragging = false;
+		_view.DragSlot = -1;
 
 		int tab = _view.GetTabAt(pointer);
 
@@ -204,12 +208,26 @@ public partial class ShipCommandHud : CanvasLayer
 			return;
 		}
 
+		if (ShipCommandView.DropBounds.HasPoint(pointer))
+		{
+			if (CargoPickup.DropFromCargo(
+				_ship,
+				_cargo,
+				_view.SelectedSlot
+			))
+			{
+				_view.SelectedSlot = -1;
+			}
+
+			_view.QueueRedraw();
+			return;
+		}
+
 		int slot = _view.GetSlotAt(pointer);
 
 		_view.SelectedSlot = slot;
 		_pressedSlot = slot;
 		_pressPosition = pointer;
-		_dragging = false;
 
 		_view.QueueRedraw();
 	}
