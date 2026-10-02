@@ -6,195 +6,184 @@ public static class AsteroidDepositGenerator
 {
 	#region Generation
 
-	// =========================================================
-	// Adds a repeatable selection of deposits to an already-built asteroid.
-	public static void Populate(
-		Asteroid asteroid,
-		AsteroidFieldDefinition field,
-		ulong shapeSeed
-	)
-	{
-		if (!GodotObject.IsInstanceValid(asteroid)
-			|| field == null
-			|| field.DepositTypes == null
-			|| field.DepositTypes.Count == 0
-			|| asteroid.Radius < field.MinimumDepositAsteroidRadius)
-		{
-			return;
-		}
+	    // =========================================================
+    // Places seeded deposits using field chance, patch count and richness.
+    // Deposits remain children of their rotating host asteroid.
+    // =========================================================
+    public static void Populate(
+        Asteroid asteroid,
+        AsteroidFieldDefinition field,
+        ulong shapeSeed
+    )
+    {
+        if (!GodotObject.IsInstanceValid(asteroid)
+            || field == null
+            || field.DepositTypes == null
+            || field.DepositTypes.Count == 0
+            || field.ResourceRichness <= 0.0f
+            || asteroid.Radius < field.MinimumDepositAsteroidRadius)
+        {
+            return;
+        }
 
-		RandomNumberGenerator random = new()
-		{
-			Seed = shapeSeed ^ 0xD1B54A32D192ED03UL
-		};
+        RandomNumberGenerator random = new()
+        {
+            Seed = shapeSeed ^ 0xD1B54A32D192ED03UL
+        };
 
-		if (random.Randf() >= Mathf.Clamp(
-			field.DepositChance,
-			0.0f,
-			1.0f
-		))
-		{
-			return;
-		}
+        if (random.Randf() >= Mathf.Clamp(
+            field.DepositChance,
+            0.0f,
+            1.0f
+        ))
+        {
+            return;
+        }
 
-		MeshInstance3D visual =
-			asteroid.GetNodeOrNull<MeshInstance3D>("Visual");
+        MeshInstance3D visual =
+            asteroid.GetNodeOrNull<MeshInstance3D>("Visual");
 
-		if (visual?.Mesh == null)
-		{
-			return;
-		}
+        if (visual?.Mesh == null)
+        {
+            return;
+        }
 
-		List<Surface> surfaces = FindExposedSurfaces(
-			visual.Mesh.GetFaces(),
-			asteroid.Radius
-		);
+        List<Surface> surfaces = FindExposedSurfaces(
+            visual.Mesh.GetFaces(),
+            asteroid.Radius
+        );
 
-		int minimum = Mathf.Max(
-			0,
-			Mathf.Min(
-				field.DepositCountRange.X,
-				field.DepositCountRange.Y
-			)
-		);
+        int minimum = Mathf.Max(
+            0,
+            Mathf.Min(
+                field.DepositCountRange.X,
+                field.DepositCountRange.Y
+            )
+        );
 
-		int maximum = Mathf.Max(
-			minimum,
-			Mathf.Max(
-				field.DepositCountRange.X,
-				field.DepositCountRange.Y
-			)
-		);
+        int maximum = Mathf.Max(
+            minimum,
+            Mathf.Max(
+                field.DepositCountRange.X,
+                field.DepositCountRange.Y
+            )
+        );
 
-		int requested = random.RandiRange(minimum, maximum);
-		int spawned = 0;
+        int requested = random.RandiRange(minimum, maximum);
+        int spawned = 0;
 
-		List<Vector3> occupiedCentres = new();
-		List<float> occupiedRadii = new();
+        List<Vector3> occupiedCentres = new();
+        List<float> occupiedRadii = new();
 
-		while (spawned < requested && surfaces.Count > 0)
-		{
-			int index = random.RandiRange(
-				0,
-				surfaces.Count - 1
-			);
+        while (spawned < requested && surfaces.Count > 0)
+        {
+            int index = random.RandiRange(0, surfaces.Count - 1);
+            Surface surface = surfaces[index];
+            surfaces.RemoveAt(index);
 
-			Surface surface = surfaces[index];
-			surfaces.RemoveAt(index);
+            float radius = Mathf.Min(
+                Mathf.Clamp(asteroid.Radius * 0.16f, 0.5f, 3.5f),
+                surface.Clearance * 0.75f
+            );
 
-			float radius = Mathf.Min(
-				Mathf.Clamp(
-					asteroid.Radius * 0.16f,
-					0.5f,
-					3.5f
-				),
-				surface.Clearance * 0.75f
-			);
+            if (radius < 0.25f)
+            {
+                continue;
+            }
 
-			if (radius < 0.25f)
-			{
-				continue;
-			}
+            bool overlaps = false;
 
-			bool overlaps = false;
+            for (int occupied = 0;
+                occupied < occupiedCentres.Count;
+                occupied++)
+            {
+                float spacing =
+                    radius + occupiedRadii[occupied] + 0.1f;
 
-			for (int occupied = 0;
-				occupied < occupiedCentres.Count;
-				occupied++)
-			{
-				float spacing =
-					radius + occupiedRadii[occupied] + 0.1f;
+                if (surface.Centre.DistanceSquaredTo(
+                    occupiedCentres[occupied]
+                ) < spacing * spacing)
+                {
+                    overlaps = true;
+                    break;
+                }
+            }
 
-				if (surface.Centre.DistanceSquaredTo(
-					occupiedCentres[occupied]
-				) < spacing * spacing)
-				{
-					overlaps = true;
-					break;
-				}
-			}
+            if (overlaps)
+            {
+                continue;
+            }
 
-			if (overlaps)
-			{
-				continue;
-			}
+            ResourceDepositDefinition definition =
+                ChooseDefinition(field.DepositTypes, random);
 
-			ResourceDepositDefinition definition =
-				ChooseDefinition(field.DepositTypes, random);
+            if (definition == null)
+            {
+                return;
+            }
 
-			if (definition == null)
-			{
-				return;
-			}
+            float reserveMinimum = Mathf.Max(
+                0.01f,
+                Mathf.Min(
+                    definition.ReserveRange.X,
+                    definition.ReserveRange.Y
+                )
+            );
 
-			float reserveMinimum = Mathf.Max(
-				0.01f,
-				Mathf.Min(
-					definition.ReserveRange.X,
-					definition.ReserveRange.Y
-				)
-			);
+            float reserveMaximum = Mathf.Max(
+                reserveMinimum,
+                Mathf.Max(
+                    definition.ReserveRange.X,
+                    definition.ReserveRange.Y
+                )
+            );
 
-			float reserveMaximum = Mathf.Max(
-				reserveMinimum,
-				Mathf.Max(
-					definition.ReserveRange.X,
-					definition.ReserveRange.Y
-				)
-			);
+            float reserve =
+                random.RandfRange(reserveMinimum, reserveMaximum)
+                * Mathf.Clamp(asteroid.Radius / 10.0f, 0.5f, 4.0f)
+                * field.ResourceRichness;
 
-			float reserve = random.RandfRange(
-				reserveMinimum,
-				reserveMaximum
-			) * Mathf.Clamp(
-				asteroid.Radius / 10.0f,
-				0.5f,
-				4.0f
-			);
+            Vector3 reference =
+                Mathf.Abs(surface.Normal.Dot(Vector3.Up)) > 0.95f
+                    ? Vector3.Right
+                    : Vector3.Up;
 
-			Vector3 reference =
-				Mathf.Abs(surface.Normal.Dot(Vector3.Up)) > 0.95f
-					? Vector3.Right
-					: Vector3.Up;
+            Vector3 tangent =
+                reference.Cross(surface.Normal).Normalized();
 
-			Vector3 tangent =
-				reference.Cross(surface.Normal).Normalized();
+            Basis basis = new(
+                tangent,
+                surface.Normal,
+                tangent.Cross(surface.Normal)
+            );
 
-			Basis basis = new(
-				tangent,
-				surface.Normal,
-				tangent.Cross(surface.Normal)
-			);
+            float height = radius * 0.45f;
 
-			float height = radius * 0.45f;
+            ResourceDeposit deposit = new()
+            {
+                Name = $"Deposit_{spawned:D2}_{definition.ResourceType}",
 
-			ResourceDeposit deposit = new()
-			{
-				Name = $"Deposit_{spawned:D2}_{definition.ResourceType}",
+                Position = surface.Centre
+                    + surface.Normal * (height * 0.45f + 0.01f),
 
-				// Embed the bottom slightly into the host face.
-				Position = surface.Centre
-					+ surface.Normal * (height * 0.45f + 0.01f),
+                Basis = basis
+            };
 
-				Basis = basis
-			};
+            deposit.Configure(
+                definition,
+                Mathf.Max(1.0f, Mathf.Round(reserve)),
+                radius,
+                $"{asteroid.PersistentId}/deposit/{spawned:D2}"
+            );
 
-			deposit.Configure(
-				definition,
-				Mathf.Max(1.0f, Mathf.Round(reserve)),
-				radius,
-				$"{asteroid.PersistentId}/deposit/{spawned:D2}"
-			);
+            asteroid.AddChild(deposit);
 
-			// Parenting keeps the deposit attached when the asteroid rotates.
-			asteroid.AddChild(deposit);
+            occupiedCentres.Add(surface.Centre);
+            occupiedRadii.Add(radius);
 
-			occupiedCentres.Add(surface.Centre);
-			occupiedRadii.Add(radius);
-
-			spawned++;
-		}
-	}
+            spawned++;
+        }
+    }
 
 	#endregion
 

@@ -94,39 +94,64 @@ public float PlacementRadius => _radius * 1.8f;
 	}
 
 	// =========================================================
-// Builds the asteroid, initializes damage visuals, and chooses its rotation.
-public override void _Ready()
-{
-	_maximumHealth = Mathf.Max(
-		1.0f,
-		_radius * HealthPerRadius
-	);
-
-	_health = _maximumHealth;
-
-	ArrayMesh mesh = CreateShape();
-
-	MeshInstance3D visual = new MeshInstance3D
+	// Builds the asteroid and registers its shared detail checks.
+	// =========================================================
+	public override void _Ready()
 	{
-		Name = "Visual",
-		Mesh = mesh
-	};
+		_maximumHealth = Mathf.Max(
+			1.0f,
+			_radius * HealthPerRadius
+		);
 
-	AddChild(visual);
+		_health = _maximumHealth;
 
-	AddChild(new CollisionShape3D
-	{
-		Name = "Collision",
-		Shape = mesh.CreateConvexShape()
-	});
+		ArrayMesh mesh = CreateShape();
 
-	ConfigureDamageVisuals(visual, mesh);
+		_visual = new MeshInstance3D
+		{
+			Name = "Visual",
+			Mesh = mesh
+		};
 
-	// Frame updates are only needed while a hit flash is fading.
-	SetProcess(false);
+		AddChild(_visual);
 
-	ConfigureRotation();
-}
+		AddChild(new CollisionShape3D
+		{
+			Name = "Collision",
+			Shape = mesh.CreateConvexShape()
+		});
+
+		ConfigureDamageVisuals(_visual, mesh);
+
+		SetProcess(false);
+
+		ConfigureRotation();
+
+		if (!DistanceOptimizationEnabled)
+		{
+			return;
+		}
+
+		_detailManager = DistanceDetailManager.Find(this);
+
+		if (!GodotObject.IsInstanceValid(_detailManager))
+		{
+			GD.PushWarning(
+				$"{Name}: WorldDetail Autoload is missing. "
+				+ "Keeping full asteroid detail."
+			);
+
+			return;
+		}
+
+		_detailManager.Register(
+			this,
+			ApplyDistanceDetail,
+			PlacementRadius,
+			FullDetailDistance,
+			SimpleDetailDistance
+		);
+	}
 
 	// =========================================================
 	// Chooses a repeatable rotation axis and speed for selected asteroids.
@@ -422,42 +447,51 @@ private void ConfigureDamageVisuals(
 	visual.MaterialOverride = _damageMaterial;
 }
 
-// =========================================================
-// Shows health-based cracks on destructible rocks and local hit flashes on both.
-private void UpdateDamageVisuals(DamageInfo damage)
-{
-	if (_damageMaterial == null)
+	// =========================================================
+	// Keeps crack damage current, but only animates hit flashes
+	// when the detailed asteroid is within the camera view.
+	// =========================================================
+	private void UpdateDamageVisuals(DamageInfo damage)
 	{
-		return;
+		if (_damageMaterial == null)
+		{
+			return;
+		}
+
+		_damageMaterial.SetShaderParameter(
+			"damage_amount",
+			Destructible && CracksEnabled
+				? 1.0f - HealthFraction
+				: 0.0f
+		);
+
+		if (!_detailState.InCameraView
+			|| _detailState.Tier
+				== DistanceDetailManager.DetailTier.Distant
+			|| !damage.HasImpact
+			|| ImpactFlashDuration <= 0.0f)
+		{
+			return;
+		}
+
+		_damageMaterial.SetShaderParameter(
+			"hit_position",
+			ToLocal(damage.ImpactPosition)
+		);
+
+		_damageMaterial.SetShaderParameter(
+			"hit_radius",
+			Mathf.Clamp(_radius * 0.08f, 0.65f, 6.0f)
+		);
+
+		_damageMaterial.SetShaderParameter(
+			"hit_strength",
+			1.0f
+		);
+
+		_flashRemaining = ImpactFlashDuration;
+		SetProcess(true);
 	}
-
-	_damageMaterial.SetShaderParameter(
-		"damage_amount",
-		Destructible && CracksEnabled
-			? 1.0f - HealthFraction
-			: 0.0f
-	);
-
-	if (!damage.HasImpact || ImpactFlashDuration <= 0.0f)
-	{
-		return;
-	}
-
-	_damageMaterial.SetShaderParameter(
-		"hit_position",
-		ToLocal(damage.ImpactPosition)
-	);
-
-	_damageMaterial.SetShaderParameter(
-		"hit_radius",
-		Mathf.Clamp(_radius * 0.08f, 0.65f, 6.0f)
-	);
-
-	_damageMaterial.SetShaderParameter("hit_strength", 1.0f);
-
-	_flashRemaining = ImpactFlashDuration;
-	SetProcess(true);
-}
 
 // =========================================================
 // Fades the local hit flash and disables frame updates when it finishes.
@@ -486,4 +520,86 @@ public override void _Process(double delta)
 }
 
 #endregion
+
+	#region Distance Detail
+
+	[ExportGroup("Distance Detail")]
+
+	[Export] public bool DistanceOptimizationEnabled = true;
+
+	[Export] public float FullDetailDistance =
+		DistanceDetailConfig.NearDistance;
+
+	[Export] public float SimpleDetailDistance =
+		DistanceDetailConfig.DistantDistance;
+
+	private MeshInstance3D _visual;
+	private DistanceDetailManager _detailManager;
+
+	private DistanceDetailManager.DetailState _detailState =
+		new(
+			DistanceDetailManager.DetailTier.Near,
+			true
+		);
+
+			// =========================================================
+	// Stops irrelevant rotation and simplifies distant rendering.
+	// Collision, damage and deposits continue operating normally.
+	// =========================================================
+	private void ApplyDistanceDetail(
+		DistanceDetailManager.DetailState state
+	)
+	{
+		if (_destroyed || IsQueuedForDeletion())
+		{
+			return;
+		}
+
+		_detailState = state;
+
+		bool rotate =
+			state.InCameraView
+			&& state.Tier == DistanceDetailManager.DetailTier.Near
+			&& _rotationSpeed > 0.0f;
+
+		SetPhysicsProcess(rotate);
+
+		bool distant =
+			state.Tier == DistanceDetailManager.DetailTier.Distant;
+
+		// Clearing the override restores the generated mesh's
+		// original StandardMaterial3D.
+		_visual.MaterialOverride = distant
+			? null
+			: _damageMaterial;
+
+		_visual.CastShadow = distant
+			? GeometryInstance3D.ShadowCastingSetting.Off
+			: GeometryInstance3D.ShadowCastingSetting.On;
+
+		if (!state.InCameraView || distant)
+		{
+			_flashRemaining = 0.0f;
+
+			_damageMaterial?.SetShaderParameter(
+				"hit_strength",
+				0.0f
+			);
+
+			SetProcess(false);
+		}
+	}
+
+	// =========================================================
+	// Releases the registration during destruction or sector unloading.
+	// =========================================================
+	public override void _ExitTree()
+	{
+		if (GodotObject.IsInstanceValid(_detailManager))
+		{
+			_detailManager.Unregister(this);
+		}
+	}
+
+	#endregion
 }

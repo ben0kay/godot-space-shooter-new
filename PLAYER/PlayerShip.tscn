@@ -13,6 +13,7 @@
 [ext_resource type="Script" uid="uid://c4t46gkn76s1r" path="res://PLAYER/Scripts/PlayerCrosshair.cs" id="11_nsdd8"]
 [ext_resource type="Script" uid="uid://doc0u8ouviehk" path="res://PLAYER/Scripts/PlayerFlightVisuals.cs" id="12_nsdd8"]
 [ext_resource type="Script" uid="uid://dhs81orlwy2dt" path="res://ENVIRONMENT/SpaceTravelDust.cs" id="15_q318l"]
+[ext_resource type="Script" uid="uid://bw8f7mj71q22d" path="res://PLAYER/Scripts/FpsCounter.cs" id="15_wt303"]
 [ext_resource type="Script" uid="uid://dddrh1kmsvoo0" path="res://PLAYER/Cockpit/PlayerCockpit.cs" id="16_dxnsd"]
 [ext_resource type="Resource" path="res://PLAYER/PlayerCargo.tres" id="cargo_definition"]
 [ext_resource type="Script" uid="uid://dtsnv5knc0udm" path="res://MINING/Core/CargoHold.cs" id="cargo_script"]
@@ -84,6 +85,11 @@ offset_right = 40.0
 offset_bottom = 40.0
 script = ExtResource("11_nsdd8")
 PrimaryWeapon = NodePath("../../PrimaryWeapon")
+
+[node name="FpsCounter" type="Label" parent="PlayerHud" unique_id=1673665388]
+offset_right = 40.0
+offset_bottom = 23.0
+script = ExtResource("15_wt303")
 
 [node name="CockpitView" type="Marker3D" parent="." unique_id=830385806]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9750545, 0.5645851)
