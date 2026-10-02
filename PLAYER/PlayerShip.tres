@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://o5i0hq3dg8us" path="res://PLAYER/Stats/PlayerDashStats.cs" id="2_sbwak"]
 [ext_resource type="Script" uid="uid://dtibfcg28auav" path="res://PLAYER/Stats/PlayerDefenceStats.cs" id="3_pacrg"]
 [ext_resource type="Script" uid="uid://1rfmty1btvsc" path="res://PLAYER/Stats/PlayerHandlingStats.cs" id="4_s6ljt"]
+[ext_resource type="Resource" path="res://PLAYER/PlayerCargo.tres" id="cargo_definition"]
 [ext_resource type="Script" uid="uid://f6c21yq4g6oi" path="res://PLAYER/Scripts/PlayerShipDefinition.cs" id="definition"]
 [ext_resource type="Script" uid="uid://bi8qfjqnsarb5" path="res://SHIELDS/ShieldVisualSettings.cs" id="shield_script"]
 
@@ -25,5 +26,10 @@ Spherical = true
 
 [resource]
 script = ExtResource("definition")
+Defence = SubResource("Resource_th0d7")
+Handling = SubResource("Resource_uj27l")
+Boost = SubResource("Resource_40qk6")
+Dash = SubResource("Resource_dsfic")
+Cargo = ExtResource("cargo_definition")
 ShieldVisuals = SubResource("ShieldVisuals")
 metadata/_custom_type_script = "uid://f6c21yq4g6oi"
