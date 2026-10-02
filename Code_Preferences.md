@@ -3,4 +3,5 @@ I prefer some comment at top of each script to explain what the script is doing.
 I prefer you organizing functions/methods into regions when appropriate.
 I prefer to organize my scripts for ease of finding in future etc.
 I prefer you to give me the full functions/methods pasted in chat. never updated my github
+To save on time I would appreciate you giving me the code to paste as well for .tscn files when there are alot of things to tweak in inspector
 Check out https://github.com/ben0kay/spaceshooter_vector_2026 for old references to how i structured the previous 2D incarnation of this project

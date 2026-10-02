@@ -240,8 +240,8 @@ public partial class AsteroidFieldGenerator : Node3D
 
 	#region Placement
 
-	// =========================================================
-	// Places one size population with bounded attempts and stable asteroid IDs.
+		// =========================================================
+	// Places one size population with stable IDs and optional surface deposits.
 	private int SpawnPopulation(
 		RandomNumberGenerator random,
 		string sizeKey,
@@ -326,8 +326,14 @@ public partial class AsteroidFieldGenerator : Node3D
 
 			asteroid.Configure(radius, shapeSeed);
 
-			// Configure before AddChild because AddChild triggers asteroid _Ready.
 			_generated.AddChild(asteroid);
+
+			// The asteroid's mesh now exists, so patches can be placed.
+			AsteroidDepositGenerator.Populate(
+				asteroid,
+				Definition,
+				shapeSeed
+			);
 
 			_placements.Add(new Placement(position, placementRadius));
 			spawned++;

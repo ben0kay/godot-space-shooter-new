@@ -1,6 +1,6 @@
 using Godot;
 
-// Describes the population, spacing, and layout of a procedural asteroid field.
+// Describes the population, spacing, layout, and deposits of an asteroid field.
 [GlobalClass]
 public partial class AsteroidFieldDefinition : Resource
 {
@@ -44,14 +44,28 @@ public partial class AsteroidFieldDefinition : Resource
 
 	[ExportGroup("Clearance")]
 
-	// Minimum extra surface-to-surface spacing between generated rocks.
 	[Export] public float MinimumGap = 8.0f;
-
-	// Empty space around each sector arrival marker.
 	[Export] public float ArrivalClearance = 90.0f;
 
-	// Bounded placement attempts prevent impossible settings from hanging loading.
+	// Bounded attempts prevent impossible settings from hanging generation.
 	[Export] public int AttemptsPerAsteroid = 200;
+
+	#endregion
+
+	#region Deposits
+
+	[ExportGroup("Resource Deposits")]
+
+	[Export] public Godot.Collections.Array<ResourceDepositDefinition>
+		DepositTypes = new();
+
+	[Export(PropertyHint.Range, "0,1,0.01")]
+	public float DepositChance = 0.55f;
+
+	[Export] public Vector2I DepositCountRange = new(1, 3);
+
+	// Keeps the smallest rocks clear of deposits for this first pass.
+	[Export] public float MinimumDepositAsteroidRadius = 6.0f;
 
 	#endregion
 }
