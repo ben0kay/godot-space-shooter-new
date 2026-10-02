@@ -55,6 +55,25 @@ EmissionEnergy = 0.7
 
 [resource]
 script = ExtResource("1_field")
+Shape = 2
+HalfExtents = Vector3(2500, 180, 3500)
+RingInnerRadius = 0.55
+Distribution = 2
+EdgeStart = 0.75
+InteriorFill = 0.2
+SmallCount = 160
+SmallRadiusRange = Vector2(3, 7)
+MediumCount = 64
+MediumRadiusRange = Vector2(10, 18)
+LargeCount = 16
+LargeRadiusRange = Vector2(25, 45)
+MinimumGap = 12.0
+ArrivalClearance = 110.0
 DepositTypes = Array[ExtResource("2_deposit")]([SubResource("Deposit_iron"), SubResource("Deposit_carbon"), SubResource("Deposit_silicon"), SubResource("Deposit_copper"), SubResource("Deposit_sulfur"), SubResource("Deposit_ice")])
-DepositChance = 0.55
+DepositChance = 0.4
+DepositCountRange = Vector2i(1, 2)
+MinimumDepositAsteroidRadius = 8.0
+ResourceRichness = 0.8
+NavigationDensity = 0.5
+LargeShipClearance = 150.0
 metadata/_custom_type_script = "uid://clw7bekt7gf02"

@@ -15,10 +15,12 @@
 [ext_resource type="Script" uid="uid://dhs81orlwy2dt" path="res://ENVIRONMENT/SpaceTravelDust.cs" id="15_q318l"]
 [ext_resource type="Script" uid="uid://bw8f7mj71q22d" path="res://PLAYER/Scripts/FpsCounter.cs" id="15_wt303"]
 [ext_resource type="Script" uid="uid://dddrh1kmsvoo0" path="res://PLAYER/Cockpit/PlayerCockpit.cs" id="16_dxnsd"]
+[ext_resource type="Script" uid="uid://bm6wjsllgqnqj" path="res://PLAYER/Effects/PlayerBoostFlow.cs" id="boost_flow_script"]
 [ext_resource type="Resource" path="res://PLAYER/PlayerCargo.tres" id="cargo_definition"]
 [ext_resource type="Script" uid="uid://dtsnv5knc0udm" path="res://MINING/Core/CargoHold.cs" id="cargo_script"]
 [ext_resource type="Resource" uid="uid://cpkdcrv76wngi" path="res://Weapons/PlayerMiningBeam.tres" id="mining_weapon"]
 [ext_resource type="Resource" uid="uid://b2s0fvtl00ei3" path="res://PLAYER/Weapons/PlayerRocketLauncher.tres" id="rocket_weapon"]
+[ext_resource type="Script" uid="uid://dacw0254ek4cf" path="res://ENVIRONMENT/SpaceTravelClouds.cs" id="travel_clouds_script"]
 [ext_resource type="Script" uid="uid://dk13qlucl75kd" path="res://Weapon/WeaponDefinition.cs" id="weapon_definition"]
 
 [node name="PlayerShip" type="CharacterBody3D" unique_id=1589947766]
@@ -104,9 +106,6 @@ ShipResponse = 6.0
 CameraStrafeOffset = 1.2
 BuildCockpitPlaceholder = false
 
-[node name="SpaceTravelDust" type="Node3D" parent="." unique_id=203588232]
-script = ExtResource("15_q318l")
-
 [node name="Camera3D" type="Camera3D" parent="." unique_id=925117365]
 transform = Transform3D(1, 0, 0, 0, 0.9961947, 0.08715574, 0, -0.08715574, 0.9961947, 0, 3, 9)
 far = 3500.0
@@ -117,3 +116,14 @@ script = ExtResource("16_dxnsd")
 [node name="Cargo" type="Node" parent="." unique_id=1916756931]
 script = ExtResource("cargo_script")
 Definition = ExtResource("cargo_definition")
+
+[node name="Effects" type="Node" parent="." unique_id=1443688528]
+
+[node name="SpaceTravelDust" type="Node3D" parent="Effects" unique_id=203588232]
+script = ExtResource("15_q318l")
+
+[node name="SpaceTravelClouds" type="Node3D" parent="Effects" unique_id=618523512]
+script = ExtResource("travel_clouds_script")
+
+[node name="BoostFlow" type="Node3D" parent="Effects" unique_id=1778966255]
+script = ExtResource("boost_flow_script")

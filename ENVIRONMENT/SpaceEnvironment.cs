@@ -10,7 +10,7 @@ public partial class SpaceEnvironment : Node3D
 	[Export] public float StarBrightness = 0.9f;
 	[Export] public float NebulaStrength = 0.12f;
 	[Export] public float SunEnergy = 1.4f;
-	[Export] public float AmbientEnergy = 0.12f;
+	[Export] public float AmbientEnergy = 0.35f;
 
 	#endregion
 

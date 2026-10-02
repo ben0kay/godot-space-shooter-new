@@ -44,7 +44,7 @@ public partial class SpaceTravelDust : Node3D
 	// =========================================================
 	public override void _Ready()
 	{
-		_ship = GetParent() as PlayerShip;
+		_ship = NodeHelpers.FindAncestor<PlayerShip>(this);
 
 		if (_ship == null)
 		{
