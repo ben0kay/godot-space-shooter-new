@@ -4,14 +4,15 @@ using Godot;
 public partial class FpsCounter : Label
 {
 	// =========================================================
-	// Updates the text and warning colour every frame.
+	// Updates the FPS text and turns it red below 60 FPS.
+	// =========================================================
 	public override void _Process(double delta)
 	{
-		int fps = Engine.GetFramesPerSecond();
+		double fps = Engine.GetFramesPerSecond();
 
-		Text = $"FPS: {fps}";
+		Text = $"FPS: {fps:0}";
 
-		Modulate = fps < 60
+		Modulate = fps < 60.0
 			? Colors.Red
 			: Colors.White;
 	}

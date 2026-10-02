@@ -4,7 +4,8 @@
 [ext_resource type="PackedScene" uid="uid://2pswi1yg6tyh" path="res://ASTEROIDS/Asteroid.tscn" id="2_yty73"]
 [ext_resource type="Script" uid="uid://barchpi8u8tka" path="res://ASTEROIDS/Generation/AsteroidFieldGenerator.cs" id="3_n3oj4"]
 [ext_resource type="PackedScene" uid="uid://dsugn4j7goyug" path="res://ENVIRONMENT/SpaceEnvironment.tscn" id="3_x0hnd"]
-[ext_resource type="Resource" uid="uid://b6mllb1olwlgl" path="res://WORLD/Sectors/MiningBelt/MiningBeltAsteroids.tres" id="5_2acvy"]
+[ext_resource type="Resource" uid="uid://b6mllb1olwlgl" path="res://WORLD/Sectors/MiningBelt/MiningBeltAsteroids_secondary.tres" id="5_2acvy"]
+[ext_resource type="Resource" uid="uid://2j24qxauhkbt" path="res://WORLD/Sectors/MiningBelt/MiningBeltAsteroids_main.tres" id="5_n3oj4"]
 
 [node name="MiningBelt" type="Node3D" unique_id=1736576946]
 script = ExtResource("1_ttpmw")
@@ -19,7 +20,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 180)
 [node name="AsteroidField" type="Node3D" parent="." unique_id=1390442610]
 script = ExtResource("3_n3oj4")
 AsteroidScene = ExtResource("2_yty73")
-Definition = ExtResource("5_2acvy")
+Definition = ExtResource("5_n3oj4")
 
 [node name="AsteroidField2" type="Node3D" parent="." unique_id=1927297808]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1800, 100, -1200)
