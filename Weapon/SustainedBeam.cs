@@ -47,6 +47,9 @@ public partial class SustainedBeam : Node3D
 	private bool _hasAimPoint;
 	private DamageType _damageType;
 
+		private MiningSettings _mining;
+	private CargoHold _cargo;
+
 	#endregion
 
 	#region Setup
@@ -63,104 +66,127 @@ public partial class SustainedBeam : Node3D
 		ProcessPriority = 10;
 	}
 
-	// =========================================================
-// Resolves beam settings and prepares interception against other ships' shields.
-public void Configure(
-	WeaponDefinition weapon,
-	Node3D emitter,
-	CollisionObject3D source,
-	Faction faction
-)
-{
-	_definition = weapon?.Beam;
-
-	if (_definition == null || emitter == null || source == null)
+		// =========================================================
+	// Resolves beam settings and selects combat damage or resource extraction.
+	public void Configure(
+		WeaponDefinition weapon,
+		Node3D emitter,
+		CollisionObject3D source,
+		Faction faction
+	)
 	{
-		GD.PushError("SustainedBeam requires a beam, emitter, and source.");
-		QueueFree();
-		return;
+		_definition = weapon?.Beam;
+
+		if (_definition == null || emitter == null || source == null)
+		{
+			GD.PushError(
+				"SustainedBeam requires a beam, emitter, and source."
+			);
+
+			QueueFree();
+			return;
+		}
+
+		_emitter = emitter;
+		_source = source;
+		_faction = faction;
+
+		_mining = weapon.Mining;
+
+		if (_mining != null)
+		{
+			_cargo = source.GetNodeOrNull<CargoHold>("Cargo");
+
+			if (!GodotObject.IsInstanceValid(_cargo))
+			{
+				GD.PushError(
+					"A mining beam requires a CargoHold child named Cargo "
+					+ "on its source ship."
+				);
+
+				QueueFree();
+				return;
+			}
+		}
+
+		BeamLaunchOverrides overrides = weapon.BeamOverrides;
+
+		_damageType = overrides != null && overrides.OverrideDamageType
+			? overrides.DamageType
+			: _definition.DamageType;
+
+		_range = Mathf.Max(
+			0.01f,
+			overrides != null && overrides.OverrideRange
+				? overrides.Range
+				: _definition.Range
+		);
+
+		_width = Mathf.Max(
+			0.001f,
+			overrides != null && overrides.OverrideWidth
+				? overrides.Width
+				: _definition.Width
+		);
+
+		_extensionSpeed = Mathf.Max(
+			0.01f,
+			overrides != null && overrides.OverrideExtensionSpeed
+				? overrides.ExtensionSpeed
+				: _definition.ExtensionSpeed
+		);
+
+		_damagePerSecond = _mining != null
+			? 0.0f
+			: Mathf.Max(
+				0.0f,
+				overrides != null && overrides.OverrideDamage
+					? overrides.DamagePerSecond
+					: _definition.DamagePerSecond
+			);
+
+		_ray = new PhysicsRayQueryParameters3D
+		{
+			CollisionMask = _definition.CollisionMask,
+			CollideWithBodies = true,
+			CollideWithAreas = false,
+			HitFromInside = true
+		};
+
+		ShipShield.ConfigureWeaponQuery(_ray, source);
+
+		TopLevel = true;
+		FollowEmitter();
+
+		Color energy = _definition.EnergyColor;
+		Color core = _definition.CoreColor;
+
+		if (_definition.UseFactionPalette)
+		{
+			var palette = FactionPalettes.Get(_faction);
+
+			energy = palette.Energy;
+			core = palette.Core;
+		}
+
+		BuildVisuals(energy, core);
+
+		if (_definition.ParticlesEnabled)
+		{
+			BuildParticles(energy);
+		}
+
+		_cleanupDuration = Mathf.Max(
+			Mathf.Max(0.0f, _definition.ReleaseDuration),
+			_definition.ParticlesEnabled
+				? Mathf.Max(0.05f, _definition.EmberLifetime)
+				: 0.0f
+		);
+
+		_active = true;
+
+		UpdateVisuals();
 	}
-
-	_emitter = emitter;
-	_source = source;
-	_faction = faction;
-
-	BeamLaunchOverrides overrides = weapon.BeamOverrides;
-
-	_damageType = overrides != null && overrides.OverrideDamageType
-		? overrides.DamageType
-		: _definition.DamageType;
-
-	_range = Mathf.Max(
-		0.01f,
-		overrides != null && overrides.OverrideRange
-			? overrides.Range
-			: _definition.Range
-	);
-
-	_width = Mathf.Max(
-		0.001f,
-		overrides != null && overrides.OverrideWidth
-			? overrides.Width
-			: _definition.Width
-	);
-
-	_extensionSpeed = Mathf.Max(
-		0.01f,
-		overrides != null && overrides.OverrideExtensionSpeed
-			? overrides.ExtensionSpeed
-			: _definition.ExtensionSpeed
-	);
-
-	_damagePerSecond = Mathf.Max(
-		0.0f,
-		overrides != null && overrides.OverrideDamage
-			? overrides.DamagePerSecond
-			: _definition.DamagePerSecond
-	);
-
-	_ray = new PhysicsRayQueryParameters3D
-	{
-		CollisionMask = _definition.CollisionMask,
-		CollideWithBodies = true,
-		CollideWithAreas = false,
-		HitFromInside = true
-	};
-
-	ShipShield.ConfigureWeaponQuery(_ray, source);
-
-	TopLevel = true;
-	FollowEmitter();
-
-	Color energy = _definition.EnergyColor;
-	Color core = _definition.CoreColor;
-
-	if (_definition.UseFactionPalette)
-	{
-		var palette = FactionPalettes.Get(_faction);
-
-		energy = palette.Energy;
-		core = palette.Core;
-	}
-
-	BuildVisuals(energy, core);
-
-	if (_definition.ParticlesEnabled)
-	{
-		BuildParticles(energy);
-	}
-
-	_cleanupDuration = Mathf.Max(
-		Mathf.Max(0.0f, _definition.ReleaseDuration),
-		_definition.ParticlesEnabled
-			? Mathf.Max(0.05f, _definition.EmberLifetime)
-			: 0.0f
-	);
-
-	_active = true;
-
-	UpdateVisuals();
-}
 
 	// =========================================================
 	// Builds segmented cylinders that can bend smoothly in the shader.
@@ -425,7 +451,7 @@ public void Configure(
 	#region Simulation
 
 		// =========================================================
-	// Extends the aimed beam and delivers typed damage at its contact point.
+	// Extends the beam and applies its selected behaviour at the first contact.
 	public override void _PhysicsProcess(double delta)
 	{
 		if (!_active)
@@ -485,17 +511,12 @@ public void Configure(
 
 			GodotObject collider = hit["collider"].AsGodotObject();
 
-			if (collider is IDamageable damageable)
-			{
-				damageable.ApplyDamage(new DamageInfo(
-					_damagePerSecond * seconds,
-					_source,
-					_faction,
-					position,
-					normal,
-					_damageType
-				));
-			}
+			ApplyContact(
+				collider,
+				position,
+				normal,
+				seconds
+			);
 		}
 
 		UpdateVisuals();
@@ -548,6 +569,48 @@ public void Configure(
 		if (_releaseElapsed >= _cleanupDuration)
 		{
 			QueueFree();
+		}
+	}
+
+		// =========================================================
+	// Keeps resource extraction exclusive from the combat damage path.
+	private void ApplyContact(
+		GodotObject collider,
+		Vector3 position,
+		Vector3 normal,
+		float seconds
+	)
+	{
+		if (_mining != null)
+		{
+			if (collider is IMineable mineable
+				&& GodotObject.IsInstanceValid(_cargo)
+				&& !_cargo.IsQueuedForDeletion())
+			{
+				float extracted = mineable.Extract(
+					Mathf.Max(0.0f, _mining.UnitsPerSecond) * seconds,
+					Mathf.Max(0.0f, _mining.Strength),
+					out MiningResourceType resource
+				);
+
+				_cargo.Add(resource, extracted);
+			}
+
+			// Mining never falls through into combat damage.
+			return;
+		}
+
+		if (_damagePerSecond > 0.0f
+			&& collider is IDamageable damageable)
+		{
+			damageable.ApplyDamage(new DamageInfo(
+				_damagePerSecond * seconds,
+				_source,
+				_faction,
+				position,
+				normal,
+				_damageType
+			));
 		}
 	}
 

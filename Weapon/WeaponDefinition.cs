@@ -1,6 +1,6 @@
 using Godot;
 
-// Selects a weapon's delivery type, shared definition, overrides, and muzzle effects.
+// Selects a weapon's delivery, shared definitions, overrides, and optional mining.
 [GlobalClass]
 public partial class WeaponDefinition : Resource
 {
@@ -37,13 +37,20 @@ public partial class WeaponDefinition : Resource
 
 	#endregion
 
+	#region Mining
+
+	// Null means this weapon uses normal combat behaviour.
+	[Export] public MiningSettings Mining;
+
+	#endregion
+
 	#region Muzzle Effects
 
 	[Export] public WeaponEffectsProfile MuzzleEffects;
 
 	#endregion
 
-		#region Accuracy
+	#region Accuracy
 
 	// Null means no random projectile spread.
 	[Export] public WeaponAccuracySettings Accuracy;
