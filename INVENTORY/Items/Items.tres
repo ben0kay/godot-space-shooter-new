@@ -1,0 +1,74 @@
+[gd_resource type="Resource" script_class="ItemCatalog" format=3]
+
+[ext_resource type="Script" path="res://INVENTORY/Items/ItemCatalog.cs" id="1_catalog"]
+[ext_resource type="Script" path="res://INVENTORY/Items/ItemDefinition.cs" id="2_item"]
+
+[sub_resource type="Resource" id="Item_iron"]
+script = ExtResource("2_item")
+Key = "item_iron"
+DisplayName = "Iron Ore"
+Description = "Dense unprocessed iron ore suitable for industrial refining."
+AllowFractionalAmounts = true
+IsMiningResource = true
+MiningResource = 0
+IconColor = Color(0.761, 0.804, 0.827, 1)
+IconGlow = Color(0.325, 0.455, 0.522, 1)
+
+[sub_resource type="Resource" id="Item_carbon"]
+script = ExtResource("2_item")
+Key = "item_carbon"
+DisplayName = "Carbon Ore"
+Description = "Unprocessed carbon-rich material recovered from asteroid deposits."
+AllowFractionalAmounts = true
+IsMiningResource = true
+MiningResource = 1
+IconColor = Color(0.408, 0.561, 0.620, 1)
+IconGlow = Color(0.153, 0.463, 0.588, 1)
+
+[sub_resource type="Resource" id="Item_silicon"]
+script = ExtResource("2_item")
+Key = "item_silicon"
+DisplayName = "Silicate Deposit"
+Description = "Raw silicate material suitable for semiconductor processing."
+AllowFractionalAmounts = true
+IsMiningResource = true
+MiningResource = 2
+IconColor = Color(0.467, 0.882, 0.722, 1)
+IconGlow = Color(0.161, 0.608, 0.439, 1)
+
+[sub_resource type="Resource" id="Item_copper"]
+script = ExtResource("2_item")
+Key = "item_copper"
+DisplayName = "Copper Ore"
+Description = "Conductive copper-bearing ore recovered from asteroid deposits."
+AllowFractionalAmounts = true
+IsMiningResource = true
+MiningResource = 3
+IconColor = Color(0.898, 0.518, 0.259, 1)
+IconGlow = Color(0.200, 0.545, 0.482, 1)
+
+[sub_resource type="Resource" id="Item_sulfur"]
+script = ExtResource("2_item")
+Key = "item_sulfur"
+DisplayName = "Sulfur Deposit"
+Description = "Reactive sulfur-bearing mineral used in propellants and explosives."
+AllowFractionalAmounts = true
+IsMiningResource = true
+MiningResource = 4
+IconColor = Color(0.839, 0.722, 0.239, 1)
+IconGlow = Color(1, 0.467, 0.125, 1)
+
+[sub_resource type="Resource" id="Item_ice"]
+script = ExtResource("2_item")
+Key = "item_ice"
+DisplayName = "Ice"
+Description = "Frozen volatile material with life-support and fuel-processing uses."
+AllowFractionalAmounts = true
+IsMiningResource = true
+MiningResource = 5
+IconColor = Color(0.839, 0.988, 1, 1)
+IconGlow = Color(0.176, 0.737, 0.898, 1)
+
+[resource]
+script = ExtResource("1_catalog")
+Items = Array[ExtResource("2_item")]([SubResource("Item_iron"), SubResource("Item_carbon"), SubResource("Item_silicon"), SubResource("Item_copper"), SubResource("Item_sulfur"), SubResource("Item_ice")])

@@ -1,4 +1,4 @@
-// Defines harvestable materials and the shared interface used by mining tools.
+// Defines mined materials and the shared interface used by mining tools.
 public enum MiningResourceType
 {
 	Iron = 0,
@@ -11,6 +11,8 @@ public enum MiningResourceType
 
 public interface IMineable
 {
+	MiningResourceType ResourceType { get; }
+
 	// =========================================================
 	// Removes available material when the tool meets the strength requirement.
 	float Extract(

@@ -572,8 +572,8 @@ public partial class SustainedBeam : Node3D
 		}
 	}
 
-		// =========================================================
-	// Keeps resource extraction exclusive from the combat damage path.
+	// =========================================================
+	// Checks cargo space before extraction and keeps mining separate from damage.
 	private void ApplyContact(
 		GodotObject collider,
 		Vector3 position,
@@ -587,16 +587,23 @@ public partial class SustainedBeam : Node3D
 				&& GodotObject.IsInstanceValid(_cargo)
 				&& !_cargo.IsQueuedForDeletion())
 			{
-				float extracted = mineable.Extract(
+				float requested = Mathf.Min(
 					Mathf.Max(0.0f, _mining.UnitsPerSecond) * seconds,
-					Mathf.Max(0.0f, _mining.Strength),
-					out MiningResourceType resource
+					_cargo.GetFreeSpace(mineable.ResourceType)
 				);
 
-				_cargo.Add(resource, extracted);
+				if (requested > 0.0f)
+				{
+					float extracted = mineable.Extract(
+						requested,
+						Mathf.Max(0.0f, _mining.Strength),
+						out MiningResourceType resource
+					);
+
+					_cargo.Add(resource, extracted);
+				}
 			}
 
-			// Mining never falls through into combat damage.
 			return;
 		}
 

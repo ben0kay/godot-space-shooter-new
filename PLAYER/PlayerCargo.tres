@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="CargoDefinition" format=3]
+
+[ext_resource type="Script" path="res://INVENTORY/Cargo/CargoDefinition.cs" id="1_definition"]
+[ext_resource type="Resource" path="res://INVENTORY/Items/Items.tres" id="2_catalog"]
+
+[resource]
+script = ExtResource("1_definition")
+Columns = 8
+Rows = 5
+MaximumMass = 500.0
+Catalog = ExtResource("2_catalog")

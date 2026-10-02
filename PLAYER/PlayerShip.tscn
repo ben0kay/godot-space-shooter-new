@@ -14,6 +14,11 @@
 [ext_resource type="Script" uid="uid://doc0u8ouviehk" path="res://PLAYER/Scripts/PlayerFlightVisuals.cs" id="12_nsdd8"]
 [ext_resource type="Script" uid="uid://dhs81orlwy2dt" path="res://ENVIRONMENT/SpaceTravelDust.cs" id="15_q318l"]
 [ext_resource type="Script" uid="uid://dddrh1kmsvoo0" path="res://PLAYER/Cockpit/PlayerCockpit.cs" id="16_dxnsd"]
+[ext_resource type="Script" path="res://Weapon/WeaponDefinition.cs" id="weapon_definition"]
+[ext_resource type="Resource" path="res://PLAYER/Weapons/PlayerRocketLauncher.tres" id="rocket_weapon"]
+[ext_resource type="Resource" path="res://Weapons/PlayerMiningBeam.tres" id="mining_weapon"]
+[ext_resource type="Script" path="res://MINING/Core/CargoHold.cs" id="cargo_script"]
+[ext_resource type="Resource" path="res://PLAYER/PlayerCargo.tres" id="cargo_definition"]
 
 [node name="PlayerShip" type="CharacterBody3D" unique_id=1589947766]
 script = ExtResource("1_d2dyu")
@@ -40,6 +45,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.28, 0.36, -0.68)
 script = ExtResource("4_faoyc")
 PrimaryWeapon = NodePath("../PrimaryWeapon")
 SecondaryWeapon = NodePath("../SecondaryWeapon")
+SecondaryOptions = Array[ExtResource("weapon_definition")]([ExtResource("9_sklyu"), ExtResource("rocket_weapon"), ExtResource("mining_weapon")])
 
 [node name="PlayerThrusters" type="Node3D" parent="." unique_id=1126257128]
 script = ExtResource("6_5rg74")
@@ -106,3 +112,6 @@ far = 2500.0
 script = ExtResource("16_dxnsd")
 
 [node name="Cargo" type="Node" parent="." unique_id=1916756931]
+script = ExtResource("cargo_script")
+Definition = ExtResource("cargo_definition")
+LogHarvest = true

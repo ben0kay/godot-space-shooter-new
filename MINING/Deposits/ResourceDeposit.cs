@@ -12,6 +12,10 @@ public partial class ResourceDeposit : StaticBody3D, IDamageable, IMineable
 	public float Remaining => _remaining;
 	public float MaximumReserve => _maximumReserve;
 
+		public MiningResourceType ResourceType => _definition != null
+		? _definition.ResourceType
+		: MiningResourceType.Iron;
+
 	#endregion
 
 	#region Runtime
