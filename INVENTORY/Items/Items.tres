@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="ItemCatalog" format=3]
+[gd_resource type="Resource" script_class="ItemCatalog" format=3 uid="uid://cm6drj60fvdoe"]
 
-[ext_resource type="Script" path="res://INVENTORY/Items/ItemCatalog.cs" id="1_catalog"]
-[ext_resource type="Script" path="res://INVENTORY/Items/ItemDefinition.cs" id="2_item"]
+[ext_resource type="Script" uid="uid://5kpe3yrrwchs" path="res://INVENTORY/Items/ItemCatalog.cs" id="1_catalog"]
+[ext_resource type="Script" uid="uid://dufuxm04xxlgm" path="res://INVENTORY/Items/ItemDefinition.cs" id="2_item"]
 
 [sub_resource type="Resource" id="Item_iron"]
 script = ExtResource("2_item")
@@ -10,7 +10,6 @@ DisplayName = "Iron Ore"
 Description = "Dense unprocessed iron ore suitable for industrial refining."
 AllowFractionalAmounts = true
 IsMiningResource = true
-MiningResource = 0
 IconColor = Color(0.761, 0.804, 0.827, 1)
 IconGlow = Color(0.325, 0.455, 0.522, 1)
 
@@ -22,7 +21,7 @@ Description = "Unprocessed carbon-rich material recovered from asteroid deposits
 AllowFractionalAmounts = true
 IsMiningResource = true
 MiningResource = 1
-IconColor = Color(0.408, 0.561, 0.620, 1)
+IconColor = Color(0.408, 0.561, 0.62, 1)
 IconGlow = Color(0.153, 0.463, 0.588, 1)
 
 [sub_resource type="Resource" id="Item_silicon"]
@@ -45,7 +44,7 @@ AllowFractionalAmounts = true
 IsMiningResource = true
 MiningResource = 3
 IconColor = Color(0.898, 0.518, 0.259, 1)
-IconGlow = Color(0.200, 0.545, 0.482, 1)
+IconGlow = Color(0.2, 0.545, 0.482, 1)
 
 [sub_resource type="Resource" id="Item_sulfur"]
 script = ExtResource("2_item")

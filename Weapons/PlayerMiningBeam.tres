@@ -1,13 +1,11 @@
-[gd_resource type="Resource" script_class="WeaponDefinition" format=3]
+[gd_resource type="Resource" script_class="WeaponDefinition" format=3 uid="uid://cpkdcrv76wngi"]
 
-[ext_resource type="Script" path="res://Weapon/WeaponDefinition.cs" id="1_weapon"]
+[ext_resource type="Script" uid="uid://dk13qlucl75kd" path="res://Weapon/WeaponDefinition.cs" id="1_weapon"]
 [ext_resource type="Resource" path="res://BEAMS/MiningBeam.tres" id="2_beam"]
-[ext_resource type="Script" path="res://MINING/Core/MiningSettings.cs" id="3_mining"]
+[ext_resource type="Script" uid="uid://b32qjc4gwuvjm" path="res://MINING/Core/MiningSettings.cs" id="3_mining"]
 
 [sub_resource type="Resource" id="Mining_player"]
 script = ExtResource("3_mining")
-UnitsPerSecond = 4.0
-Strength = 1.0
 
 [resource]
 resource_name = "Mining Beam"
