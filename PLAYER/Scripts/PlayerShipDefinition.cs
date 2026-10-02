@@ -17,6 +17,8 @@ public partial class PlayerShipDefinition : Resource
 	[Export] public PlayerBoostStats Boost = new();
 	[Export] public PlayerDashStats Dash = new();
 
+		[Export] public CargoDefinition Cargo;
+
 	#endregion
 
 	#region Presentation

@@ -26,9 +26,8 @@ public partial class CargoHold : Node
 
 	public int SlotCount => _slots.Length;
 
-	public float MaximumMass => Definition != null
-		? Mathf.Max(0.0f, Definition.MaximumMass)
-		: 0.0f;
+	public float MaximumMass => _maximumMass;
+	public bool IsOverCapacity => UsedMass > MaximumMass;
 
 	public float UsedMass => _usedMass;
 	public float TotalUnits => _totalUnits;
@@ -43,13 +42,14 @@ public partial class CargoHold : Node
 	private float _totalUnits;
 
 	private bool _configured;
+		private float _maximumMass;
 
 	#endregion
 
 	#region Setup
 
 	// =========================================================
-	// Creates the ship's cargo slots without enabling per-frame updates.
+	// Creates cargo slots and initializes independent runtime mass capacity.
 	public override void _Ready()
 	{
 		SetProcess(false);
@@ -65,7 +65,28 @@ public partial class CargoHold : Node
 		}
 
 		_slots = new CargoSlot[Columns * Rows];
+		_maximumMass = Mathf.Max(0.0f, Definition.MaximumMass);
 		_configured = true;
+	}
+
+		// =========================================================
+	// Changes allowed cargo mass while preserving every stored item and slot.
+	public void SetMaximumMass(float maximumMass)
+	{
+		if (!float.IsFinite(maximumMass))
+		{
+			return;
+		}
+
+		float next = Mathf.Max(0.0f, maximumMass);
+
+		if (_maximumMass == next)
+		{
+			return;
+		}
+
+		_maximumMass = next;
+		Changed?.Invoke();
 	}
 
 	#endregion

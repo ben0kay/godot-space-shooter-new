@@ -4,10 +4,9 @@ using Godot;
 public sealed class ShipDefence
 {
 	#region Values
-
-	public float MaxShield { get; }
-	public float MaxArmour { get; }
-	public float MaxHull { get; }
+	public float MaxShield { get; private set; }
+	public float MaxArmour { get; private set; }
+	public float MaxHull { get; private set; }
 
 	public float Shield { get; private set; }
 	public float Armour { get; private set; }
@@ -17,7 +16,21 @@ public sealed class ShipDefence
 
 	#endregion
 
+
 	#region Setup
+
+	// =========================================================
+	// Updates capacities without healing damage or reviving a destroyed ship.
+	public void SetMaximums(float maxShield, float maxArmour, float maxHull)
+	{
+		MaxShield = Mathf.Max(0.0f, maxShield);
+		MaxArmour = Mathf.Max(0.0f, maxArmour);
+		MaxHull = Mathf.Max(1.0f, maxHull);
+
+		Shield = Mathf.Min(Shield, MaxShield);
+		Armour = Mathf.Min(Armour, MaxArmour);
+		Hull = Mathf.Min(Hull, MaxHull);
+	}
 
 	// =========================================================
 	// Creates independent runtime defence from the ship's maximum values.

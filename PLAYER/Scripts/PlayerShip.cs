@@ -29,42 +29,45 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 
 	#endregion
 
-	#region Definition Settings
+		#region Final Stats
 
-	// Forward existing property names to the shared definition.
-	// Camera, thrusters, and movement code keep using the same public interface.
-	public float ForwardSpeed => Definition.Handling.ForwardSpeed;
-	public float ReverseSpeed => Definition.Handling.ReverseSpeed;
-	public float StrafeSpeed => Definition.Handling.StrafeSpeed;
-	public float VerticalSpeed => Definition.Handling.VerticalSpeed;
+	public PlayerRuntimeStats Stats { get; private set; }
 
-	public float Acceleration => Definition.Handling.Acceleration;
-	public float Deceleration => Definition.Handling.Deceleration;
+	// Existing flight and presentation systems now read cached final values.
+	public float ForwardSpeed => Stats.Get(PlayerStat.ForwardSpeed);
+	public float ReverseSpeed => Stats.Get(PlayerStat.ReverseSpeed);
+	public float StrafeSpeed => Stats.Get(PlayerStat.StrafeSpeed);
+	public float VerticalSpeed => Stats.Get(PlayerStat.VerticalSpeed);
 
-	public float RollSpeed => Definition.Handling.RollSpeed;
+	public float Acceleration => Stats.Get(PlayerStat.Acceleration);
+	public float Deceleration => Stats.Get(PlayerStat.Deceleration);
+	public float RollSpeed => Stats.Get(PlayerStat.RollSpeed);
 
 	public float MousePitchSensitivity =>
-		Definition.Handling.MousePitchSensitivity;
+		Stats.Get(PlayerStat.MousePitchSensitivity);
 
 	public float MouseYawSensitivity =>
-		Definition.Handling.MouseYawSensitivity;
+		Stats.Get(PlayerStat.MouseYawSensitivity);
 
 	public float MaxPitchSpeedDegrees =>
-		Definition.Handling.MaxPitchSpeedDegrees;
+		Stats.Get(PlayerStat.MaxPitchSpeedDegrees);
 
 	public float MaxYawSpeedDegrees =>
-		Definition.Handling.MaxYawSpeedDegrees;
+		Stats.Get(PlayerStat.MaxYawSpeedDegrees);
 
 	public float SteeringResponse =>
-		Definition.Handling.SteeringResponse;
+		Stats.Get(PlayerStat.SteeringResponse);
 
 	public float BoostSpeedMultiplier =>
-		Definition.Boost.SpeedMultiplier;
+		Stats.Get(PlayerStat.BoostSpeedMultiplier);
 
 	public float BoostAccelerationMultiplier =>
-		Definition.Boost.AccelerationMultiplier;
+		Stats.Get(PlayerStat.BoostAccelerationMultiplier);
 
-	public float BoostResponse => Definition.Boost.Response;
+	public float BoostResponse =>
+		Stats.Get(PlayerStat.BoostResponse);
+
+	private CargoHold _cargo;
 
 	#endregion
 
@@ -111,14 +114,47 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 
 	#region Godot Events
 
-	// =========================================================
-	// Creates collision, defence, presentation, and caches the dash controller.
+		// =========================================================
+	// Creates runtime stats, defence, collision, and existing player presentation.
 	public override void _Ready()
 	{
+		_dash = GetNodeOrNull<PlayerDash>("Dash");
+		_cargo = GetNodeOrNull<CargoHold>("Cargo");
+
+		if (Definition == null
+			|| Definition.Defence == null
+			|| Definition.Handling == null
+			|| Definition.Boost == null
+			|| Definition.Dash == null
+			|| Definition.Cargo == null
+			|| _cargo == null
+			|| _cargo.Definition != Definition.Cargo)
+		{
+			GD.PushError(
+				"PlayerShip requires all stat groups and a Cargo node "
+				+ "using the same CargoDefinition as PlayerShipDefinition."
+			);
+
+			SetProcessInput(false);
+			SetPhysicsProcess(false);
+			_dash?.SetProcessInput(false);
+			_dash?.SetPhysicsProcess(false);
+			return;
+		}
+
+		Stats = new PlayerRuntimeStats(Definition);
+
+		Defence = new ShipDefence(
+			Stats.Get(PlayerStat.MaxShield),
+			Stats.Get(PlayerStat.MaxArmour),
+			Stats.Get(PlayerStat.MaxHull)
+		);
+
+		Stats.Changed += ApplyFinalStats;
+		ApplyFinalStats();
+
 		AddToGroup("player_ship");
 		AddToGroup("combat_targets");
-
-		_dash = GetNodeOrNull<PlayerDash>("Dash");
 
 		AddChild(new CollisionShape3D
 		{
@@ -130,25 +166,10 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 			Position = new Vector3(0.0f, 0.06f, -0.225f)
 		});
 
-		if (Definition == null)
+		AddChild(new PlayerDefenceHud
 		{
-			GD.PushError(
-				"Assign a PlayerShipDefinition to PlayerShip."
-			);
-		}
-		else
-		{
-			Defence = new ShipDefence(
-				Definition.MaxShield,
-				Definition.MaxArmour,
-				Definition.MaxHull
-			);
-
-			AddChild(new PlayerDefenceHud
-			{
-				Name = "PlayerDefenceHud"
-			});
-		}
+			Name = "PlayerDefenceHud"
+		});
 
 		if (GetNodeOrNull<PlayerFlightVisuals>("FlightVisuals") == null)
 		{
@@ -158,15 +179,12 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 			});
 		}
 
-		if (Defence != null)
-		{
-			_shield = ShipShield.Attach(
-				this,
-				Defence,
-				CombatFaction,
-				Definition.ShieldVisuals
-			);
-		}
+		_shield = ShipShield.Attach(
+			this,
+			Defence,
+			CombatFaction,
+			Definition.ShieldVisuals
+		);
 
 		Input.MouseMode = Input.MouseModeEnum.Captured;
 	}
@@ -233,9 +251,15 @@ public override void _Notification(int what)
 	}
 }
 
-	// Restores the pointer when leaving gameplay.
+	// =========================================================
+	// Disconnects runtime stat updates and restores the pointer when leaving gameplay.
 	public override void _ExitTree()
 	{
+		if (Stats != null)
+		{
+			Stats.Changed -= ApplyFinalStats;
+		}
+
 		Input.MouseMode = Input.MouseModeEnum.Visible;
 	}
 
@@ -280,6 +304,23 @@ public override void _PhysicsProcess(double delta)
 	UpdateRotation(seconds);
 	UpdateMovement(seconds);
 }
+
+	// =========================================================
+	// Synchronizes calculated capacities without repairing damage or removing cargo.
+	private void ApplyFinalStats()
+	{
+		Defence.SetMaximums(
+			Stats.Get(PlayerStat.MaxShield),
+			Stats.Get(PlayerStat.MaxArmour),
+			Stats.Get(PlayerStat.MaxHull)
+		);
+
+		_cargo.SetMaximumMass(
+			Stats.Get(PlayerStat.CargoMaximumMass)
+		);
+
+		DefenceChanged?.Invoke();
+	}
 
 	#endregion
 
