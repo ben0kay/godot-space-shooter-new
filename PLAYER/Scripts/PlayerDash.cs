@@ -3,18 +3,22 @@ using Godot;
 // Detects double-tap Right Shift and controls a short direction-locked dash.
 public partial class PlayerDash : Node
 {
-	#region Settings
+	#region Definition Settings
 
-	[ExportGroup("Dash Movement")]
+	// Dash configuration belongs to the player's shared ship definition.
+	public float Speed => _ship.Definition.Dash.Speed;
 
-	[Export] public float Speed = 90.0f;
-	[Export] public float DurationSeconds = 0.22f;
-	[Export] public float ExitSpeedMultiplier = 0.45f;
+	public float DurationSeconds =>
+		_ship.Definition.Dash.DurationSeconds;
 
-	[ExportGroup("Dash Input")]
+	public float ExitSpeedMultiplier =>
+		_ship.Definition.Dash.ExitSpeedMultiplier;
 
-	[Export] public float DoubleTapWindowSeconds = 0.25f;
-	[Export] public float CooldownSeconds = 1.2f;
+	public float DoubleTapWindowSeconds =>
+		_ship.Definition.Dash.DoubleTapWindowSeconds;
+
+	public float CooldownSeconds =>
+		_ship.Definition.Dash.CooldownSeconds;
 
 	#endregion
 

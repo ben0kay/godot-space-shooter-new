@@ -29,37 +29,49 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 
 	#endregion
 
-	#region Flight Settings
+	#region Definition Settings
 
-	[Export] public float ForwardSpeed = 18.0f;
-	[Export] public float ReverseSpeed = 8.0f;
-	[Export] public float StrafeSpeed = 12.0f;
-	[Export] public float VerticalSpeed = 10.0f;
-	[Export] public float Acceleration = 24.0f;
-	[Export] public float Deceleration = 18.0f;
+	// Forward existing property names to the shared definition.
+	// Camera, thrusters, and movement code keep using the same public interface.
+	public float ForwardSpeed => Definition.Handling.ForwardSpeed;
+	public float ReverseSpeed => Definition.Handling.ReverseSpeed;
+	public float StrafeSpeed => Definition.Handling.StrafeSpeed;
+	public float VerticalSpeed => Definition.Handling.VerticalSpeed;
 
-	[Export] public float RollSpeed = 75.0f;
-	[Export] public float MousePitchSensitivity = 0.0008f;
-	[Export] public float MouseYawSensitivity = 0.0008f;
+	public float Acceleration => Definition.Handling.Acceleration;
+	public float Deceleration => Definition.Handling.Deceleration;
+
+	public float RollSpeed => Definition.Handling.RollSpeed;
+
+	public float MousePitchSensitivity =>
+		Definition.Handling.MousePitchSensitivity;
+
+	public float MouseYawSensitivity =>
+		Definition.Handling.MouseYawSensitivity;
+
+	public float MaxPitchSpeedDegrees =>
+		Definition.Handling.MaxPitchSpeedDegrees;
+
+	public float MaxYawSpeedDegrees =>
+		Definition.Handling.MaxYawSpeedDegrees;
+
+	public float SteeringResponse =>
+		Definition.Handling.SteeringResponse;
+
+	public float BoostSpeedMultiplier =>
+		Definition.Boost.SpeedMultiplier;
+
+	public float BoostAccelerationMultiplier =>
+		Definition.Boost.AccelerationMultiplier;
+
+	public float BoostResponse => Definition.Boost.Response;
 
 	#endregion
 
-	#region Steering Settings
+	#region Steering Runtime
 
-[Export] public float MaxPitchSpeedDegrees = 60.0f;
-[Export] public float MaxYawSpeedDegrees = 75.0f;
-[Export] public float SteeringResponse = 12.0f;
-
-private float _pitchRate;
-private float _yawRate;
-
-#endregion
-
-	#region Boost Settings
-
-	[Export] public float BoostSpeedMultiplier = 2.2f;
-	[Export] public float BoostAccelerationMultiplier = 1.8f;
-	[Export] public float BoostResponse = 4.0f;
+	private float _pitchRate;
+	private float _yawRate;
 
 	#endregion
 
