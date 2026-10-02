@@ -1,7 +1,60 @@
 [gd_resource type="Resource" script_class="AsteroidFieldDefinition" format=3 uid="uid://b6mllb1olwlgl"]
 
-[ext_resource type="Script" uid="uid://clw7bekt7gf02" path="res://ASTEROIDS/Generation/AsteroidFieldDefinition.cs" id="1_tb4f4"]
+[ext_resource type="Script" uid="uid://clw7bekt7gf02" path="res://ASTEROIDS/Generation/AsteroidFieldDefinition.cs" id="1_field"]
+[ext_resource type="Script" uid="uid://cn6wllof1ymn5" path="res://MINING/Deposits/ResourceDepositDefinition.cs" id="2_deposit"]
+
+[sub_resource type="Resource" id="Deposit_iron"]
+script = ExtResource("2_deposit")
+GenerationWeight = 11.0
+ReserveRange = Vector2(14, 28)
+EmissionEnergy = 0.7
+
+[sub_resource type="Resource" id="Deposit_carbon"]
+script = ExtResource("2_deposit")
+ResourceType = 1
+GenerationWeight = 13.0
+ReserveRange = Vector2(16, 30)
+SurfaceColor = Color(0.5, 0.59, 0.62, 1)
+GlowColor = Color(0.15, 0.35, 0.42, 1)
+EmissionEnergy = 0.7
+
+[sub_resource type="Resource" id="Deposit_silicon"]
+script = ExtResource("2_deposit")
+ResourceType = 2
+GenerationWeight = 7.0
+ReserveRange = Vector2(10, 22)
+SurfaceColor = Color(0.47, 0.88, 0.72, 1)
+GlowColor = Color(0.16, 0.61, 0.44, 1)
+EmissionEnergy = 0.7
+
+[sub_resource type="Resource" id="Deposit_copper"]
+script = ExtResource("2_deposit")
+ResourceType = 3
+GenerationWeight = 8.0
+ReserveRange = Vector2(10, 22)
+SurfaceColor = Color(0.9, 0.52, 0.26, 1)
+GlowColor = Color(0.2, 0.55, 0.48, 1)
+EmissionEnergy = 0.7
+
+[sub_resource type="Resource" id="Deposit_sulfur"]
+script = ExtResource("2_deposit")
+ResourceType = 4
+GenerationWeight = 8.0
+ReserveRange = Vector2(10, 20)
+SurfaceColor = Color(0.84, 0.72, 0.24, 1)
+GlowColor = Color(1, 0.47, 0.13, 1)
+EmissionEnergy = 0.7
+
+[sub_resource type="Resource" id="Deposit_ice"]
+script = ExtResource("2_deposit")
+ResourceType = 5
+ReserveRange = Vector2(18, 36)
+SurfaceColor = Color(0.84, 0.99, 1, 1)
+GlowColor = Color(0.18, 0.74, 0.9, 1)
+EmissionEnergy = 0.7
 
 [resource]
-script = ExtResource("1_tb4f4")
+script = ExtResource("1_field")
+DepositTypes = Array[ExtResource("2_deposit")]([SubResource("Deposit_iron"), SubResource("Deposit_carbon"), SubResource("Deposit_silicon"), SubResource("Deposit_copper"), SubResource("Deposit_sulfur"), SubResource("Deposit_ice")])
+DepositChance = 0.55
 metadata/_custom_type_script = "uid://clw7bekt7gf02"
