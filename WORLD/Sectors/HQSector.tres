@@ -6,5 +6,6 @@
 script = ExtResource("1_4evfs")
 Key = "hq"
 DisplayName = "Headquarters"
+ScenePath = "uid://dlgkviqw4iclg"
 Connections = Array[String](["mining_belt"])
 metadata/_custom_type_script = "uid://dcyugw4lrj6u"
