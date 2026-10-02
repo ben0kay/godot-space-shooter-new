@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="AsteroidFieldDefinition" format=3 uid="uid://b6mllb1olwlgl"]
+
+[ext_resource type="Script" uid="uid://clw7bekt7gf02" path="res://ASTEROIDS/Generation/AsteroidFieldDefinition.cs" id="1_tb4f4"]
+
+[resource]
+script = ExtResource("1_tb4f4")
+metadata/_custom_type_script = "uid://clw7bekt7gf02"

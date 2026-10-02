@@ -6,6 +6,7 @@ public partial class Asteroid : StaticBody3D, IDamageable
 	#region Health Settings
 
 	[Export] public float HealthPerRadius = 3.0f;
+	[Export] public bool Destructible = true;
 
 	public float Health => _health;
 	public float MaximumHealth => _maximumHealth;
@@ -15,6 +16,18 @@ public partial class Asteroid : StaticBody3D, IDamageable
 		: 0.0f;
 
 	#endregion
+
+	#region Identity And Size
+
+[Export] public string PersistentId = "";
+
+public float Radius => _radius;
+
+// Conservative bound for the current shape generator:
+// maximum deformation 1.38 × maximum proportion 1.25 = 1.725.
+public float PlacementRadius => _radius * 1.8f;
+
+#endregion
 
 	#region Rotation Settings
 
@@ -182,7 +195,7 @@ public override void _Ready()
 	#region Damage
 
 	// =========================================================
-// Updates health and cracks, flashes the hit surface, and emits throttled debris.
+// Applies damage only to destructible rocks while retaining surface hit feedback.
 public void ApplyDamage(DamageInfo damage)
 {
 	if (_destroyed
@@ -192,12 +205,15 @@ public void ApplyDamage(DamageInfo damage)
 		return;
 	}
 
-	_health = Mathf.Max(0.0f, _health - damage.Amount);
-
-	if (_health <= 0.0f)
+	if (Destructible)
 	{
-		Destroy();
-		return;
+		_health = Mathf.Max(0.0f, _health - damage.Amount);
+
+		if (_health <= 0.0f)
+		{
+			Destroy();
+			return;
+		}
 	}
 
 	UpdateDamageVisuals(damage);
@@ -227,9 +243,14 @@ public void ApplyDamage(DamageInfo damage)
 }
 
 	// =========================================================
-// Emits independent fragments and dust before removing the asteroid.
+// Removes a destructible asteroid after emitting sector-owned debris and dust.
 private void Destroy()
 {
+	if (!Destructible || _destroyed)
+	{
+		return;
+	}
+
 	_destroyed = true;
 
 	SetPhysicsProcess(false);
@@ -402,7 +423,7 @@ private void ConfigureDamageVisuals(
 }
 
 // =========================================================
-// Updates health-driven cracks and starts a flash at the supplied surface hit.
+// Shows health-based cracks on destructible rocks and local hit flashes on both.
 private void UpdateDamageVisuals(DamageInfo damage)
 {
 	if (_damageMaterial == null)
@@ -412,7 +433,9 @@ private void UpdateDamageVisuals(DamageInfo damage)
 
 	_damageMaterial.SetShaderParameter(
 		"damage_amount",
-		CracksEnabled ? 1.0f - HealthFraction : 0.0f
+		Destructible && CracksEnabled
+			? 1.0f - HealthFraction
+			: 0.0f
 	);
 
 	if (!damage.HasImpact || ImpactFlashDuration <= 0.0f)
@@ -420,7 +443,6 @@ private void UpdateDamageVisuals(DamageInfo damage)
 		return;
 	}
 
-	// Store the hit in asteroid coordinates so it follows the rotating surface.
 	_damageMaterial.SetShaderParameter(
 		"hit_position",
 		ToLocal(damage.ImpactPosition)
@@ -434,7 +456,6 @@ private void UpdateDamageVisuals(DamageInfo damage)
 	_damageMaterial.SetShaderParameter("hit_strength", 1.0f);
 
 	_flashRemaining = ImpactFlashDuration;
-
 	SetProcess(true);
 }
 
