@@ -4,11 +4,9 @@
 [ext_resource type="Script" uid="uid://o5i0hq3dg8us" path="res://PLAYER/Stats/PlayerDashStats.cs" id="2_sbwak"]
 [ext_resource type="Script" uid="uid://dtibfcg28auav" path="res://PLAYER/Stats/PlayerDefenceStats.cs" id="3_pacrg"]
 [ext_resource type="Script" uid="uid://1rfmty1btvsc" path="res://PLAYER/Stats/PlayerHandlingStats.cs" id="4_s6ljt"]
-[ext_resource type="Resource" path="res://PLAYER/PlayerCargo.tres" id="cargo_definition"]
+[ext_resource type="Resource" uid="uid://c4h5k4fek1lxa" path="res://PLAYER/PlayerCargo.tres" id="cargo_definition"]
 [ext_resource type="Script" uid="uid://f6c21yq4g6oi" path="res://PLAYER/Scripts/PlayerShipDefinition.cs" id="definition"]
 [ext_resource type="Script" uid="uid://bi8qfjqnsarb5" path="res://SHIELDS/ShieldVisualSettings.cs" id="shield_script"]
-[ext_resource type="Script" path="res://PLAYER/Stats/PlayerResourceStats.cs" id="resource_stats"]
-[ext_resource type="Script" path="res://SHIP/ShipSystemsDefinition.cs" id="systems_definition"]
 
 [sub_resource type="Resource" id="Resource_40qk6"]
 script = ExtResource("1_0u2ma")
@@ -26,21 +24,6 @@ script = ExtResource("4_s6ljt")
 script = ExtResource("shield_script")
 Spherical = true
 
-[sub_resource type="Resource" id="PlayerResources"]
-script = ExtResource("resource_stats")
-MaximumFuel = 1000.0
-ThrustFuelPerSecond = 0.9
-BoostFuelPerSecond = 3.6
-DashFuelCost = 8.0
-JumpFuelCost = 50.0
-MaximumEnergy = 500.0
-EnergyRegenerationPerSecond = 12.0
-EnergyRechargeDelaySeconds = 0.75
-
-[sub_resource type="Resource" id="PlayerSystems"]
-script = ExtResource("systems_definition")
-MaximumCondition = 100.0
-
 [resource]
 script = ExtResource("definition")
 Defence = SubResource("Resource_th0d7")
@@ -50,5 +33,3 @@ Dash = SubResource("Resource_dsfic")
 Cargo = ExtResource("cargo_definition")
 ShieldVisuals = SubResource("ShieldVisuals")
 metadata/_custom_type_script = "uid://f6c21yq4g6oi"
-Resources = SubResource("PlayerResources")
-Systems = SubResource("PlayerSystems")

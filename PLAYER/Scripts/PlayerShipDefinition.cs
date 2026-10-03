@@ -19,6 +19,9 @@ public partial class PlayerShipDefinition : Resource
 
 		[Export] public CargoDefinition Cargo;
 
+		[Export] public PlayerResourceStats Resources = new();
+[Export] public ShipSystemsDefinition Systems = new();
+
 	#endregion
 
 	#region Presentation
