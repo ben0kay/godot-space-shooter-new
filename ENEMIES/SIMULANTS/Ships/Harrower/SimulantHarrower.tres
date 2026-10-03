@@ -8,7 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://df3088rujgyds" path="res://ENEMIES/SIMULANTS/Ships/Dreadwing/SimulantDreadwingMovement.tscn" id="movement"]
 [ext_resource type="Script" uid="uid://ccwbsekbqw5ln" path="res://ENEMIES/CORE/EnemyRangeStats.cs" id="ranges"]
 [ext_resource type="Script" uid="uid://bi8qfjqnsarb5" path="res://SHIELDS/ShieldVisualSettings.cs" id="shield"]
-[ext_resource type="PackedScene" uid="uid://lb2gneb0ahlm" path="res://ENEMIES/SIMULANTS/Ships/Harrower/SimulantHarrowerVisual.tscn" id="visual"]
+[ext_resource type="PackedScene" path="res://ENEMIES/SIMULANTS/Ships/Harrower/SimulantHarrowerVisual.tscn" id="visual"]
 
 [sub_resource type="Resource" id="Defence"]
 script = ExtResource("defence")

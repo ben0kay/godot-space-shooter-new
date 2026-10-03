@@ -206,16 +206,16 @@ RotationStats = SubResource("FixedRotation")
 [node name="Muzzle" type="Marker3D" parent="Hardpoints/CoreEmitter"]
 position = Vector3(0, 0, -3)
 
-[node name="BeamEmitter" type="Node3D" parent="Hardpoints"]
+[node name="OrbEmitter" type="Node3D" parent="Hardpoints"]
 position = Vector3(0, 0, -9)
 script = ExtResource("hardpoint")
-Key = "beam_centre"
-Group = "beam"
+Key = "orb_centre"
+Group = "orbs"
 RotationStats = SubResource("FixedRotation")
 
-[node name="Emitter" type="MeshInstance3D" parent="Hardpoints/BeamEmitter"]
+[node name="Emitter" type="MeshInstance3D" parent="Hardpoints/OrbEmitter"]
 mesh = SubResource("EmitterMesh")
 cast_shadow = 0
 
-[node name="Muzzle" type="Marker3D" parent="Hardpoints/BeamEmitter"]
+[node name="Muzzle" type="Marker3D" parent="Hardpoints/OrbEmitter"]
 position = Vector3(0, 0, -0.4)

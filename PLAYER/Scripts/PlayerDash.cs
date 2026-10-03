@@ -166,23 +166,26 @@ public partial class PlayerDash : Node
 		}
 	}
 
-	// =========================================================
-	// Locks the current travel direction and starts the burst and cooldown.
-	private void BeginDash()
+// =========================================================
+// Pays the dash fuel cost before starting its burst and cooldown.
+private void BeginDash()
+{
+	if (!_ship.Systems.IsOperational(ShipSystem.Engines)
+		|| !_ship.Systems.IsOperational(ShipSystem.Thrusters)
+		|| !_ship.Resources.TrySpendFuel(
+			_ship.Stats.Get(PlayerStat.DashFuelCost)
+		))
 	{
-		Direction = _ship.GetDashDirection();
-
-		_dashRemaining = Mathf.Max(0.01f, DurationSeconds);
-
-		_cooldownRemaining = Mathf.Max(
-			0.0f,
-			CooldownSeconds
-		);
-
-		IsDashing = true;
-
-		_ship.Velocity = Direction * DashSpeed;
+		return;
 	}
+
+	Direction = _ship.GetDashDirection();
+	_dashRemaining = Mathf.Max(0.01f, DurationSeconds);
+	_cooldownRemaining = Mathf.Max(0.0f, CooldownSeconds);
+
+	IsDashing = true;
+	_ship.Velocity = Direction * DashSpeed;
+}
 
 	// =========================================================
 	// Ends the burst and retains a configurable fraction of exit momentum.

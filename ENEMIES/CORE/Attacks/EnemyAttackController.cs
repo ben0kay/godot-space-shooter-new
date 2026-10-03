@@ -258,9 +258,9 @@ public void Initialize(
 
 	#region Volleys
 
-	// =========================================================
-// Fires each volley round using its configured projectile formation.
-// Briefly waits for blocked or unaligned mounts before skipping a round.
+// =========================================================
+// Advances volley rounds, including individual sequential-ring shots.
+// Briefly waits for blocked mounts before skipping a round.
 // =========================================================
 private void UpdateVolley(AttackState state, float seconds)
 {
@@ -276,11 +276,7 @@ private void UpdateVolley(AttackState state, float seconds)
 	}
 
 	state.ShotTimer -= seconds;
-
-	if (state.ShotTimer > 0.0f)
-	{
-		return;
-	}
+	if (state.ShotTimer > 0.0f) return;
 
 	bool fired = false;
 
@@ -289,9 +285,7 @@ private void UpdateVolley(AttackState state, float seconds)
 		foreach (EnemyHardpoint mount in state.Mounts)
 		{
 			if (CanFire(mount, attack, target))
-			{
-				fired |= Fire(mount, attack, target);
-			}
+				fired |= Fire(mount, attack, target, state.Round);
 		}
 	}
 	else
@@ -299,9 +293,7 @@ private void UpdateVolley(AttackState state, float seconds)
 		EnemyHardpoint mount = state.Mounts[state.MountIndex];
 
 		if (CanFire(mount, attack, target))
-		{
-			fired = Fire(mount, attack, target);
-		}
+			fired = Fire(mount, attack, target, state.Round);
 	}
 
 	if (!fired)
@@ -309,15 +301,22 @@ private void UpdateVolley(AttackState state, float seconds)
 		state.WaitTimer += seconds;
 
 		if (state.WaitTimer < Mathf.Max(0.0f, attack.MaxRoundWaitSeconds))
-		{
 			return;
-		}
 	}
 
 	state.WaitTimer = 0.0f;
 	state.Round++;
 
-	if (state.Round >= Mathf.Max(1, attack.VolleyRounds))
+	EnemyShotPattern pattern = attack.ShotPattern;
+	bool sequentialRing = pattern != null
+		&& pattern.Type == EnemyShotPattern.PatternType.SequentialRing;
+
+	// Sequential rings use Amount as their total number of shots.
+	int rounds = sequentialRing
+		? Mathf.Clamp(pattern.Amount, 1, 64)
+		: Mathf.Max(1, attack.VolleyRounds);
+
+	if (state.Round >= rounds)
 	{
 		FinishAttack(state);
 		return;
@@ -463,13 +462,14 @@ private void UpdateVolley(AttackState state, float seconds)
 	#region Projectile Creation
 
 	// =========================================================
-// Emits a single projectile or an expanding ring.
-// The ring samples the target position once for the whole formation.
+// Emits one projectile, a complete ring, or one sequential-ring position.
+// Sequential shots sample the target again on each volley round.
 // =========================================================
 private bool Fire(
 	EnemyHardpoint mount,
 	EnemyAttackDefinition attack,
-	Node3D target
+	Node3D target,
+	int round
 )
 {
 	Node parent = WorldSector.GetContentParent(this);
@@ -487,27 +487,24 @@ private bool Fire(
 		|| pattern.Type == EnemyShotPattern.PatternType.Single)
 	{
 		LaunchProjectile(
-			parent,
-			weapon,
-			mount.MuzzlePosition,
-			mount.MuzzleDirection,
-			target
+			parent, weapon,
+			mount.MuzzlePosition, mount.MuzzleDirection, target
 		);
 	}
 	else
 	{
 		Vector3 muzzle = mount.MuzzlePosition;
-		Vector3 forward = (target.GlobalPosition - muzzle).Normalized();
+		Vector3 offset = target.GlobalPosition - muzzle;
+		if (offset.LengthSquared() < 0.0001f) return false;
 
+		Vector3 forward = offset.Normalized();
 		Vector3 reference = Mathf.Abs(forward.Dot(Vector3.Up)) > 0.99f
-			? Vector3.Right
-			: Vector3.Up;
+			? Vector3.Right : Vector3.Up;
 
 		Vector3 right = forward.Cross(reference).Normalized();
 		Vector3 up = right.Cross(forward).Normalized();
-
-		Vector3 centre =
-			muzzle + forward * Mathf.Max(0.0f, pattern.ForwardOffset);
+		Vector3 centre = muzzle
+			+ forward * Mathf.Max(0.0f, pattern.ForwardOffset);
 
 		int amount = Mathf.Clamp(pattern.Amount, 1, 64);
 		float radius = Mathf.Max(0.0f, pattern.StartingRadius);
@@ -519,29 +516,31 @@ private bool Fire(
 		float forwardWeight = Mathf.Cos(expansion);
 		float outwardWeight = Mathf.Sin(expansion);
 
-		for (int index = 0; index < amount; index++)
+		bool sequential =
+			pattern.Type == EnemyShotPattern.PatternType.SequentialRing;
+
+		int firstIndex = sequential ? round % amount : 0;
+		int shotCount = sequential ? 1 : amount;
+
+		for (int shot = 0; shot < shotCount; shot++)
 		{
+			int index = firstIndex + shot;
 			float angle = rotation + Mathf.Tau * index / amount;
 
 			Vector3 outward =
 				right * Mathf.Cos(angle) + up * Mathf.Sin(angle);
 
 			Vector3 position = centre + outward * radius;
-
 			Vector3 direction = (
-				forward * forwardWeight
-				+ outward * outwardWeight
+				forward * forwardWeight + outward * outwardWeight
 			).Normalized();
 
 			LaunchProjectile(parent, weapon, position, direction, target);
 		}
 	}
 
-	// One muzzle flash per formation, rather than one per orb.
 	WeaponEffects.Muzzle(
-		mount.Muzzle,
-		weapon.MuzzleEffects,
-		_ship.CombatFaction
+		mount.Muzzle, weapon.MuzzleEffects, _ship.CombatFaction
 	);
 
 	return true;

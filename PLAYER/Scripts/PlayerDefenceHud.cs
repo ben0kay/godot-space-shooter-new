@@ -112,51 +112,40 @@ public override void _Process(double delta)
 		}
 	}
 
-	// =========================================================
-	// Draws defence and flight panels relative to the viewport.
-	private void DrawHud(Control surface)
-	{
-		if (!GodotObject.IsInstanceValid(_ship))
-		{
-			return;
-		}
+// =========================================================
+// Positions defence, resource and flight panels relative to the viewport.
+private void DrawHud(Control surface)
+{
+	if (!GodotObject.IsInstanceValid(_ship)) return;
 
-		float scale = Mathf.Clamp(HudScale, 0.5f, 2.0f);
-		float margin = Mathf.Max(0.0f, EdgeMargin);
-		Vector2 viewport = surface.Size;
+	float scale = Mathf.Clamp(HudScale, 0.5f, 2.0f);
+	float margin = Mathf.Max(0.0f, EdgeMargin);
+	Vector2 viewport = surface.Size;
 
-		Vector2 defenceOrigin = new Vector2(
-			margin,
-			viewport.Y - margin - 142.0f * scale
-		);
+	surface.DrawSetTransform(
+		new Vector2(margin, viewport.Y - margin - 142.0f * scale),
+		0.0f, Vector2.One * scale
+	);
+	DrawDefencePanel(surface);
 
-		surface.DrawSetTransform(
-			defenceOrigin,
-			0.0f,
-			Vector2.One * scale
-		);
+	// Resource panel sits directly above the defence panel.
+	surface.DrawSetTransform(
+		new Vector2(margin, viewport.Y - margin - 264.0f * scale),
+		0.0f, Vector2.One * scale
+	);
+	DrawResourcePanel(surface);
 
-		DrawDefencePanel(surface);
-
-		Vector2 flightOrigin = new Vector2(
+	surface.DrawSetTransform(
+		new Vector2(
 			margin + 352.0f * scale,
 			viewport.Y - margin - 54.0f * scale
-		);
+		),
+		0.0f, Vector2.One * scale
+	);
+	DrawFlightPanel(surface);
 
-		surface.DrawSetTransform(
-			flightOrigin,
-			0.0f,
-			Vector2.One * scale
-		);
-
-		DrawFlightPanel(surface);
-
-		surface.DrawSetTransform(
-			Vector2.Zero,
-			0.0f,
-			Vector2.One
-		);
-	}
+	surface.DrawSetTransform(Vector2.Zero, 0.0f, Vector2.One);
+}
 
 	// =========================================================
 	// Draws the three defence layers and their current values.
@@ -200,6 +189,32 @@ public override void _Process(double delta)
 			defence.Hull, defence.MaxHull, HullColor
 		);
 	}
+
+	// =========================================================
+// Reuses the existing vector bars for fuel and energy.
+private void DrawResourcePanel(Control surface)
+{
+	PlayerResources resources = _ship.Resources;
+	if (resources == null) return;
+
+	DrawFrame(surface, new Vector2(328.0f, 110.0f));
+	DrawText(
+		surface, "SHIP RESOURCES", new Vector2(14.0f, 23.0f),
+		AccentColor, 13
+	);
+
+	DrawDefenceRow(
+		surface, "FUEL", 42.0f,
+		resources.Fuel, resources.MaximumFuel,
+		new Color(0.95f, 0.75f, 0.30f)
+	);
+
+	DrawDefenceRow(
+		surface, "ENERGY", 73.0f,
+		resources.Energy, resources.MaximumEnergy,
+		AccentColor
+	);
+}
 
 	// =========================================================
 	// Draws one labelled defence bar with a numeric readout.

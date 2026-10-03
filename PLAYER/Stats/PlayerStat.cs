@@ -1,4 +1,4 @@
-// Identifies upgradeable player stats independently of their Inspector grouping.
+// Identifies upgradeable player stats independently of Inspector grouping.
 public enum PlayerStat
 {
 	MaxShield, MaxArmour, MaxHull,
@@ -9,5 +9,10 @@ public enum PlayerStat
 	BoostSpeedMultiplier, BoostAccelerationMultiplier, BoostResponse,
 	DashSpeed, DashDuration, DashExitMultiplier, DashDoubleTapWindow, DashCooldown,
 	CargoMaximumMass,
+
+	MaximumFuel, ThrustFuelPerSecond, BoostFuelPerSecond,
+	DashFuelCost, JumpFuelCost,
+	MaximumEnergy, EnergyRegenerationPerSecond, EnergyRechargeDelaySeconds,
+
 	Count
 }

@@ -112,6 +112,21 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 
 	#endregion
 
+	#region Resources and Systems
+
+public PlayerResources Resources { get; private set; }
+public ShipSystems Systems { get; private set; }
+
+// =========================================================
+// Creates independent resource and subsystem runtimes after final stats exist.
+private void InitializeResources()
+{
+	Systems = new ShipSystems(Definition.Systems);
+	Resources = new PlayerResources(Stats);
+}
+
+#endregion
+
 	#region Godot Events
 
 		// =========================================================
@@ -143,6 +158,7 @@ public partial class PlayerShip : CharacterBody3D, IDamageable, ICombatTarget
 		}
 
 		Stats = new PlayerRuntimeStats(Definition);
+		InitializeResources();
 
 		Defence = new ShipDefence(
 			Stats.Get(PlayerStat.MaxShield),
@@ -263,8 +279,8 @@ public override void _Notification(int what)
 		Input.MouseMode = Input.MouseModeEnum.Visible;
 	}
 
-	// =========================================================
-// Updates flight normally or preserves existing travel during cockpit interaction.
+// =========================================================
+// Updates ship resources and flight while respecting cockpit interaction.
 public override void _PhysicsProcess(double delta)
 {
 	float seconds = (float)delta;
@@ -272,11 +288,8 @@ public override void _PhysicsProcess(double delta)
 	if (_destroyed)
 	{
 		IsBoosting = false;
-
 		BoostAmount = Mathf.MoveToward(
-			BoostAmount,
-			0.0f,
-			Mathf.Max(0.0f, BoostResponse) * seconds
+			BoostAmount, 0.0f, Mathf.Max(0.0f, BoostResponse) * seconds
 		);
 
 		PitchInput = 0.0f;
@@ -286,17 +299,16 @@ public override void _PhysicsProcess(double delta)
 		return;
 	}
 
+	Systems.Update(seconds);
+	Resources.Update(seconds, Stats, Systems);
+
 	if (CockpitInteractionActive)
 	{
 		IsBoosting = false;
-
 		BoostAmount = Mathf.MoveToward(
-			BoostAmount,
-			0.0f,
-			Mathf.Max(0.0f, BoostResponse) * seconds
+			BoostAmount, 0.0f, Mathf.Max(0.0f, BoostResponse) * seconds
 		);
 
-		// Keep collision handling active while coasting at existing velocity.
 		MoveAndSlide();
 		return;
 	}
@@ -305,22 +317,21 @@ public override void _PhysicsProcess(double delta)
 	UpdateMovement(seconds);
 }
 
-	// =========================================================
-	// Synchronizes calculated capacities without repairing damage or removing cargo.
-	private void ApplyFinalStats()
-	{
-		Defence.SetMaximums(
-			Stats.Get(PlayerStat.MaxShield),
-			Stats.Get(PlayerStat.MaxArmour),
-			Stats.Get(PlayerStat.MaxHull)
-		);
+// =========================================================
+// Synchronizes capacities without repairing damage or refilling resources.
+private void ApplyFinalStats()
+{
+	Defence.SetMaximums(
+		Stats.Get(PlayerStat.MaxShield),
+		Stats.Get(PlayerStat.MaxArmour),
+		Stats.Get(PlayerStat.MaxHull)
+	);
 
-		_cargo.SetMaximumMass(
-			Stats.Get(PlayerStat.CargoMaximumMass)
-		);
+	_cargo.SetMaximumMass(Stats.Get(PlayerStat.CargoMaximumMass));
+	Resources.Synchronize(Stats);
 
-		DefenceChanged?.Invoke();
-	}
+	DefenceChanged?.Invoke();
+}
 
 	#endregion
 
@@ -442,100 +453,108 @@ private void UpdateRotation(float seconds)
 	);
 }
 
-		// =========================================================
-	// Applies direction-locked dash, normal flight, or held-Shift boost.
-	private void UpdateMovement(float seconds)
+	// =========================================================
+// Applies flight and boost fuel costs; preserves momentum when fuel runs out.
+private void UpdateMovement(float seconds)
+{
+	if (IsDashing)
 	{
-		if (IsDashing)
-		{
-			IsBoosting = false;
-			StrafeInput = 0.0f;
-
-			// Reuse existing engine and camera boost presentation during dash.
-			BoostAmount = Mathf.MoveToward(
-				BoostAmount,
-				1.0f,
-				Mathf.Max(0.0f, BoostResponse) * seconds
-			);
-
-			Velocity = _dash.Direction * _dash.DashSpeed;
-
-			MoveAndSlide();
-
-			if (GetSlideCollisionCount() > 0)
-			{
-				_dash.EndDash();
-			}
-
-			return;
-		}
-
-		float thrust = 0.0f;
-		float strafe = 0.0f;
-		float rise = 0.0f;
-
-		bool controlsActive =
-			Input.MouseMode == Input.MouseModeEnum.Captured;
-
-		if (controlsActive)
-		{
-			if (Input.IsPhysicalKeyPressed(KEY_FORWARD)) thrust += 1.0f;
-			if (Input.IsPhysicalKeyPressed(KEY_REVERSE)) thrust -= 1.0f;
-
-			if (Input.IsPhysicalKeyPressed(KEY_STRAFE_LEFT)) strafe -= 1.0f;
-			if (Input.IsPhysicalKeyPressed(KEY_STRAFE_RIGHT)) strafe += 1.0f;
-
-			if (Input.IsMouseButtonPressed(MOUSE_ASCEND)) rise += 1.0f;
-			if (_rightCtrlHeld) rise -= 1.0f;
-		}
-
-		IsBoosting =
-			controlsActive
-			&& Input.IsPhysicalKeyPressed(KEY_BOOST);
+		IsBoosting = false;
+		StrafeInput = 0.0f;
 
 		BoostAmount = Mathf.MoveToward(
-			BoostAmount,
-			IsBoosting ? 1.0f : 0.0f,
-			Mathf.Max(0.0f, BoostResponse) * seconds
+			BoostAmount, 1.0f, Mathf.Max(0.0f, BoostResponse) * seconds
 		);
 
-		StrafeInput = strafe;
+		Velocity = _dash.Direction * _dash.DashSpeed;
+		MoveAndSlide();
 
-		float forwardSpeed =
-			thrust >= 0.0f ? ForwardSpeed : ReverseSpeed;
+		if (GetSlideCollisionCount() > 0) _dash.EndDash();
+		return;
+	}
 
-		if (IsBoosting)
+	float thrust = 0.0f;
+	float strafe = 0.0f;
+	float rise = 0.0f;
+
+	bool controlsActive = Input.MouseMode == Input.MouseModeEnum.Captured;
+
+	if (controlsActive)
+	{
+		if (Input.IsPhysicalKeyPressed(KEY_FORWARD)) thrust += 1.0f;
+		if (Input.IsPhysicalKeyPressed(KEY_REVERSE)) thrust -= 1.0f;
+		if (Input.IsPhysicalKeyPressed(KEY_STRAFE_LEFT)) strafe -= 1.0f;
+		if (Input.IsPhysicalKeyPressed(KEY_STRAFE_RIGHT)) strafe += 1.0f;
+		if (Input.IsMouseButtonPressed(MOUSE_ASCEND)) rise += 1.0f;
+		if (_rightCtrlHeld) rise -= 1.0f;
+	}
+
+	IsBoosting = controlsActive && Input.IsPhysicalKeyPressed(KEY_BOOST);
+
+	if (IsBoosting) thrust = 1.0f;
+
+	bool requestingThrust =
+		thrust != 0.0f || strafe != 0.0f || rise != 0.0f;
+
+	// Boost uses its total rate rather than adding both rates together.
+	float fuelRate = Stats.Get(
+		IsBoosting ? PlayerStat.BoostFuelPerSecond : PlayerStat.ThrustFuelPerSecond
+	);
+
+	bool powered = Resources.Fuel > 0.0f;
+
+	if (requestingThrust && powered)
+	{
+		powered = Resources.TrySpendFuel(fuelRate * seconds);
+
+		// Insufficient boost fuel can still allow ordinary powered flight.
+		if (!powered && IsBoosting)
 		{
-			thrust = 1.0f;
-
-			forwardSpeed = ForwardSpeed
-				* Mathf.Max(1.0f, BoostSpeedMultiplier);
-		}
-
-		Vector3 targetVelocity =
-			-GlobalBasis.Z * thrust * forwardSpeed
-			+ GlobalBasis.X * strafe * StrafeSpeed
-			+ GlobalBasis.Y * rise * VerticalSpeed;
-
-		float response = targetVelocity == Vector3.Zero
-			? Deceleration
-			: Acceleration;
-
-		if (IsBoosting)
-		{
-			response *= Mathf.Max(
-				1.0f,
-				BoostAccelerationMultiplier
+			IsBoosting = false;
+			powered = Resources.TrySpendFuel(
+				Stats.Get(PlayerStat.ThrustFuelPerSecond) * seconds
 			);
 		}
-
-		Velocity = Velocity.MoveToward(
-			targetVelocity,
-			Mathf.Max(0.0f, response) * seconds
-		);
-
-		MoveAndSlide();
 	}
+
+	if (!powered) IsBoosting = false;
+
+	BoostAmount = Mathf.MoveToward(
+		BoostAmount, IsBoosting ? 1.0f : 0.0f,
+		Mathf.Max(0.0f, BoostResponse) * seconds
+	);
+
+	StrafeInput = powered ? strafe : 0.0f;
+
+	if (!powered)
+	{
+		// No propulsion or automatic braking; collision handling still runs.
+		MoveAndSlide();
+		return;
+	}
+
+	float forwardSpeed = thrust >= 0.0f ? ForwardSpeed : ReverseSpeed;
+
+	if (IsBoosting)
+		forwardSpeed = ForwardSpeed * Mathf.Max(1.0f, BoostSpeedMultiplier);
+
+	Vector3 targetVelocity =
+		-GlobalBasis.Z * thrust * forwardSpeed
+		+ GlobalBasis.X * strafe * StrafeSpeed
+		+ GlobalBasis.Y * rise * VerticalSpeed;
+
+	float response = targetVelocity == Vector3.Zero
+		? Deceleration : Acceleration;
+
+	if (IsBoosting)
+		response *= Mathf.Max(1.0f, BoostAccelerationMultiplier);
+
+	Velocity = Velocity.MoveToward(
+		targetVelocity, Mathf.Max(0.0f, response) * seconds
+	);
+
+	MoveAndSlide();
+}
 
 		// =========================================================
 	// Chooses current travel, requested movement, or forward as the dash direction.

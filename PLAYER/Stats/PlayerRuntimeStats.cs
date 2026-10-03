@@ -19,57 +19,76 @@ public sealed class PlayerRuntimeStats
 	#region Construction
 
 	// =========================================================
-	// Copies authored values once so runtime upgrades never modify shared resources.
-	public PlayerRuntimeStats(PlayerShipDefinition definition)
+// Copies authored values into an independent, upgradeable base snapshot.
+public PlayerRuntimeStats(PlayerShipDefinition definition)
+{
+	if (definition == null
+		|| definition.Defence == null
+		|| definition.Handling == null
+		|| definition.Boost == null
+		|| definition.Dash == null
+		|| definition.Cargo == null
+		|| definition.Resources == null
+		|| definition.Systems == null)
 	{
-		if (definition == null
-			|| definition.Defence == null
-			|| definition.Handling == null
-			|| definition.Boost == null
-			|| definition.Dash == null
-			|| definition.Cargo == null)
-		{
-			throw new ArgumentException(
-				"Player definition requires Defence, Handling, Boost, Dash, and Cargo."
-			);
-		}
-
-		PlayerDefenceStats defence = definition.Defence;
-		PlayerHandlingStats handling = definition.Handling;
-		PlayerBoostStats boost = definition.Boost;
-		PlayerDashStats dash = definition.Dash;
-
-		SetBase(PlayerStat.MaxShield, defence.MaxShield);
-		SetBase(PlayerStat.MaxArmour, defence.MaxArmour);
-		SetBase(PlayerStat.MaxHull, defence.MaxHull);
-
-		SetBase(PlayerStat.ForwardSpeed, handling.ForwardSpeed);
-		SetBase(PlayerStat.ReverseSpeed, handling.ReverseSpeed);
-		SetBase(PlayerStat.StrafeSpeed, handling.StrafeSpeed);
-		SetBase(PlayerStat.VerticalSpeed, handling.VerticalSpeed);
-		SetBase(PlayerStat.Acceleration, handling.Acceleration);
-		SetBase(PlayerStat.Deceleration, handling.Deceleration);
-		SetBase(PlayerStat.RollSpeed, handling.RollSpeed);
-		SetBase(PlayerStat.MousePitchSensitivity, handling.MousePitchSensitivity);
-		SetBase(PlayerStat.MouseYawSensitivity, handling.MouseYawSensitivity);
-		SetBase(PlayerStat.MaxPitchSpeedDegrees, handling.MaxPitchSpeedDegrees);
-		SetBase(PlayerStat.MaxYawSpeedDegrees, handling.MaxYawSpeedDegrees);
-		SetBase(PlayerStat.SteeringResponse, handling.SteeringResponse);
-
-		SetBase(PlayerStat.BoostSpeedMultiplier, boost.SpeedMultiplier);
-		SetBase(PlayerStat.BoostAccelerationMultiplier, boost.AccelerationMultiplier);
-		SetBase(PlayerStat.BoostResponse, boost.Response);
-
-		SetBase(PlayerStat.DashSpeed, dash.Speed);
-		SetBase(PlayerStat.DashDuration, dash.DurationSeconds);
-		SetBase(PlayerStat.DashExitMultiplier, dash.ExitSpeedMultiplier);
-		SetBase(PlayerStat.DashDoubleTapWindow, dash.DoubleTapWindowSeconds);
-		SetBase(PlayerStat.DashCooldown, dash.CooldownSeconds);
-
-		SetBase(PlayerStat.CargoMaximumMass, definition.Cargo.MaximumMass);
-
-		Recalculate();
+		throw new ArgumentException(
+			"Player definition requires Defence, Handling, Boost, Dash, "
+			+ "Cargo, Resources and Systems."
+		);
 	}
+
+	PlayerDefenceStats defence = definition.Defence;
+	PlayerHandlingStats handling = definition.Handling;
+	PlayerBoostStats boost = definition.Boost;
+	PlayerDashStats dash = definition.Dash;
+	PlayerResourceStats resources = definition.Resources;
+
+	SetBase(PlayerStat.MaxShield, defence.MaxShield);
+	SetBase(PlayerStat.MaxArmour, defence.MaxArmour);
+	SetBase(PlayerStat.MaxHull, defence.MaxHull);
+
+	SetBase(PlayerStat.ForwardSpeed, handling.ForwardSpeed);
+	SetBase(PlayerStat.ReverseSpeed, handling.ReverseSpeed);
+	SetBase(PlayerStat.StrafeSpeed, handling.StrafeSpeed);
+	SetBase(PlayerStat.VerticalSpeed, handling.VerticalSpeed);
+	SetBase(PlayerStat.Acceleration, handling.Acceleration);
+	SetBase(PlayerStat.Deceleration, handling.Deceleration);
+	SetBase(PlayerStat.RollSpeed, handling.RollSpeed);
+	SetBase(PlayerStat.MousePitchSensitivity, handling.MousePitchSensitivity);
+	SetBase(PlayerStat.MouseYawSensitivity, handling.MouseYawSensitivity);
+	SetBase(PlayerStat.MaxPitchSpeedDegrees, handling.MaxPitchSpeedDegrees);
+	SetBase(PlayerStat.MaxYawSpeedDegrees, handling.MaxYawSpeedDegrees);
+	SetBase(PlayerStat.SteeringResponse, handling.SteeringResponse);
+
+	SetBase(PlayerStat.BoostSpeedMultiplier, boost.SpeedMultiplier);
+	SetBase(PlayerStat.BoostAccelerationMultiplier, boost.AccelerationMultiplier);
+	SetBase(PlayerStat.BoostResponse, boost.Response);
+
+	SetBase(PlayerStat.DashSpeed, dash.Speed);
+	SetBase(PlayerStat.DashDuration, dash.DurationSeconds);
+	SetBase(PlayerStat.DashExitMultiplier, dash.ExitSpeedMultiplier);
+	SetBase(PlayerStat.DashDoubleTapWindow, dash.DoubleTapWindowSeconds);
+	SetBase(PlayerStat.DashCooldown, dash.CooldownSeconds);
+
+	SetBase(PlayerStat.CargoMaximumMass, definition.Cargo.MaximumMass);
+
+	SetBase(PlayerStat.MaximumFuel, resources.MaximumFuel);
+	SetBase(PlayerStat.ThrustFuelPerSecond, resources.ThrustFuelPerSecond);
+	SetBase(PlayerStat.BoostFuelPerSecond, resources.BoostFuelPerSecond);
+	SetBase(PlayerStat.DashFuelCost, resources.DashFuelCost);
+	SetBase(PlayerStat.JumpFuelCost, resources.JumpFuelCost);
+	SetBase(PlayerStat.MaximumEnergy, resources.MaximumEnergy);
+	SetBase(
+		PlayerStat.EnergyRegenerationPerSecond,
+		resources.EnergyRegenerationPerSecond
+	);
+	SetBase(
+		PlayerStat.EnergyRechargeDelaySeconds,
+		resources.EnergyRechargeDelaySeconds
+	);
+
+	Recalculate();
+}
 
 	// =========================================================
 	// Stores one finite authored value in the independent base snapshot.
