@@ -10,6 +10,10 @@ public partial class PlayerDefenceHud : CanvasLayer
 	[Export] public Color PanelColor = new(0.01f, 0.025f, 0.04f, 0.65f);
 	[Export] public float EdgeMargin = 16.0f;
 
+	// Controls the vertical size of both HUD bars without changing their width.
+[Export(PropertyHint.Range, "0.4,1.0,0.05")]
+public float BarHeightScale { get; set; } = 0.65f;
+
 	#endregion
 
 	#region Runtime
@@ -99,32 +103,38 @@ public partial class PlayerDefenceHud : CanvasLayer
 	#region Layout
 
 	// =========================================================
-	// Scales the two bars to the available viewport width.
-	private void DrawHud(Control surface)
-	{
-		if (!GodotObject.IsInstanceValid(_ship)) return;
+// Positions both HUD bars and compresses their height for a slimmer layout.
+private void DrawHud(Control surface)
+{
+	if (!GodotObject.IsInstanceValid(_ship)) return;
 
-		float margin = Mathf.Max(0.0f, EdgeMargin);
-		float availableWidth = surface.Size.X - margin * 2.0f;
-		if (availableWidth <= 0.0f) return;
+	// Lower this for thinner bars; 1.0 restores the original height.
+	const float heightScale = 0.65f;
 
-		float scale = availableWidth / DESIGN_WIDTH;
+	float margin = Mathf.Max(0.0f, EdgeMargin);
+	float availableWidth = surface.Size.X - margin * 2.0f;
+	if (availableWidth <= 0.0f) return;
 
-		surface.DrawSetTransform(
-			new Vector2(margin, margin), 0.0f, Vector2.One * scale
-		);
-		DrawTopBar(surface);
+	float scale = availableWidth / DESIGN_WIDTH;
+	Vector2 drawScale = new Vector2(scale, scale * heightScale);
+	float barHeight = BAR_HEIGHT * drawScale.Y;
 
-		surface.DrawSetTransform(
-			new Vector2(
-				margin, surface.Size.Y - margin - BAR_HEIGHT * scale
-			),
-			0.0f, Vector2.One * scale
-		);
-		DrawBottomBar(surface);
+	surface.DrawSetTransform(
+		new Vector2(margin, margin),
+		0.0f,
+		drawScale
+	);
+	DrawTopBar(surface);
 
-		surface.DrawSetTransform(Vector2.Zero, 0.0f, Vector2.One);
-	}
+	surface.DrawSetTransform(
+		new Vector2(margin, surface.Size.Y - margin - barHeight),
+		0.0f,
+		drawScale
+	);
+	DrawBottomBar(surface);
+
+	surface.DrawSetTransform(Vector2.Zero, 0.0f, Vector2.One);
+}
 
 	// =========================================================
 	// Draws credit and XP totals, centred sector navigation, and speed.
