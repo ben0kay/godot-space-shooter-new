@@ -308,78 +308,102 @@ private void Destroy()
 	#region Shape Generation
 
 	// =========================================================
-	// Deforms a low-poly sphere into a repeatable irregular asteroid shape.
-	private ArrayMesh CreateShape()
+// Builds a seeded irregular rock and recalculates its surface normals.
+private ArrayMesh CreateShape()
+{
+	RandomNumberGenerator random = new() { Seed = _shapeSeed };
+
+	FastNoiseLite noise = new()
 	{
-		RandomNumberGenerator random = new RandomNumberGenerator
-		{
-			Seed = _shapeSeed
-		};
+		Seed = unchecked((int)_shapeSeed),
+		NoiseType = FastNoiseLite.NoiseTypeEnum.SimplexSmooth,
+		Frequency = 2.4f,
+		FractalType = FastNoiseLite.FractalTypeEnum.Fbm,
+		FractalOctaves = 3
+	};
 
-		float phaseA = random.RandfRange(0.0f, Mathf.Tau);
-		float phaseB = random.RandfRange(0.0f, Mathf.Tau);
+	Vector3 proportions = new(
+		random.RandfRange(0.78f, 1.22f),
+		random.RandfRange(0.78f, 1.22f),
+		random.RandfRange(0.78f, 1.22f)
+	);
 
-		Vector3 proportions = new Vector3(
-			random.RandfRange(0.75f, 1.25f),
-			random.RandfRange(0.75f, 1.25f),
-			random.RandfRange(0.75f, 1.25f)
+	Vector3 offset = new(
+		random.RandfRange(-100, 100),
+		random.RandfRange(-100, 100),
+		random.RandfRange(-100, 100)
+	);
+
+	SphereMesh source = new()
+	{
+		Radius = 1.0f,
+		Height = 2.0f,
+		RadialSegments = 10,
+		Rings = 6
+	};
+
+	ArrayMesh sourceMesh = new();
+	sourceMesh.AddSurfaceFromArrays(
+		Mesh.PrimitiveType.Triangles,
+		source.SurfaceGetArrays(0)
+	);
+
+	MeshDataTool data = new();
+	data.CreateFromSurface(sourceMesh, 0);
+
+	for (int index = 0; index < data.GetVertexCount(); index++)
+	{
+		Vector3 direction = data.GetVertex(index).Normalized();
+		Vector3 sample = direction + offset;
+
+		float broad = noise.GetNoise3D(sample.X, sample.Y, sample.Z);
+		float ridges = noise.GetNoise3D(
+			sample.X * 2.1f,
+			sample.Y * 2.1f,
+			sample.Z * 2.1f
 		);
 
-		SphereMesh source = new SphereMesh
-		{
-			Radius = 1.0f,
-			Height = 2.0f,
-			RadialSegments = 10,
-			Rings = 6
-		};
-
-		ArrayMesh sourceMesh = new ArrayMesh();
-
-		sourceMesh.AddSurfaceFromArrays(
-			Mesh.PrimitiveType.Triangles,
-			source.SurfaceGetArrays(0)
+		// Stays within the existing conservative placement radius.
+		float variation = Mathf.Clamp(
+			1.0f + broad * 0.32f
+				+ (Mathf.Abs(ridges) - 0.35f) * 0.15f,
+			0.65f,
+			1.40f
 		);
 
-		MeshDataTool data = new MeshDataTool();
-		data.CreateFromSurface(sourceMesh, 0);
-
-		for (int index = 0; index < data.GetVertexCount(); index++)
-		{
-			Vector3 point = data.GetVertex(index);
-			Vector3 direction = point.Normalized();
-
-			float variation =
-				1.0f
-				+ 0.16f * Mathf.Sin(direction.X * 7.0f + phaseA)
-				+ 0.12f * Mathf.Cos(direction.Y * 6.0f + phaseB)
-				+ 0.10f * Mathf.Sin(direction.Z * 9.0f + phaseA);
-
-			Vector3 shapedPoint = new Vector3(
-				point.X * proportions.X,
-				point.Y * proportions.Y,
-				point.Z * proportions.Z
-			) * _radius * variation;
-
-			data.SetVertex(index, shapedPoint);
-		}
-
-		ArrayMesh result = new ArrayMesh();
-		data.CommitToSurface(result);
-
-		StandardMaterial3D material = new StandardMaterial3D
-		{
-			AlbedoColor = new Color(
-				random.RandfRange(0.33f, 0.48f),
-				random.RandfRange(0.33f, 0.44f),
-				random.RandfRange(0.35f, 0.47f)
-			),
-			Roughness = 1.0f
-		};
-
-		result.SurfaceSetMaterial(0, material);
-
-		return result;
+		data.SetVertex(
+			index,
+			direction * proportions * _radius * variation
+		);
 	}
+
+	ArrayMesh deformed = new();
+	data.CommitToSurface(deformed);
+	data.Dispose();
+
+	// Original sphere normals no longer match the deformed rock.
+	SurfaceTool surface = new();
+	surface.CreateFrom(deformed, 0);
+	surface.SetSmoothGroup(0);
+	surface.GenerateNormals();
+
+	ArrayMesh result = surface.Commit();
+	surface.Dispose();
+
+	Color rockColor = new Color(0.22f, 0.235f, 0.25f).Lerp(
+		new Color(0.34f, 0.29f, 0.235f),
+		random.Randf()
+	);
+
+	result.SurfaceSetMaterial(0, new StandardMaterial3D
+	{
+		AlbedoColor = rockColor,
+		Roughness = 0.95f,
+		MetallicSpecular = 0.18f
+	});
+
+	return result;
+}
 
 	#endregion
 

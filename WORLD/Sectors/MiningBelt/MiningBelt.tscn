@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://dsugn4j7goyug" path="res://ENVIRONMENT/SpaceEnvironment.tscn" id="3_x0hnd"]
 [ext_resource type="Resource" uid="uid://b6mllb1olwlgl" path="res://WORLD/Sectors/MiningBelt/MiningBeltAsteroids_secondary.tres" id="5_2acvy"]
 [ext_resource type="Resource" uid="uid://2j24qxauhkbt" path="res://WORLD/Sectors/MiningBelt/MiningBeltAsteroids_main.tres" id="5_n3oj4"]
+[ext_resource type="Script" path="res://ASTEROIDS/Generation/AsteroidBackdrop.cs" id="backdrop_script"]
 
 [node name="MiningBelt" type="Node3D" unique_id=1736576946]
 script = ExtResource("1_ttpmw")
@@ -29,3 +30,12 @@ AsteroidScene = ExtResource("2_yty73")
 Definition = ExtResource("5_2acvy")
 FieldKey = "belt_outer"
 SeedOffset = 1
+
+[node name="AsteroidBackdrop" type="Node3D" parent="."]
+script = ExtResource("backdrop_script")
+AsteroidCount = 2400
+Seed = 184
+RadiusRange = Vector2(5, 28)
+OuterRadii = Vector2(7500, 10000)
+InnerRadiusFraction = 0.65
+HalfHeight = 450.0
