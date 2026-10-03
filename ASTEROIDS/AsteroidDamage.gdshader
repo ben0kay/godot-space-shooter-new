@@ -63,18 +63,23 @@ void vertex()
 }
 
 // =========================================================
-// Shades rocky surfaces and reveals fissures as the asteroid takes damage.
+// Shades softer rock detail, fades tiny features and preserves damage feedback.
 void fragment()
 {
 	vec3 p = local_position * surface_scale + pattern_offset;
 
-	float broad = rock_noise(p * 0.24);
-	float medium = rock_noise(p);
-	float fine = rock_noise(p * 3.1);
-	float height = medium * 0.72 + fine * 0.28;
+	// Fade detail once its noise cells become too small on screen.
+	float footprint = max(length(dFdx(p)), length(dFdy(p)));
+	float medium_visibility = 1.0 - smoothstep(0.25, 0.9, footprint);
+	float fine_visibility = 1.0 - smoothstep(0.08, 0.3, footprint);
 
-	vec3 stone = rock_color.rgb * mix(0.62, 1.32, broad);
-	stone *= mix(0.78, 1.12, height);
+	float broad = rock_noise(p * 0.24);
+	float medium = mix(0.5, rock_noise(p), medium_visibility);
+	float fine = mix(0.5, rock_noise(p * 2.1), fine_visibility);
+	float height = medium * 0.9 + fine * 0.1;
+
+	vec3 stone = rock_color.rgb * mix(0.82, 1.20, broad);
+	stone *= mix(0.92, 1.06, height);
 
 	float damage = clamp(damage_amount, 0.0, 1.0);
 	float cracks = 0.0;
@@ -107,22 +112,22 @@ void fragment()
 	}
 
 	ALBEDO = mix(stone, crack_color.rgb, cracks);
-	ROUGHNESS = mix(0.88, 1.0, fine);
+	ROUGHNESS = mix(0.93, 1.0, fine);
 	SPECULAR = 0.18;
 
-	// Derivative-based relief needs no UVs or extra mesh vertices.
 	vec3 dpdx = dFdx(view_position);
 	vec3 dpdy = dFdy(view_position);
 	vec3 r1 = cross(dpdy, NORMAL);
 	vec3 r2 = cross(NORMAL, dpdx);
 	float determinant = dot(dpdx, r1);
 
+	// Calculate derivatives before the conditional normal adjustment.
+	vec3 gradient = (
+		dFdx(height) * r1 + dFdy(height) * r2
+	) * bump_strength * 0.4 * medium_visibility;
+
 	if (abs(determinant) > 0.000001)
 	{
-		vec3 gradient = (
-			dFdx(height) * r1 + dFdy(height) * r2
-		) * bump_strength;
-
 		NORMAL = normalize(
 			abs(determinant) * NORMAL
 			- sign(determinant) * gradient
