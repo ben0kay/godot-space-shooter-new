@@ -1,13 +1,12 @@
-[gd_resource type="Resource" script_class="ProjectileDefinition" format=3]
+[gd_resource type="Resource" script_class="ProjectileDefinition" format=3 uid="uid://cn1k7sereimla"]
 
-[ext_resource type="Script" path="res://PROJECTILES/ProjectileDefinition.cs" id="definition"]
-[ext_resource type="PackedScene" path="res://PROJECTILES/Projectile.tscn" id="projectile_scene"]
+[ext_resource type="Script" uid="uid://7oyb1xy2i35r" path="res://PROJECTILES/ProjectileDefinition.cs" id="definition"]
+[ext_resource type="Script" uid="uid://mv26j0357h2" path="res://Weapon/WeaponEffectsProfile.cs" id="effects"]
+[ext_resource type="PackedScene" uid="uid://bykb33nirbctc" path="res://PROJECTILES/Projectile.tscn" id="projectile_scene"]
 [ext_resource type="PackedScene" path="res://ENEMIES/SIMULANTS/Projectiles/SimulantOrb/SimulantOrbVisual.tscn" id="visual"]
-[ext_resource type="Script" path="res://Weapon/WeaponEffectsProfile.cs" id="effects"]
 
 [sub_resource type="Resource" id="OrbEffects"]
 script = ExtResource("effects")
-UseFactionPalette = true
 EmissionEnergy = 2.0
 ParticleRadius = 0.1
 TrailParticles = 24
@@ -26,7 +25,6 @@ Damage = 12.0
 Speed = 35.0
 Lifetime = 8.0
 CollisionRadius = 0.65
-DamageType = 2
 Effects = SubResource("OrbEffects")
 VisualScene = ExtResource("visual")
-ModelScale = 1.0
+DamageType = 2

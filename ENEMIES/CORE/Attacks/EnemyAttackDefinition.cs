@@ -45,4 +45,13 @@ public partial class EnemyAttackDefinition : Resource
 	[Export] public float MaxRoundWaitSeconds = 0.5f;
 
 	#endregion
+
+	#region Shot Formation
+
+[ExportGroup("Shot Formation")]
+
+// Null preserves the existing single-projectile behaviour.
+[Export] public EnemyShotPattern ShotPattern;
+
+#endregion
 }

@@ -258,83 +258,74 @@ public void Initialize(
 
 	#region Volleys
 
-	// Fires a round when ready, briefly waiting for blocked or unaligned mounts.
-	private void UpdateVolley(AttackState state, float seconds)
+	// =========================================================
+// Fires each volley round using its configured projectile formation.
+// Briefly waits for blocked or unaligned mounts before skipping a round.
+// =========================================================
+private void UpdateVolley(AttackState state, float seconds)
+{
+	EnemyAttackDefinition attack = state.Definition;
+	Node3D target = state.Target;
+
+	if (!IsValidTarget(target)
+		|| target != _ship.Targeting?.Target
+		|| !IsInRange(attack, target))
 	{
-		EnemyAttackDefinition attack = state.Definition;
-		Node3D target = state.Target;
+		FinishAttack(state);
+		return;
+	}
 
-		if (
-			!IsValidTarget(target)
-			|| target != _ship.Targeting?.Target
-			|| !IsInRange(attack, target)
-		)
+	state.ShotTimer -= seconds;
+
+	if (state.ShotTimer > 0.0f)
+	{
+		return;
+	}
+
+	bool fired = false;
+
+	if (attack.Order == HardpointFireOrder.All)
+	{
+		foreach (EnemyHardpoint mount in state.Mounts)
 		{
-			FinishAttack(state);
-			return;
-		}
-
-		state.ShotTimer -= seconds;
-
-		if (state.ShotTimer > 0.0f)
-		{
-			return;
-		}
-
-		bool fired = false;
-
-		if (attack.Order == HardpointFireOrder.All)
-		{
-			foreach (EnemyHardpoint mount in state.Mounts)
-			{
-				if (CanFire(mount, attack, target))
-				{
-					Fire(mount, attack.Weapon);
-					fired = true;
-				}
-			}
-		}
-		else
-		{
-			EnemyHardpoint mount = state.Mounts[state.MountIndex];
-
 			if (CanFire(mount, attack, target))
 			{
-				Fire(mount, attack.Weapon);
-				fired = true;
+				fired |= Fire(mount, attack, target);
 			}
 		}
+	}
+	else
+	{
+		EnemyHardpoint mount = state.Mounts[state.MountIndex];
 
-		if (!fired)
+		if (CanFire(mount, attack, target))
 		{
-			state.WaitTimer += seconds;
-
-			if (
-				state.WaitTimer
-				< Mathf.Max(0.0f, attack.MaxRoundWaitSeconds)
-			)
-			{
-				return;
-			}
+			fired = Fire(mount, attack, target);
 		}
+	}
 
-		// A fired or skipped round advances the volley.
-		state.WaitTimer = 0.0f;
-		state.Round++;
+	if (!fired)
+	{
+		state.WaitTimer += seconds;
 
-		if (state.Round >= Mathf.Max(1, attack.VolleyRounds))
+		if (state.WaitTimer < Mathf.Max(0.0f, attack.MaxRoundWaitSeconds))
 		{
-			FinishAttack(state);
 			return;
 		}
-
-		state.ShotTimer = Mathf.Max(
-			0.01f,
-			attack.IntervalSeconds
-		);
-
-		ChooseMount(state);
 	}
+
+	state.WaitTimer = 0.0f;
+	state.Round++;
+
+	if (state.Round >= Mathf.Max(1, attack.VolleyRounds))
+	{
+		FinishAttack(state);
+		return;
+	}
+
+	state.ShotTimer = Mathf.Max(0.01f, attack.IntervalSeconds);
+	ChooseMount(state);
+}
 
 	// Chooses the next mount using the attack's configured firing order.
 	private void ChooseMount(AttackState state)
@@ -472,36 +463,112 @@ public void Initialize(
 	#region Projectile Creation
 
 	// =========================================================
-// Launches a sector-owned projectile and supplies the enemy's guidance target.
-private void Fire(
+// Emits a single projectile or an expanding ring.
+// The ring samples the target position once for the whole formation.
+// =========================================================
+private bool Fire(
 	EnemyHardpoint mount,
-	WeaponDefinition weapon
+	EnemyAttackDefinition attack,
+	Node3D target
 )
 {
 	Node parent = WorldSector.GetContentParent(this);
+	WeaponDefinition weapon = attack.Weapon;
 
-	if (!GodotObject.IsInstanceValid(parent))
+	if (!GodotObject.IsInstanceValid(parent)
+		|| weapon?.ProjectileScene == null)
 	{
-		return;
+		return false;
 	}
 
+	EnemyShotPattern pattern = attack.ShotPattern;
+
+	if (pattern == null
+		|| pattern.Type == EnemyShotPattern.PatternType.Single)
+	{
+		LaunchProjectile(
+			parent,
+			weapon,
+			mount.MuzzlePosition,
+			mount.MuzzleDirection,
+			target
+		);
+	}
+	else
+	{
+		Vector3 muzzle = mount.MuzzlePosition;
+		Vector3 forward = (target.GlobalPosition - muzzle).Normalized();
+
+		Vector3 reference = Mathf.Abs(forward.Dot(Vector3.Up)) > 0.99f
+			? Vector3.Right
+			: Vector3.Up;
+
+		Vector3 right = forward.Cross(reference).Normalized();
+		Vector3 up = right.Cross(forward).Normalized();
+
+		Vector3 centre =
+			muzzle + forward * Mathf.Max(0.0f, pattern.ForwardOffset);
+
+		int amount = Mathf.Clamp(pattern.Amount, 1, 64);
+		float radius = Mathf.Max(0.0f, pattern.StartingRadius);
+		float rotation = Mathf.DegToRad(pattern.RotationDegrees);
+		float expansion = Mathf.DegToRad(
+			Mathf.Clamp(pattern.ExpansionDegrees, 0.0f, 45.0f)
+		);
+
+		float forwardWeight = Mathf.Cos(expansion);
+		float outwardWeight = Mathf.Sin(expansion);
+
+		for (int index = 0; index < amount; index++)
+		{
+			float angle = rotation + Mathf.Tau * index / amount;
+
+			Vector3 outward =
+				right * Mathf.Cos(angle) + up * Mathf.Sin(angle);
+
+			Vector3 position = centre + outward * radius;
+
+			Vector3 direction = (
+				forward * forwardWeight
+				+ outward * outwardWeight
+			).Normalized();
+
+			LaunchProjectile(parent, weapon, position, direction, target);
+		}
+	}
+
+	// One muzzle flash per formation, rather than one per orb.
+	WeaponEffects.Muzzle(
+		mount.Muzzle,
+		weapon.MuzzleEffects,
+		_ship.CombatFaction
+	);
+
+	return true;
+}
+
+// =========================================================
+// Creates one sector-owned projectile with an explicit launch direction.
+// Existing weapon overrides, damage, effects and guidance remain shared.
+// =========================================================
+private void LaunchProjectile(
+	Node parent,
+	WeaponDefinition weapon,
+	Vector3 position,
+	Vector3 direction,
+	Node3D target
+)
+{
 	Projectile projectile =
 		weapon.ProjectileScene.Instantiate<Projectile>();
 
 	parent.AddChild(projectile);
 
-	Vector3 direction = mount.MuzzleDirection;
+	Vector3 up = Mathf.Abs(direction.Dot(Vector3.Up)) > 0.99f
+		? Vector3.Right
+		: Vector3.Up;
 
-	Vector3 up =
-		Mathf.Abs(direction.Dot(Vector3.Up)) > 0.99f
-			? Vector3.Right
-			: Vector3.Up;
-
-	projectile.LookAtFromPosition(
-		mount.MuzzlePosition,
-		mount.MuzzlePosition + direction,
-		up
-	);
+	projectile.LookAtFromPosition(position, position + direction, up);
 
 	projectile.Configure(
 		weapon,
@@ -510,13 +577,7 @@ private void Fire(
 		_ship.Velocity
 	);
 
-	projectile.SetGuidanceTarget(_ship.Targeting?.Target);
-
-	WeaponEffects.Muzzle(
-		mount.Muzzle,
-		weapon.MuzzleEffects,
-		_ship.CombatFaction
-	);
+	projectile.SetGuidanceTarget(target);
 }
 
 	#endregion

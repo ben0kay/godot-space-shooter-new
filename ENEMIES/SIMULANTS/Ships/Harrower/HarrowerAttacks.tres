@@ -5,6 +5,7 @@
 [ext_resource type="Resource" uid="uid://ddltmr4sb7kcb" path="res://ENEMIES/SIMULANTS/Weapons/SimulantOrb/SimulantWeaponOrb.tres" id="orb_weapon"]
 [ext_resource type="Resource" uid="uid://bw66vuhpdphfd" path="res://ENEMIES/SIMULANTS/Weapons/SimulantPulseCannon/SimulantPulse.tres" id="pulse"]
 [ext_resource type="Resource" uid="uid://nb740567d3jy" path="res://ENEMIES/SIMULANTS/Weapons/SimulantSeekerCore/SimulantWeaponSeekerCore.tres" id="seeker"]
+[ext_resource type="Script" path="res://ENEMIES/CORE/Attacks/EnemyShotPattern.cs" id="shot_pattern"]
 
 [sub_resource type="Resource" id="CannonStream"]
 script = ExtResource("attack")
@@ -34,20 +35,31 @@ Order = 2
 VolleyRounds = 1
 CooldownSeconds = 6.0
 
+[sub_resource type="Resource" id="OrbRingPattern"]
+script = ExtResource("shot_pattern")
+Type = 1
+Amount = 12
+StartingRadius = 2.5
+ExpansionDegrees = 4.0
+ForwardOffset = 12.0
+RotationDegrees = 15.0
+
 [sub_resource type="Resource" id="OrbTest"]
 script = ExtResource("attack")
-Key = "harrower_orb_test"
+Key = "harrower_expanding_orb_ring"
 Channel = "core"
 HardpointGroup = "core_weapon"
 Weight = 65.0
 Weapon = ExtResource("orb_weapon")
-RangeMin = 20.0
+RangeMin = 60.0
 RangeMax = 250.0
+RequireLineOfSight = true
 FireToleranceDegrees = 35.0
 Order = 2
-VolleyRounds = 6
-IntervalSeconds = 0.3
-CooldownSeconds = 4.0
+VolleyRounds = 1
+CooldownSeconds = 5.0
+MaxRoundWaitSeconds = 0.5
+ShotPattern = SubResource("OrbRingPattern")
 
 [resource]
 script = ExtResource("controller")

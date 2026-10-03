@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://mv26j0357h2" path="res://Weapon/WeaponEffectsProfile.cs" id="effects"]
 [ext_resource type="Script" uid="uid://6wveafw5dvgq" path="res://Weapon/ProjectileLaunchOverrides.cs" id="launch"]
+[ext_resource type="Resource" path="res://ENEMIES/SIMULANTS/Projectiles/SimulantOrb/SimulantOrb.tres" id="orb"]
 [ext_resource type="Script" uid="uid://dk13qlucl75kd" path="res://Weapon/WeaponDefinition.cs" id="weapon"]
 
 [sub_resource type="Resource" id="Launch"]
@@ -20,12 +21,9 @@ ParticleRadius = 0.1
 MuzzleParticles = 10
 MuzzleLifetime = 0.18
 
-[sub_resource type="Resource" id="Resource_j4137"]
-metadata/__load_path__ = "res://ENEMIES/SIMULANTS/Projectiles/SimulantOrb.tres"
-
 [resource]
 script = ExtResource("weapon")
 SecondsBetweenShots = 0.3
-Projectile = SubResource("Resource_j4137")
+Projectile = ExtResource("orb")
 LaunchOverrides = SubResource("Launch")
 MuzzleEffects = SubResource("MuzzleEffects")
