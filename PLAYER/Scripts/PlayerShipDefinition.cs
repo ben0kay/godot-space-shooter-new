@@ -16,10 +16,8 @@ public partial class PlayerShipDefinition : Resource
 	[Export] public PlayerHandlingStats Handling = new();
 	[Export] public PlayerBoostStats Boost = new();
 	[Export] public PlayerDashStats Dash = new();
-	[Export] public CargoDefinition Cargo;
 
-	[Export] public PlayerResourceStats Resources = new();
-	[Export] public ShipSystemsDefinition Systems = new();
+		[Export] public CargoDefinition Cargo;
 
 	#endregion
 
@@ -31,6 +29,7 @@ public partial class PlayerShipDefinition : Resource
 
 	#region Defence Access
 
+	// Existing systems can read capacities without owning their configuration.
 	public float MaxShield => Defence.MaxShield;
 	public float MaxArmour => Defence.MaxArmour;
 	public float MaxHull => Defence.MaxHull;
