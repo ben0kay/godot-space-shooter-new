@@ -6,7 +6,7 @@ render_mode disable_fog;
 uniform float star_brightness = 0.9;
 uniform float nebula_strength = 0.65;
 
-uniform vec4 background_color : source_color = vec4(0.008, 0.016, 0.032, 1.0);
+uniform vec4 background_color : source_color = vec4(0.003, 0.006, 0.012, 1.0);
 uniform vec4 nebula_color : source_color = vec4(0.25, 0.42, 0.62, 1.0);
 uniform vec3 nebula_direction = vec3(-0.25, 0.18, -1.0);
 
@@ -20,10 +20,13 @@ uniform float planet_radius = 0.95;
 uniform float atmosphere_strength = 0.8;
 
 // =========================================================
-// Produces repeatable values for clouds and surface formations.
+// Generates repeatable noise values without a large sine calculation.
 float hash_value(vec3 p)
 {
-	return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
+	p = fract(p * 0.1031);
+	p += dot(p, p.yzx + vec3(33.33));
+
+	return fract((p.x + p.y) * p.z);
 }
 
 // =========================================================
@@ -60,47 +63,46 @@ float layered_noise(vec3 p)
 }
 
 // =========================================================
-// Draws broad warped nebula clouds with darker gaps between formations.
+// Draws faint continuous nebula wisps with smoothly fading coverage.
 vec3 draw_nebula(vec3 ray)
 {
-	vec3 p = ray * vec3(3.0, 5.0, 3.0);
+	vec3 p = ray * vec3(2.5, 3.5, 2.5);
 
 	vec3 warp = vec3(
 		noise_value(p + vec3(11.0)),
 		noise_value(p + vec3(37.0)),
 		noise_value(p + vec3(71.0))
+	) - vec3(0.5);
+
+	vec3 cloud_point = p + warp * 0.7;
+
+	float formations = layered_noise(
+		cloud_point + vec3(19.0)
 	);
 
-	float formations = layered_noise(p + warp * 2.0 + vec3(19.0));
-	float wisps = layered_noise(p * 2.4 + warp * 3.0 + vec3(43.0));
-
-	float cloud = smoothstep(0.35, 0.72, formations);
-	float detail = mix(0.55, 1.0, wisps);
-
-	float region = pow(
-		max(dot(ray, normalize(nebula_direction)), 0.0),
-		1.6
+	float wisps = layered_noise(
+		cloud_point * 2.0 + vec3(43.0)
 	);
 
-	float secondary = pow(
-		max(dot(ray, normalize(vec3(-0.8, -0.15, -0.5))), 0.0),
-		3.0
+	float coverage = smoothstep(0.25, 0.80, formations);
+	float detail = mix(0.75, 1.0, wisps);
+
+	float alignment = dot(
+		ray,
+		normalize(nebula_direction)
 	);
 
-	float dust = smoothstep(
-		0.48, 0.72, layered_noise(p * 0.8 + vec3(97.0))
-	);
+	float region = smoothstep(-0.25, 0.95, alignment);
+	region *= region;
 
 	vec3 tint = mix(
-		vec3(0.055, 0.12, 0.22),
-		nebula_color.rgb,
-		formations
+		vec3(0.025, 0.045, 0.075),
+		nebula_color.rgb * 0.35,
+		smoothstep(0.30, 0.75, formations)
 	);
 
-	return tint * cloud * detail
-		* (region + secondary * 0.35)
-		* (1.0 - dust * 0.55)
-		* nebula_strength;
+	return tint * coverage * detail
+		* region * nebula_strength;
 }
 
 // =========================================================

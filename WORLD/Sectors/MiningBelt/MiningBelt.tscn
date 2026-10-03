@@ -17,7 +17,7 @@ script = ExtResource("1_ttpmw")
 AmbientEnergy = 0.75
 SunEnergy = 1.8
 SunAngularSizeDegrees = 2.0
-NebulaStrength = 0.65
+NebulaStrength = 0.2
 StarBrightness = 0.75
 
 [node name="Arrivals" type="Node3D" parent="." unique_id=1309684115]
@@ -54,9 +54,9 @@ position = Vector3(2200, 0, -1700)
 script = ExtResource("atmosphere_script")
 WorldEnvironmentPath = NodePath("../SpaceEnvironment/WorldEnvironment")
 HazeEnabled = true
-HazeColor = Color(0.10, 0.17, 0.26, 1)
-HazeHalfDistance = 18000.0
-CloudsEnabled = true
+HazeColor = Color(0.045, 0.07, 0.11, 1)
+HazeHalfDistance = 24000.0
+CloudsEnabled = false
 CloudCount = 12
 Seed = 287
 CloudHalfExtents = Vector3(1600, 220, 2300)
