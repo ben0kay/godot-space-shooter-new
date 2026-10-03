@@ -1,10 +1,14 @@
 shader_type sky;
 render_mode disable_fog;
 
-// Draws distant stars, an aligned sun and a procedurally shaded planet.
+// Draws deep blue space, broad nebula clouds, sunlight and planetary atmosphere.
 
 uniform float star_brightness = 0.9;
-uniform float nebula_strength = 0.06;
+uniform float nebula_strength = 0.65;
+
+uniform vec4 background_color : source_color = vec4(0.008, 0.016, 0.032, 1.0);
+uniform vec4 nebula_color : source_color = vec4(0.25, 0.42, 0.62, 1.0);
+uniform vec3 nebula_direction = vec3(-0.25, 0.18, -1.0);
 
 uniform vec3 sun_direction = vec3(-0.65, 0.35, -0.67);
 uniform vec4 sun_color : source_color = vec4(1.0, 0.91, 0.76, 1.0);
@@ -13,47 +17,17 @@ uniform float sun_radius = 0.01135;
 uniform bool planet_enabled = true;
 uniform vec3 planet_direction = vec3(0.55, 0.25, -1.0);
 uniform float planet_radius = 0.95;
+uniform float atmosphere_strength = 0.8;
 
 // =========================================================
-// Generates repeatable values for star positions.
-vec3 star_random(vec2 cell, float seed)
-{
-	return fract(sin(vec3(
-		dot(cell, vec2(127.1, 311.7)) + seed,
-		dot(cell, vec2(269.5, 183.3)) + seed,
-		dot(cell, vec2(419.2, 371.9)) + seed
-	)) * 43758.5453);
-}
-
-// =========================================================
-// Draws a sparse star layer with varied brightness.
-vec3 star_layer(vec2 coordinates, float face, float density, float seed)
-{
-	vec2 grid = coordinates * density;
-	vec3 random = star_random(floor(grid), seed + face * 37.0);
-
-	if (random.z > 0.025)
-		return vec3(0.0);
-
-	float distance_to_star = length(
-		fract(grid) - (vec2(0.2) + random.xy * 0.6)
-	);
-
-	float star = 1.0 - smoothstep(0.02, 0.10, distance_to_star);
-	vec3 tint = mix(vec3(0.65, 0.78, 1.0), vec3(1.0, 0.88, 0.72), random.x);
-
-	return tint * star * mix(0.3, 1.0, random.y);
-}
-
-// =========================================================
-// Produces repeatable planetary noise.
+// Produces repeatable values for clouds and surface formations.
 float hash_value(vec3 p)
 {
 	return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
 }
 
 // =========================================================
-// Interpolates three-dimensional noise without seams around the planet.
+// Interpolates seamless three-dimensional noise.
 float noise_value(vec3 p)
 {
 	vec3 i = floor(p);
@@ -76,33 +50,136 @@ float noise_value(vec3 p)
 }
 
 // =========================================================
-// Combines broad formations with smaller cloud detail.
+// Combines broad shapes and finer wisps.
 float layered_noise(vec3 p)
 {
-	return noise_value(p) * 0.57
-		+ noise_value(p * 2.03 + vec3(17.0)) * 0.28
-		+ noise_value(p * 4.11 + vec3(31.0)) * 0.15;
+	return noise_value(p) * 0.53
+		+ noise_value(p * 2.03 + vec3(17.0)) * 0.27
+		+ noise_value(p * 4.11 + vec3(31.0)) * 0.14
+		+ noise_value(p * 8.17 + vec3(53.0)) * 0.06;
 }
 
 // =========================================================
-// Shades the planet using the same sun direction as the sector lighting.
+// Draws broad warped nebula clouds with darker gaps between formations.
+vec3 draw_nebula(vec3 ray)
+{
+	vec3 p = ray * vec3(3.0, 5.0, 3.0);
+
+	vec3 warp = vec3(
+		noise_value(p + vec3(11.0)),
+		noise_value(p + vec3(37.0)),
+		noise_value(p + vec3(71.0))
+	);
+
+	float formations = layered_noise(p + warp * 2.0 + vec3(19.0));
+	float wisps = layered_noise(p * 2.4 + warp * 3.0 + vec3(43.0));
+
+	float cloud = smoothstep(0.35, 0.72, formations);
+	float detail = mix(0.55, 1.0, wisps);
+
+	float region = pow(
+		max(dot(ray, normalize(nebula_direction)), 0.0),
+		1.6
+	);
+
+	float secondary = pow(
+		max(dot(ray, normalize(vec3(-0.8, -0.15, -0.5))), 0.0),
+		3.0
+	);
+
+	float dust = smoothstep(
+		0.48, 0.72, layered_noise(p * 0.8 + vec3(97.0))
+	);
+
+	vec3 tint = mix(
+		vec3(0.055, 0.12, 0.22),
+		nebula_color.rgb,
+		formations
+	);
+
+	return tint * cloud * detail
+		* (region + secondary * 0.35)
+		* (1.0 - dust * 0.55)
+		* nebula_strength;
+}
+
+// =========================================================
+// Generates varied star positions.
+vec3 star_random(vec2 cell, float seed)
+{
+	return fract(sin(vec3(
+		dot(cell, vec2(127.1, 311.7)) + seed,
+		dot(cell, vec2(269.5, 183.3)) + seed,
+		dot(cell, vec2(419.2, 371.9)) + seed
+	)) * 43758.5453);
+}
+
+// =========================================================
+// Draws one sparse layer of distant stars.
+vec3 star_layer(vec2 coordinates, float face, float density, float seed)
+{
+	vec2 grid = coordinates * density;
+	vec3 random = star_random(floor(grid), seed + face * 37.0);
+
+	if (random.z > 0.025)
+		return vec3(0.0);
+
+	float distance_to_star = length(
+		fract(grid) - (vec2(0.2) + random.xy * 0.6)
+	);
+
+	float star = 1.0 - smoothstep(0.02, 0.10, distance_to_star);
+	vec3 tint = mix(
+		vec3(0.65, 0.78, 1.0),
+		vec3(1.0, 0.88, 0.72),
+		random.x
+	);
+
+	return tint * star * mix(0.3, 1.0, random.y);
+}
+
+// =========================================================
+// Draws the planet and a soft atmosphere extending beyond its silhouette.
 vec3 draw_planet(vec3 ray, vec3 background)
 {
 	if (!planet_enabled)
 		return background;
 
-	vec3 centre = normalize(planet_direction) * 3.0;
+	vec3 planet_axis = normalize(planet_direction);
+	vec3 centre = planet_axis * 3.0;
+	vec3 sunlight = normalize(sun_direction);
+
 	float radius = clamp(planet_radius, 0.1, 2.0);
 	float projected = dot(ray, centre);
 	float discriminant = projected * projected
 		- dot(centre, centre) + radius * radius;
 
+	float angular_radius = asin(radius / 3.0);
+	float angular_distance = acos(clamp(dot(ray, planet_axis), -1.0, 1.0));
+
+	// Estimate illumination around the limb to favour the sun-facing edge.
+	vec3 tangent = ray - planet_axis * dot(ray, planet_axis);
+	vec3 limb_normal = length(tangent) > 0.0001
+		? normalize(tangent) : vec3(0.0, 1.0, 0.0);
+
+	float limb_light = 0.12 + 0.88 * max(dot(limb_normal, sunlight), 0.0);
+
 	if (projected <= 0.0 || discriminant <= 0.0)
-		return background;
+	{
+		float outside = max(angular_distance - angular_radius, 0.0);
+		float close_haze = exp(-outside * 90.0);
+		float broad_haze = exp(-outside * 22.0);
+
+		vec3 atmosphere = vec3(0.20, 0.48, 0.82)
+			* (close_haze * 0.28 + broad_haze * 0.045)
+			* limb_light * atmosphere_strength;
+
+		return background + atmosphere;
+	}
 
 	float distance_to_surface = projected - sqrt(discriminant);
 	vec3 normal = normalize(ray * distance_to_surface - centre);
-	float illumination = max(dot(normal, normalize(sun_direction)), 0.0);
+	float illumination = max(dot(normal, sunlight), 0.0);
 
 	float land = smoothstep(
 		0.47, 0.59, layered_noise(normal * 4.0 + vec3(12.0))
@@ -123,14 +200,21 @@ vec3 draw_planet(vec3 ray, vec3 background)
 
 	surface = mix(surface, vec3(0.65, 0.72, 0.76), clouds * 0.85);
 
-	float limb = pow(1.0 - max(dot(normal, -ray), 0.0), 4.0);
+	float limb = pow(
+		1.0 - max(dot(normal, -ray), 0.0),
+		3.0
+	);
 
-	return surface * (0.025 + illumination * 0.95)
-		+ vec3(0.08, 0.35, 0.68) * limb * (0.04 + illumination);
+	vec3 planet = surface * (0.035 + illumination * 0.95);
+	vec3 atmosphere = vec3(0.14, 0.40, 0.74)
+		* limb * (0.08 + illumination)
+		* atmosphere_strength;
+
+	return planet + atmosphere;
 }
 
 // =========================================================
-// Composes stars, restrained haze, sunlight and the distant planet.
+// Composes the blue background, nebulae, stars, sun and planet.
 void sky()
 {
 	vec3 direction = normalize(EYEDIR);
@@ -160,25 +244,26 @@ void sky()
 	vec3 stars = star_layer(coordinates, face, 180.0, 11.0);
 	stars += star_layer(coordinates, face, 75.0, 83.0) * 1.3;
 
-	float haze = pow(
-		max(dot(direction, normalize(vec3(-0.7, 0.3, -0.6))), 0.0),
-		6.0
+	vec3 nebula = draw_nebula(direction);
+	float star_attenuation = clamp(
+		1.0 - length(nebula) * 1.5, 0.45, 1.0
 	);
 
-	vec3 background = vec3(0.001, 0.002, 0.004)
-		+ vec3(0.10, 0.16, 0.27) * haze * nebula_strength
-		+ stars * star_brightness;
+	vec3 background = background_color.rgb
+		+ nebula
+		+ stars * star_brightness * star_attenuation;
 
 	float angle = acos(clamp(
 		dot(direction, normalize(sun_direction)), -1.0, 1.0
 	));
 
 	float disc = 1.0 - smoothstep(sun_radius * 0.85, sun_radius, angle);
-	float halo = exp(-angle * 22.0) * 0.22;
-	float outer_glow = exp(-angle * 6.0) * 0.025;
+	float inner_glow = exp(-angle * 18.0) * 0.25;
+	float outer_glow = exp(-angle * 4.5) * 0.045;
 
-	background += sun_color.rgb * (disc * 7.0 + halo + outer_glow);
+	background += sun_color.rgb * (
+		disc * 7.0 + inner_glow + outer_glow
+	);
 
-	// Drawing the planet last lets it obscure the sun when aligned.
 	COLOR = draw_planet(direction, background);
 }
