@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="EnemyAttackControllerDefinition" format=3 uid="uid://dtqjgow23sh5"]
+
+[ext_resource type="Script" uid="uid://c018bvm22iks8" path="res://ENEMIES/CORE/Attacks/EnemyAttackDefinition.cs" id="attack"]
+[ext_resource type="Script" uid="uid://dnknugvhnysd0" path="res://ENEMIES/CORE/Attacks/EnemyAttackControllerDefinition.cs" id="controller"]
+[ext_resource type="Resource" uid="uid://bw66vuhpdphfd" path="res://ENEMIES/SIMULANTS/Weapons/SimulantPulse.tres" id="pulse"]
+[ext_resource type="Resource" uid="uid://nb740567d3jy" path="res://ENEMIES/SIMULANTS/Weapons/SimulantWeaponSeekerCore.tres" id="seeker"]
+
+[sub_resource type="Resource" id="CannonStream"]
+script = ExtResource("attack")
+Key = "harrower_cannon_stream"
+Channel = "shards"
+Weight = 100.0
+Weapon = ExtResource("pulse")
+RangeMin = 15.0
+RangeMax = 250.0
+Order = 1
+VolleyRounds = 30
+IntervalSeconds = 0.08
+CooldownSeconds = 2.0
+MaxRoundWaitSeconds = 0.3
+
+[sub_resource type="Resource" id="SeekerLaunch"]
+script = ExtResource("attack")
+Key = "harrower_seeker_launch"
+Channel = "core"
+HardpointGroup = "core_weapon"
+Weight = 35.0
+Weapon = ExtResource("seeker")
+RangeMin = 40.0
+RangeMax = 250.0
+FireToleranceDegrees = 180.0
+Order = 2
+VolleyRounds = 1
+CooldownSeconds = 6.0
+
+[resource]
+script = ExtResource("controller")
+MaxActiveChannels = 2
+SelectionIntervalSeconds = 0.2
+Attacks = Array[ExtResource("attack")]([SubResource("CannonStream"), SubResource("SeekerLaunch")])

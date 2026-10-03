@@ -1,0 +1,221 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ENEMIES/CORE/Hardpoints/EnemyHardpoint.cs" id="hardpoint"]
+[ext_resource type="Script" path="res://ENEMIES/CORE/Hardpoints/HardpointRotationStats.cs" id="rotation"]
+
+[sub_resource type="StandardMaterial3D" id="HullMaterial"]
+albedo_color = Color(0.035, 0.025, 0.055, 1)
+metallic = 0.65
+roughness = 0.45
+
+[sub_resource type="StandardMaterial3D" id="ArmourMaterial"]
+albedo_color = Color(0.12, 0.1, 0.17, 1)
+metallic = 0.75
+roughness = 0.35
+
+[sub_resource type="StandardMaterial3D" id="EnergyMaterial"]
+albedo_color = Color(0.55, 0.12, 1, 1)
+emission_enabled = true
+emission = Color(0.55, 0.12, 1, 1)
+emission_energy_multiplier = 2.0
+
+[sub_resource type="BoxMesh" id="HullMesh"]
+material = SubResource("HullMaterial")
+size = Vector3(7, 5, 13)
+
+[sub_resource type="BoxMesh" id="WingMesh"]
+material = SubResource("HullMaterial")
+size = Vector3(10, 3.5, 9)
+
+[sub_resource type="BoxMesh" id="ArmourMesh"]
+material = SubResource("ArmourMaterial")
+size = Vector3(8, 1.5, 6)
+
+[sub_resource type="BoxMesh" id="NoseMesh"]
+material = SubResource("ArmourMaterial")
+size = Vector3(4, 3, 4)
+
+[sub_resource type="BoxMesh" id="BarrelMesh"]
+material = SubResource("ArmourMaterial")
+size = Vector3(0.8, 0.8, 3)
+
+[sub_resource type="BoxMesh" id="EmitterMesh"]
+material = SubResource("EnergyMaterial")
+size = Vector3(0.85, 0.85, 0.2)
+
+[sub_resource type="SphereMesh" id="CoreMesh"]
+material = SubResource("EnergyMaterial")
+radius = 1.3
+height = 2.6
+
+[sub_resource type="BoxMesh" id="ConduitMesh"]
+material = SubResource("EnergyMaterial")
+size = Vector3(8, 0.15, 0.3)
+
+[sub_resource type="BoxMesh" id="EngineMesh"]
+material = SubResource("EnergyMaterial")
+size = Vector3(2, 1.5, 0.25)
+
+[sub_resource type="Resource" id="CannonRotation"]
+script = ExtResource("rotation")
+Mode = 1
+TurnSpeedDegrees = 110.0
+YawLimitDegrees = 55.0
+PitchUpDegrees = 45.0
+PitchDownDegrees = 25.0
+
+[sub_resource type="Resource" id="FixedRotation"]
+script = ExtResource("rotation")
+Mode = 0
+
+[node name="SimulantHarrowerVisual" type="Node3D"]
+
+[node name="Hull" type="MeshInstance3D" parent="."]
+mesh = SubResource("HullMesh")
+
+[node name="LeftWing" type="MeshInstance3D" parent="."]
+position = Vector3(-8, 0, 0.5)
+mesh = SubResource("WingMesh")
+
+[node name="RightWing" type="MeshInstance3D" parent="."]
+position = Vector3(8, 0, 0.5)
+mesh = SubResource("WingMesh")
+
+[node name="LeftArmour" type="MeshInstance3D" parent="."]
+position = Vector3(-8, 2.3, 0.5)
+mesh = SubResource("ArmourMesh")
+
+[node name="RightArmour" type="MeshInstance3D" parent="."]
+position = Vector3(8, 2.3, 0.5)
+mesh = SubResource("ArmourMesh")
+
+[node name="Nose" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0, -7)
+mesh = SubResource("NoseMesh")
+
+[node name="Core" type="MeshInstance3D" parent="."]
+position = Vector3(0, 3, -1)
+mesh = SubResource("CoreMesh")
+cast_shadow = 0
+
+[node name="LeftConduit" type="MeshInstance3D" parent="."]
+position = Vector3(-6, 3.1, -1)
+mesh = SubResource("ConduitMesh")
+cast_shadow = 0
+
+[node name="RightConduit" type="MeshInstance3D" parent="."]
+position = Vector3(6, 3.1, -1)
+mesh = SubResource("ConduitMesh")
+cast_shadow = 0
+
+[node name="LeftEngine" type="MeshInstance3D" parent="."]
+position = Vector3(-8, 0, 5.1)
+mesh = SubResource("EngineMesh")
+cast_shadow = 0
+
+[node name="RightEngine" type="MeshInstance3D" parent="."]
+position = Vector3(8, 0, 5.1)
+mesh = SubResource("EngineMesh")
+cast_shadow = 0
+
+[node name="Hardpoints" type="Node3D" parent="."]
+
+[node name="CannonOuterLeft" type="Node3D" parent="Hardpoints"]
+position = Vector3(-10, 3.5, -3.5)
+script = ExtResource("hardpoint")
+Key = "cannon_outer_left"
+Group = "cannons"
+RotationStats = SubResource("CannonRotation")
+
+[node name="Barrel" type="MeshInstance3D" parent="Hardpoints/CannonOuterLeft"]
+position = Vector3(0, 0, -1.5)
+mesh = SubResource("BarrelMesh")
+
+[node name="Emitter" type="MeshInstance3D" parent="Hardpoints/CannonOuterLeft"]
+position = Vector3(0, 0, -3)
+mesh = SubResource("EmitterMesh")
+cast_shadow = 0
+
+[node name="Muzzle" type="Marker3D" parent="Hardpoints/CannonOuterLeft"]
+position = Vector3(0, 0, -3.2)
+
+[node name="CannonInnerLeft" type="Node3D" parent="Hardpoints"]
+position = Vector3(-4.5, 3.5, -4.5)
+script = ExtResource("hardpoint")
+Key = "cannon_inner_left"
+Group = "cannons"
+RotationStats = SubResource("CannonRotation")
+
+[node name="Barrel" type="MeshInstance3D" parent="Hardpoints/CannonInnerLeft"]
+position = Vector3(0, 0, -1.5)
+mesh = SubResource("BarrelMesh")
+
+[node name="Emitter" type="MeshInstance3D" parent="Hardpoints/CannonInnerLeft"]
+position = Vector3(0, 0, -3)
+mesh = SubResource("EmitterMesh")
+cast_shadow = 0
+
+[node name="Muzzle" type="Marker3D" parent="Hardpoints/CannonInnerLeft"]
+position = Vector3(0, 0, -3.2)
+
+[node name="CannonInnerRight" type="Node3D" parent="Hardpoints"]
+position = Vector3(4.5, 3.5, -4.5)
+script = ExtResource("hardpoint")
+Key = "cannon_inner_right"
+Group = "cannons"
+RotationStats = SubResource("CannonRotation")
+
+[node name="Barrel" type="MeshInstance3D" parent="Hardpoints/CannonInnerRight"]
+position = Vector3(0, 0, -1.5)
+mesh = SubResource("BarrelMesh")
+
+[node name="Emitter" type="MeshInstance3D" parent="Hardpoints/CannonInnerRight"]
+position = Vector3(0, 0, -3)
+mesh = SubResource("EmitterMesh")
+cast_shadow = 0
+
+[node name="Muzzle" type="Marker3D" parent="Hardpoints/CannonInnerRight"]
+position = Vector3(0, 0, -3.2)
+
+[node name="CannonOuterRight" type="Node3D" parent="Hardpoints"]
+position = Vector3(10, 3.5, -3.5)
+script = ExtResource("hardpoint")
+Key = "cannon_outer_right"
+Group = "cannons"
+RotationStats = SubResource("CannonRotation")
+
+[node name="Barrel" type="MeshInstance3D" parent="Hardpoints/CannonOuterRight"]
+position = Vector3(0, 0, -1.5)
+mesh = SubResource("BarrelMesh")
+
+[node name="Emitter" type="MeshInstance3D" parent="Hardpoints/CannonOuterRight"]
+position = Vector3(0, 0, -3)
+mesh = SubResource("EmitterMesh")
+cast_shadow = 0
+
+[node name="Muzzle" type="Marker3D" parent="Hardpoints/CannonOuterRight"]
+position = Vector3(0, 0, -3.2)
+
+[node name="CoreEmitter" type="Node3D" parent="Hardpoints"]
+position = Vector3(0, 3, -1)
+script = ExtResource("hardpoint")
+Key = "core_emitter"
+Group = "core_weapon"
+RotationStats = SubResource("FixedRotation")
+
+[node name="Muzzle" type="Marker3D" parent="Hardpoints/CoreEmitter"]
+position = Vector3(0, 0, -3)
+
+[node name="BeamEmitter" type="Node3D" parent="Hardpoints"]
+position = Vector3(0, 0, -9)
+script = ExtResource("hardpoint")
+Key = "beam_centre"
+Group = "beam"
+RotationStats = SubResource("FixedRotation")
+
+[node name="Emitter" type="MeshInstance3D" parent="Hardpoints/BeamEmitter"]
+mesh = SubResource("EmitterMesh")
+cast_shadow = 0
+
+[node name="Muzzle" type="Marker3D" parent="Hardpoints/BeamEmitter"]
+position = Vector3(0, 0, -0.4)
