@@ -1,6 +1,6 @@
 [gd_scene format=3]
 
-[ext_resource type="Shader" path="res://ENEMIES/SIMULANTS/Projectiles/SimulantOrb.gdshader" id="orb_shader"]
+[ext_resource type="Shader" path="res://ENEMIES/SIMULANTS/Projectiles/SimulantOrb/SimulantOrb.gdshader" id="orb_shader"]
 
 [sub_resource type="ShaderMaterial" id="PlasmaMaterial"]
 shader = ExtResource("orb_shader")

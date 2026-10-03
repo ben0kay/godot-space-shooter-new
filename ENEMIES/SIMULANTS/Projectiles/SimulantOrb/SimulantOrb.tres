@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://PROJECTILES/ProjectileDefinition.cs" id="definition"]
 [ext_resource type="PackedScene" path="res://PROJECTILES/Projectile.tscn" id="projectile_scene"]
-[ext_resource type="PackedScene" path="res://ENEMIES/SIMULANTS/Projectiles/SimulantOrbVisual.tscn" id="visual"]
+[ext_resource type="PackedScene" path="res://ENEMIES/SIMULANTS/Projectiles/SimulantOrb/SimulantOrbVisual.tscn" id="visual"]
 [ext_resource type="Script" path="res://Weapon/WeaponEffectsProfile.cs" id="effects"]
 
 [sub_resource type="Resource" id="OrbEffects"]
