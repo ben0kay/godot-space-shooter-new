@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="EnemyCatalog" format=3]
+
+[ext_resource type="Script" path="res://ENEMIES/CORE/Registry/EnemyCatalog.cs" id="catalog"]
+[ext_resource type="Script" path="res://ENEMIES/CORE/Registry/EnemyRegistration.cs" id="registration"]
+[ext_resource type="Resource" path="res://ENEMIES/SIMULANTS/Ships/Dreadwing/SimulantDreadwing.tres" id="dreadwing_definition"]
+[ext_resource type="PackedScene" path="res://ENEMIES/SIMULANTS/Ships/Dreadwing/SimulantDreadwing.tscn" id="dreadwing_scene"]
+[ext_resource type="Resource" path="res://ENEMIES/SIMULANTS/Ships/Harrower/SimulantHarrower.tres" id="harrower_definition"]
+[ext_resource type="PackedScene" path="res://ENEMIES/SIMULANTS/Ships/Harrower/SimulantHarrower.tscn" id="harrower_scene"]
+
+[sub_resource type="Resource" id="Dreadwing"]
+script = ExtResource("registration")
+Key = "simulant_dreadwing"
+Definition = ExtResource("dreadwing_definition")
+SpawnScene = ExtResource("dreadwing_scene")
+
+[sub_resource type="Resource" id="Harrower"]
+script = ExtResource("registration")
+Key = "simulant_harrower"
+Definition = ExtResource("harrower_definition")
+SpawnScene = ExtResource("harrower_scene")
+
+[resource]
+script = ExtResource("catalog")
+Entries = Array[ExtResource("registration")]([SubResource("Dreadwing"), SubResource("Harrower")])
