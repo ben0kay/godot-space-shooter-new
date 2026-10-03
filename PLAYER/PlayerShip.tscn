@@ -16,7 +16,7 @@
 [ext_resource type="Script" uid="uid://bw8f7mj71q22d" path="res://PLAYER/Scripts/FpsCounter.cs" id="15_wt303"]
 [ext_resource type="Script" uid="uid://dddrh1kmsvoo0" path="res://PLAYER/Cockpit/PlayerCockpit.cs" id="16_dxnsd"]
 [ext_resource type="Script" uid="uid://bm6wjsllgqnqj" path="res://PLAYER/Effects/PlayerBoostFlow.cs" id="boost_flow_script"]
-[ext_resource type="Resource" path="res://PLAYER/PlayerCargo.tres" id="cargo_definition"]
+[ext_resource type="Resource" uid="uid://c4h5k4fek1lxa" path="res://PLAYER/PlayerCargo.tres" id="cargo_definition"]
 [ext_resource type="Script" uid="uid://dtsnv5knc0udm" path="res://MINING/Core/CargoHold.cs" id="cargo_script"]
 [ext_resource type="Resource" uid="uid://cpkdcrv76wngi" path="res://Weapons/PlayerMiningBeam.tres" id="mining_weapon"]
 [ext_resource type="Resource" uid="uid://b2s0fvtl00ei3" path="res://PLAYER/Weapons/PlayerRocketLauncher.tres" id="rocket_weapon"]
@@ -105,7 +105,8 @@ TurnBankDegrees = 18.0
 StrafeBankDegrees = 14.0
 RollTiltDegrees = 25.0
 ShipResponse = 6.0
-CameraStrafeOffset = 1.2
+CameraStrafeOffset = 2.0
+MovementFollowResponse = 5.0
 BuildCockpitPlaceholder = false
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=925117365]
