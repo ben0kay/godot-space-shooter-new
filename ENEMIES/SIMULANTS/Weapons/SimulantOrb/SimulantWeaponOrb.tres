@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="WeaponDefinition" format=3 uid="uid://ddltmr4sb7kcb"]
+
+[ext_resource type="Script" uid="uid://mv26j0357h2" path="res://Weapon/WeaponEffectsProfile.cs" id="effects"]
+[ext_resource type="Script" uid="uid://6wveafw5dvgq" path="res://Weapon/ProjectileLaunchOverrides.cs" id="launch"]
+[ext_resource type="Script" uid="uid://dk13qlucl75kd" path="res://Weapon/WeaponDefinition.cs" id="weapon"]
+
+[sub_resource type="Resource" id="Launch"]
+script = ExtResource("launch")
+OverrideDamage = true
+Damage = 14.0
+OverrideSpeed = true
+Speed = 35.0
+OverrideLifetime = true
+Lifetime = 8.0
+
+[sub_resource type="Resource" id="MuzzleEffects"]
+script = ExtResource("effects")
+EmissionEnergy = 2.0
+ParticleRadius = 0.1
+MuzzleParticles = 10
+MuzzleLifetime = 0.18
+
+[sub_resource type="Resource" id="Resource_j4137"]
+metadata/__load_path__ = "res://ENEMIES/SIMULANTS/Projectiles/SimulantOrb.tres"
+
+[resource]
+script = ExtResource("weapon")
+SecondsBetweenShots = 0.3
+Projectile = SubResource("Resource_j4137")
+LaunchOverrides = SubResource("Launch")
+MuzzleEffects = SubResource("MuzzleEffects")
