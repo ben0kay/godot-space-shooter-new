@@ -78,4 +78,10 @@ public FactionDoctrine GetDoctrine()
 	public Godot.Collections.Array<HardpointDefinition> Hardpoints = new();
 
 	#endregion
+
+	#region Rewards
+
+[Export] public EnemyRewardStats Reward = new();
+
+#endregion
 }

@@ -172,36 +172,35 @@ private void RegisterHardpoints(Node parent)
 	#region Damage
 
 	// =========================================================
-	// Resolves typed damage, updates shield feedback, and enables recovery.
-	public void ApplyDamage(DamageInfo damage)
+// Resolves typed damage, awards a player kill once, and enables shield recovery.
+public void ApplyDamage(DamageInfo damage)
+{
+	if (_defence == null
+		|| _defence.Destroyed
+		|| damage.Amount <= 0.0f
+		|| IsQueuedForDeletion())
 	{
-		if (_defence == null
-			|| _defence.Destroyed
-			|| damage.Amount <= 0.0f
-			|| IsQueuedForDeletion())
-		{
-			return;
-		}
-
-		float shieldBefore = _defence.Shield;
-
-		_defence.ApplyDamage(damage.Amount, damage.Type);
-
-		_shield?.NotifyDamage(shieldBefore, damage);
-
-		if (_defence.Destroyed)
-		{
-			SetPhysicsProcess(false);
-			QueueFree();
-			return;
-		}
-
-		if (_shieldRechargeRate > 0.0f
-			&& _defence.Shield < _defence.MaxShield)
-		{
-			SetPhysicsProcess(true);
-		}
+		return;
 	}
+
+	float shieldBefore = _defence.Shield;
+	_defence.ApplyDamage(damage.Amount, damage.Type);
+	_shield?.NotifyDamage(shieldBefore, damage);
+
+	if (_defence.Destroyed)
+	{
+		GrantKillReward(damage);
+		SetPhysicsProcess(false);
+		QueueFree();
+		return;
+	}
+
+	if (_shieldRechargeRate > 0.0f
+		&& _defence.Shield < _defence.MaxShield)
+	{
+		SetPhysicsProcess(true);
+	}
+}
 
 	#endregion
 
@@ -345,4 +344,46 @@ private void RegisterHardpoints(Node parent)
 	}
 
 	#endregion
+
+	#region Kill Rewards
+
+private bool _rewardResolved;
+
+// =========================================================
+// Resolves a kill once and grants rewards only for player-owned lethal damage.
+private void GrantKillReward(DamageInfo damage)
+{
+	if (_rewardResolved) return;
+	_rewardResolved = true;
+
+	if (Definition?.Reward == null) return;
+
+	PlayerShip player = null;
+
+	if (GodotObject.IsInstanceValid(damage.Source)
+		&& damage.Source is PlayerShip sourcePlayer)
+	{
+		player = sourcePlayer;
+	}
+	else if (damage.SourceFaction == Faction.Player)
+	{
+		// Supports player-owned damage whose original source no longer exists.
+		player = GetTree().GetFirstNodeInGroup("player_ship") as PlayerShip;
+	}
+
+	if (!GodotObject.IsInstanceValid(player)
+		|| player.IsQueuedForDeletion())
+	{
+		return;
+	}
+
+	int credits = System.Math.Max(0, Definition.Reward.Credits);
+	long experience = EnemyRewardRules.GetExperience(
+		credits, Definition.Class
+	);
+
+	player.Progression.Grant(credits, experience);
+}
+
+#endregion
 }

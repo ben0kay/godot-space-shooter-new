@@ -620,4 +620,11 @@ public void SetCockpitInteraction(bool active)
 		? Input.MouseModeEnum.Visible
 		: Input.MouseModeEnum.Captured;
 }
+
+#region Progression
+
+// Remains with this player instance during sector transitions.
+public PlayerProgression Progression { get; } = new();
+
+#endregion
 }
