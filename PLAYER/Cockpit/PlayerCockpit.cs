@@ -79,7 +79,7 @@ private CockpitInstrument _defenceInstrument;
 		);
 
 		_weapons = _ship.GetNodeOrNull<PlayerWeaponInput>(
-			"PlayerWeaponMount"
+			"Weapons/PlayerWeaponMount"
 		);
 	}
 

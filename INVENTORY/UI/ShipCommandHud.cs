@@ -301,7 +301,7 @@ public partial class ShipCommandHud : CanvasLayer
 
 			PlayerWeaponInput weapons =
 				_ship.GetNodeOrNull<PlayerWeaponInput>(
-					"PlayerWeaponMount"
+					"Weapons/PlayerWeaponMount"
 				);
 
 			weapons?.PrimaryWeapon?.SetTriggerHeld(false);

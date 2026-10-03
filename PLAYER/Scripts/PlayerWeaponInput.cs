@@ -38,36 +38,35 @@ public partial class PlayerWeaponInput : Node
 
 	#region Setup
 
-	// =========================================================
-	// Caches the player and equips the starting secondary option when configured.
-	public override void _Ready()
+// =========================================================
+// Finds the owning player through organisational containers
+// and equips the configured starting secondary weapon.
+// =========================================================
+public override void _Ready()
+{
+	ProcessPhysicsPriority = 20;
+
+	_ship = NodeHelpers.FindAncestor<PlayerShip>(this);
+
+	if (_ship == null)
 	{
-		ProcessPhysicsPriority = 20;
-
-		_ship = GetParent() as PlayerShip;
-
-		if (_ship == null)
-		{
-			GD.PushError(
-				"PlayerWeaponInput must be a child of PlayerShip."
-			);
-
-			SetPhysicsProcess(false);
-			SetProcessInput(false);
-			return;
-		}
-
-		if (SecondaryOptions.Count > 0)
-		{
-			int start = Mathf.Clamp(
-				StartingSecondaryIndex,
-				0,
-				SecondaryOptions.Count - 1
-			);
-
-			SelectSecondary(start);
-		}
+		GD.PushError("PlayerWeaponInput needs a PlayerShip ancestor.");
+		SetPhysicsProcess(false);
+		SetProcessInput(false);
+		return;
 	}
+
+	if (SecondaryOptions.Count > 0)
+	{
+		int start = Mathf.Clamp(
+			StartingSecondaryIndex,
+			0,
+			SecondaryOptions.Count - 1
+		);
+
+		SelectSecondary(start);
+	}
+}
 
 	#endregion
 

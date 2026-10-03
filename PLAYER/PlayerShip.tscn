@@ -30,22 +30,33 @@ Definition = ExtResource("2_vl8mf")
 [node name="Cyan_Interceptor_Mk2" parent="." unique_id=1887880329 instance=ExtResource("2_u2noc")]
 transform = Transform3D(0.4, 0, 0, 0, 0.4, 0, 0, 0, 0.4, 0, 0, 0)
 
-[node name="PrimaryWeapon" type="Node3D" parent="." unique_id=384299454]
+[node name="Weapons" type="Node3D" parent="." unique_id=43985072]
+
+[node name="PrimaryWeapon" type="Node3D" parent="Weapons" unique_id=384299454]
 script = ExtResource("2_5lrhm")
 Weapon = ExtResource("3_faoyc")
 AimAtCameraCenter = true
 
-[node name="LeftMuzzle" type="Marker3D" parent="PrimaryWeapon" unique_id=1688840903]
+[node name="LeftMuzzle" type="Marker3D" parent="Weapons/PrimaryWeapon" unique_id=1688840903]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.288, 0.336, -0.68)
 
-[node name="RightMuzzle" type="Marker3D" parent="PrimaryWeapon" unique_id=1616554921]
+[node name="RightMuzzle" type="Marker3D" parent="Weapons/PrimaryWeapon" unique_id=1616554921]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.28, 0.36, -0.68)
 
-[node name="PlayerWeaponMount" type="Node" parent="." unique_id=1068048311 node_paths=PackedStringArray("PrimaryWeapon", "SecondaryWeapon")]
+[node name="PlayerWeaponMount" type="Node" parent="Weapons" unique_id=1068048311 node_paths=PackedStringArray("PrimaryWeapon", "SecondaryWeapon")]
 script = ExtResource("4_faoyc")
 PrimaryWeapon = NodePath("../PrimaryWeapon")
 SecondaryWeapon = NodePath("../SecondaryWeapon")
 SecondaryOptions = Array[ExtResource("weapon_definition")]([ExtResource("9_sklyu"), ExtResource("rocket_weapon"), ExtResource("mining_weapon")])
+
+[node name="SecondaryWeapon" type="Node3D" parent="Weapons" unique_id=632114802 node_paths=PackedStringArray("ProjectileMuzzleProvider")]
+script = ExtResource("2_5lrhm")
+Weapon = ExtResource("9_sklyu")
+AimAtCameraCenter = true
+ProjectileMuzzleProvider = NodePath("../PrimaryWeapon")
+
+[node name="BeamMuzzle" type="Marker3D" parent="Weapons/SecondaryWeapon" unique_id=109934333]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2641109, -2.5890062)
 
 [node name="PlayerThrusters" type="Node3D" parent="." unique_id=1126257128]
 script = ExtResource("6_5rg74")
@@ -66,15 +77,6 @@ script = ExtResource("8_crfyu")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.4372416, 0.085373044, 1.9875399)
 script = ExtResource("8_crfyu")
 
-[node name="SecondaryWeapon" type="Node3D" parent="." unique_id=632114802 node_paths=PackedStringArray("ProjectileMuzzleProvider")]
-script = ExtResource("2_5lrhm")
-Weapon = ExtResource("9_sklyu")
-AimAtCameraCenter = true
-ProjectileMuzzleProvider = NodePath("../PrimaryWeapon")
-
-[node name="BeamMuzzle" type="Marker3D" parent="SecondaryWeapon" unique_id=109934333]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2641109, -2.5890062)
-
 [node name="Dash" type="Node" parent="." unique_id=866161540]
 script = ExtResource("10_jip12")
 
@@ -86,7 +88,7 @@ anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 script = ExtResource("11_nsdd8")
-PrimaryWeapon = NodePath("../../PrimaryWeapon")
+PrimaryWeapon = NodePath("../../Weapons/PrimaryWeapon")
 
 [node name="FpsCounter" type="Label" parent="PlayerHud" unique_id=1673665388]
 offset_right = 40.0

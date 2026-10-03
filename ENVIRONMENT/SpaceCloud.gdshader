@@ -1,61 +1,125 @@
 shader_type spatial;
-render_mode unshaded, blend_mix, cull_disabled, depth_draw_never, fog_disabled;
+render_mode unshaded, blend_add, cull_disabled, depth_draw_never, fog_disabled;
 
-// Draws faint, irregular cloud patches without external textures.
+// Draws faint greenish cloud wisps using smoothly warped, layered noise.
+// Additive blending preserves the stars behind the cloud patches.
 
 varying vec4 cloud_color;
 varying vec2 cloud_seed;
 
 // =========================================================
-// Receives each patch's colour and unique noise offset.
+// Receives per-patch colour and noise variation.
 // =========================================================
 void vertex()
 {
 	cloud_color = COLOR;
-	cloud_seed = INSTANCE_CUSTOM.xy * 80.0;
+	cloud_seed = INSTANCE_CUSTOM.xy * 17.0;
 }
 
 // =========================================================
-// Generates a repeatable pseudo-random value.
+// Produces repeatable noise values without a large sine-based hash.
 // =========================================================
 float hash_value(vec2 point)
 {
-	return fract(sin(dot(point, vec2(127.1, 311.7))) * 43758.5453);
+	vec3 value = fract(vec3(point.xyx) * 0.1031);
+	value += dot(value, value.yzx + 33.33);
+
+	return fract((value.x + value.y) * value.z);
 }
 
 // =========================================================
-// Interpolates noise smoothly between neighbouring cells.
+// Interpolates all four cell corners with smooth quintic blending.
 // =========================================================
-float cloud_noise(vec2 point)
+float smooth_noise(vec2 point)
 {
 	vec2 cell = floor(point);
 	vec2 fraction = fract(point);
-	vec2 blend = fraction * fraction * (3.0 - 2.0 * fraction);
 
-	return mix(
-		mix(hash_value(cell), hash_value(cell + vec2(1.0, 0.0)), blend.x),
-		mix(hash_value(cell + vec2(0.0, 1.0)),
-			hash_value(cell + vec2(1.0, 1.0)), blend.x),
-		blend.y
-	);
+	vec2 blend = fraction * fraction * fraction
+		* (fraction * (fraction * 6.0 - 15.0) + 10.0);
+
+	float bottom_left = hash_value(cell);
+	float bottom_right = hash_value(cell + vec2(1.0, 0.0));
+	float top_left = hash_value(cell + vec2(0.0, 1.0));
+	float top_right = hash_value(cell + vec2(1.0, 1.0));
+
+	float bottom = mix(bottom_left, bottom_right, blend.x);
+	float top = mix(top_left, top_right, blend.x);
+
+	return mix(bottom, top, blend.y);
 }
 
 // =========================================================
-// Builds soft wisps with transparent edges and slow internal motion.
+// Combines rotated noise layers to reduce visible grid structure.
+// =========================================================
+float layered_noise(vec2 point)
+{
+	mat2 rotation = mat2(
+		vec2(0.8, 0.6),
+		vec2(-0.6, 0.8)
+	);
+
+	float value = smooth_noise(point) * 0.57;
+
+	point = rotation * point * 2.03 + vec2(7.1, 3.8);
+	value += smooth_noise(point) * 0.29;
+
+	point = rotation * point * 2.07 + vec2(2.6, 9.3);
+	value += smooth_noise(point) * 0.14;
+
+	return value;
+}
+
+// =========================================================
+// Warps broad haze into flowing wisps and fades every card edge.
 // =========================================================
 void fragment()
 {
-	vec2 point = UV * vec2(5.0, 3.0) + cloud_seed;
-	point += vec2(TIME * 0.025, TIME * 0.012);
+	vec2 centred_uv = (UV - vec2(0.5)) * 2.0;
 
-	float noise =
-		cloud_noise(point) * 0.65
-		+ cloud_noise(point * 2.1) * 0.35;
+	float angle = cloud_seed.x;
+	float cosine = cos(angle);
+	float sine = sin(angle);
 
-	float radius = length((UV - vec2(0.5)) * 2.0);
-	float edge = 1.0 - smoothstep(0.2, 1.0, radius);
-	float wisp = smoothstep(0.35, 0.75, noise);
+	vec2 rotated_uv = vec2(
+		cosine * centred_uv.x - sine * centred_uv.y,
+		sine * centred_uv.x + cosine * centred_uv.y
+	);
+
+	vec2 point = rotated_uv * vec2(2.0, 3.8) + cloud_seed;
+	point += vec2(TIME * 0.012, TIME * 0.006);
+
+	vec2 warp = vec2(
+		layered_noise(point * 0.7 + vec2(4.2, 1.3)),
+		layered_noise(point * 0.7 + vec2(9.7, 6.4))
+	);
+
+	vec2 flowing_point = point + (warp - vec2(0.5)) * 2.4;
+
+	float broad_noise = layered_noise(flowing_point);
+	float fine_noise = smooth_noise(
+		flowing_point * 3.1 + vec2(5.2, 8.7)
+	);
+
+	float haze = smoothstep(0.22, 0.78, broad_noise);
+
+	float filament = 1.0 - smoothstep(
+		0.025,
+		0.2,
+		abs(broad_noise - 0.52)
+	);
+
+	// Broad fade guarantees transparent edges regardless of noise.
+	float radius_squared = dot(centred_uv, centred_uv);
+
+	float envelope =
+		exp(-radius_squared * 2.3)
+		* (1.0 - smoothstep(0.45, 1.0, radius_squared));
+
+	float density =
+		haze * 0.55
+		+ filament * fine_noise * 0.45;
 
 	ALBEDO = cloud_color.rgb;
-	ALPHA = edge * wisp * cloud_color.a;
+	ALPHA = density * envelope * cloud_color.a;
 }

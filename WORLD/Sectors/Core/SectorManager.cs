@@ -294,7 +294,7 @@ public partial class SectorManager : Node
 
 		PlayerWeaponInput weapons =
 			Player.GetNodeOrNull<PlayerWeaponInput>(
-				"PlayerWeaponMount"
+				"Weapons/PlayerWeaponMount"
 			);
 
 		weapons?.PrimaryWeapon?.SetTriggerHeld(false);

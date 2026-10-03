@@ -162,17 +162,26 @@ public partial class PlayerFlightVisuals : Node
 		SetProcessInput(true);
 	}
 
-	// =========================================================
-	// Moves a visual component while preserving its authored placement.
-	private void MoveUnderPivot(string nodeName)
-	{
-		Node3D component = _ship.GetNodeOrNull<Node3D>(nodeName);
+// =========================================================
+// Finds an authored visual at the ship root or inside Weapons,
+// then attaches it to the cosmetic pitch and bank pivot.
+// =========================================================
+private void MoveUnderPivot(string nodeName)
+{
+	Node3D component = _ship.GetNodeOrNull<Node3D>(nodeName);
 
-		if (component != null)
-		{
-			component.Reparent(_visualPivot, true);
-		}
+	if (component == null)
+	{
+		component = _ship.GetNodeOrNull<Node3D>(
+			$"Weapons/{nodeName}"
+		);
 	}
+
+	if (component != null)
+	{
+		component.Reparent(_visualPivot, true);
+	}
+}
 
 	#endregion
 
