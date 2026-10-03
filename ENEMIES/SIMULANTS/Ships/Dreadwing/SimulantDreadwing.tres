@@ -8,6 +8,13 @@
 [ext_resource type="Script" uid="uid://bi8qfjqnsarb5" path="res://SHIELDS/ShieldVisualSettings.cs" id="6_40ml7"]
 [ext_resource type="PackedScene" uid="uid://bohf7i01xknix" path="res://ENEMIES/SIMULANTS/Ships/Dreadwing/SimulantDreadwingVisual.tscn" id="6_j7elm"]
 [ext_resource type="Script" uid="uid://bxv2gm5hx3d6i" path="res://ENEMIES/CORE/EnemyDefinition.cs" id="7_y5ihi"]
+[ext_resource type="Script" uid="uid://cdmpdcwofk7h" path="res://ENEMIES/CORE/EnemyDefenceStats.cs" id="defence_script"]
+
+[sub_resource type="Resource" id="DreadwingDefence"]
+script = ExtResource("defence_script")
+MaxShield = 180.0
+MaxArmour = 600.0
+MaxHull = 250.0
 
 [sub_resource type="Resource" id="Resource_xhs40"]
 script = ExtResource("2_jd67b")
@@ -37,6 +44,7 @@ DisplayName = "Simulant Dreadwing"
 Faction = 4
 Class = 3
 Rank = 2
+Defence = SubResource("DreadwingDefence")
 ShieldVisuals = SubResource("Resource_tp0rx")
 Handling = SubResource("Resource_xhs40")
 Ranges = SubResource("Resource_k1wv1")

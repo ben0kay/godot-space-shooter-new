@@ -1,11 +1,11 @@
-[gd_resource type="Resource" script_class="EnemyCatalog" format=3]
+[gd_resource type="Resource" script_class="EnemyCatalog" format=3 uid="uid://yyegkf8820r0"]
 
-[ext_resource type="Script" path="res://ENEMIES/CORE/Registry/EnemyCatalog.cs" id="catalog"]
-[ext_resource type="Script" path="res://ENEMIES/CORE/Registry/EnemyRegistration.cs" id="registration"]
-[ext_resource type="Resource" path="res://ENEMIES/SIMULANTS/Ships/Dreadwing/SimulantDreadwing.tres" id="dreadwing_definition"]
-[ext_resource type="PackedScene" path="res://ENEMIES/SIMULANTS/Ships/Dreadwing/SimulantDreadwing.tscn" id="dreadwing_scene"]
-[ext_resource type="Resource" path="res://ENEMIES/SIMULANTS/Ships/Harrower/SimulantHarrower.tres" id="harrower_definition"]
+[ext_resource type="Script" uid="uid://boxiwr5hfj6c" path="res://ENEMIES/CORE/Registry/EnemyCatalog.cs" id="catalog"]
+[ext_resource type="Resource" uid="uid://tkfi5asftg5d" path="res://ENEMIES/SIMULANTS/Ships/Dreadwing/SimulantDreadwing.tres" id="dreadwing_definition"]
+[ext_resource type="PackedScene" uid="uid://jir05eflrfkg" path="res://ENEMIES/SIMULANTS/Ships/Dreadwing/SimulantDreadwing.tscn" id="dreadwing_scene"]
+[ext_resource type="Resource" uid="uid://ys24jjv64k4v" path="res://ENEMIES/SIMULANTS/Ships/Harrower/SimulantHarrower.tres" id="harrower_definition"]
 [ext_resource type="PackedScene" path="res://ENEMIES/SIMULANTS/Ships/Harrower/SimulantHarrower.tscn" id="harrower_scene"]
+[ext_resource type="Script" uid="uid://bd3xeiijdma4" path="res://ENEMIES/CORE/Registry/EnemyRegistration.cs" id="registration"]
 
 [sub_resource type="Resource" id="Dreadwing"]
 script = ExtResource("registration")

@@ -5,9 +5,9 @@
 [ext_resource type="Resource" uid="uid://ggsfju664lep" path="res://WORLD/Sectors/HQSector.tres" id="3_n31nw"]
 [ext_resource type="Resource" uid="uid://dlk1b3hlbqvgv" path="res://WORLD/Sectors/MiningBelt/MiningBelt.tres" id="4_6028j"]
 [ext_resource type="PackedScene" uid="uid://cqt3qu6fub14m" path="res://PLAYER/PlayerShip.tscn" id="5_fyavk"]
-[ext_resource type="Script" uid="uid://te7ctp1p5hbg" path="res://INVENTORY/UI/ShipCommandHud.cs" id="ship_command_hud"]
-[ext_resource type="Script" path="res://SCRIPTS/Debug/EnemySpawnerDebug.cs" id="debug_spawner"]
+[ext_resource type="Script" uid="uid://bk1bjo4kq71wv" path="res://SCRIPTS/Debug/EnemySpawnerDebug.cs" id="debug_spawner"]
 [ext_resource type="Resource" path="res://ENEMIES/EnemyCatalog.tres" id="enemy_catalog"]
+[ext_resource type="Script" uid="uid://te7ctp1p5hbg" path="res://INVENTORY/UI/ShipCommandHud.cs" id="ship_command_hud"]
 
 [node name="Level" type="Node3D" unique_id=1129365220]
 
@@ -25,6 +25,6 @@ Sectors = Array[ExtResource("2_8e8wh")]([ExtResource("3_n31nw"), ExtResource("4_
 layer = 30
 script = ExtResource("ship_command_hud")
 
-[node name="EnemySpawnerDebug" type="CanvasLayer" parent="."]
+[node name="EnemySpawnerDebug" type="CanvasLayer" parent="." unique_id=1507606259]
 script = ExtResource("debug_spawner")
 Catalog = ExtResource("enemy_catalog")

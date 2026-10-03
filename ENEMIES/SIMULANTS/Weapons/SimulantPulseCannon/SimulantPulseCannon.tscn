@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bhcalgt0dkuwm"]
 
 [ext_resource type="Script" uid="uid://cle77mfe2h8rq" path="res://ENEMIES/CORE/Hardpoints/EnemyHardpoint.cs" id="1_j2sea"]
-[ext_resource type="PackedScene" uid="uid://cu278g8fet35q" path="res://ENEMIES/SIMULANTS/Weapons/Simulant_PulseCannon.glb" id="2_o0dc5"]
+[ext_resource type="PackedScene" uid="uid://cu278g8fet35q" path="res://ENEMIES/SIMULANTS/Weapons/SimulantPulseCannon/Simulant_PulseCannon.glb" id="2_o0dc5"]
 
 [node name="SimulantPulseCannon" type="Node3D" unique_id=411003694]
 script = ExtResource("1_j2sea")

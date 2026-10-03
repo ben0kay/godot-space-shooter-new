@@ -4,12 +4,12 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://brxretrf3d2vk"
-path="res://.godot/imported/SimulantSeekerCore.glb-31f2c2bcf9837d5ee0224d048fbc47c3.scn"
+path="res://.godot/imported/SimulantSeekerCore.glb-f52934cfdda3e776385c1ecfd3ad98af.scn"
 
 [deps]
 
-source_file="res://ENEMIES/SIMULANTS/Projectiles/SimulantSeekerCore.glb"
-dest_files=["res://.godot/imported/SimulantSeekerCore.glb-31f2c2bcf9837d5ee0224d048fbc47c3.scn"]
+source_file="res://ENEMIES/SIMULANTS/Projectiles/SeekerCore/SimulantSeekerCore.glb"
+dest_files=["res://.godot/imported/SimulantSeekerCore.glb-f52934cfdda3e776385c1ecfd3ad98af.scn"]
 
 [params]
 

@@ -2,8 +2,9 @@
 
 [ext_resource type="Script" uid="uid://c018bvm22iks8" path="res://ENEMIES/CORE/Attacks/EnemyAttackDefinition.cs" id="attack"]
 [ext_resource type="Script" uid="uid://dnknugvhnysd0" path="res://ENEMIES/CORE/Attacks/EnemyAttackControllerDefinition.cs" id="controller"]
-[ext_resource type="Resource" uid="uid://bw66vuhpdphfd" path="res://ENEMIES/SIMULANTS/Weapons/SimulantPulse.tres" id="pulse"]
-[ext_resource type="Resource" uid="uid://nb740567d3jy" path="res://ENEMIES/SIMULANTS/Weapons/SimulantWeaponSeekerCore.tres" id="seeker"]
+[ext_resource type="Resource" uid="uid://bw66vuhpdphfd" path="res://ENEMIES/SIMULANTS/Weapons/SimulantPulseCannon/SimulantPulse.tres" id="pulse"]
+[ext_resource type="Resource" uid="uid://nb740567d3jy" path="res://ENEMIES/SIMULANTS/Weapons/SimulantSeekerCore/SimulantWeaponSeekerCore.tres" id="seeker"]
+[ext_resource type="Resource" path="res://ENEMIES/SIMULANTS/Weapons/SimulantOrb/SimulantWeaponOrb.tres" id="orb_weapon"]
 
 [sub_resource type="Resource" id="CannonStream"]
 script = ExtResource("attack")
@@ -33,8 +34,25 @@ Order = 2
 VolleyRounds = 1
 CooldownSeconds = 6.0
 
+[sub_resource type="Resource" id="OrbTest"]
+script = ExtResource("attack")
+Key = "harrower_orb_test"
+Channel = "core"
+HardpointGroup = "core_weapon"
+Weight = 65.0
+Weapon = ExtResource("orb_weapon")
+RangeMin = 20.0
+RangeMax = 250.0
+RequireLineOfSight = true
+FireToleranceDegrees = 35.0
+Order = 2
+VolleyRounds = 6
+IntervalSeconds = 0.3
+CooldownSeconds = 4.0
+MaxRoundWaitSeconds = 0.5
+
 [resource]
 script = ExtResource("controller")
 MaxActiveChannels = 2
 SelectionIntervalSeconds = 0.2
-Attacks = Array[ExtResource("attack")]([SubResource("CannonStream"), SubResource("SeekerLaunch")])
+Attacks = Array[ExtResource("attack")]([SubResource("CannonStream"), SubResource("SeekerLaunch"), SubResource("OrbTest")])
