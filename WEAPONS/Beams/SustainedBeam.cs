@@ -195,7 +195,7 @@ public partial class SustainedBeam : Node3D
 		if (_flowShader == null)
 		{
 			_flowShader = GD.Load<Shader>(
-				"res://BEAMS/FlowingBeam.gdshader"
+				"res://WEAPONS/Beams/FlowingBeam.gdshader"
 			);
 		}
 

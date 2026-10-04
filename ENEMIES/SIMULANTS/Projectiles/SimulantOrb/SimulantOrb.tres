@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="ProjectileDefinition" format=3 uid="uid://cn1k7sereimla"]
 
 [ext_resource type="Script" uid="uid://7oyb1xy2i35r" path="res://PROJECTILES/ProjectileDefinition.cs" id="definition"]
-[ext_resource type="Script" uid="uid://mv26j0357h2" path="res://Weapon/WeaponEffectsProfile.cs" id="effects"]
+[ext_resource type="Script" uid="uid://mv26j0357h2" path="res://WEAPONS/Effects/WeaponEffectsProfile.cs" id="effects"]
 [ext_resource type="PackedScene" uid="uid://bykb33nirbctc" path="res://PROJECTILES/Projectile.tscn" id="projectile_scene"]
 [ext_resource type="PackedScene" path="res://ENEMIES/SIMULANTS/Projectiles/SimulantOrb/SimulantOrbVisual.tscn" id="visual"]
 

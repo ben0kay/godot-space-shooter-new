@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://c018bvm22iks8" path="res://ENEMIES/CORE/Attacks/EnemyAttackDefinition.cs" id="attack"]
 [ext_resource type="Script" uid="uid://dnknugvhnysd0" path="res://ENEMIES/CORE/Attacks/EnemyAttackControllerDefinition.cs" id="controller"]
-[ext_resource type="Resource" uid="uid://duk6me74e1i1y" path="res://Weapons/minigun.tres" id="minigun"]
+[ext_resource type="Resource" uid="uid://duk6me74e1i1y" path="res://WEAPONS/Definitions/minigun.tres" id="minigun"]
 
 [sub_resource type="Resource" id="DeckMiniguns"]
 script = ExtResource("attack")

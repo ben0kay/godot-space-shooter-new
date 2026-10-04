@@ -193,7 +193,7 @@ private void Build(Color color)
 	if (_shader == null)
 	{
 		_shader = GD.Load<Shader>(
-			"res://SHIELDS/ShipShield.gdshader"
+			"res://SHIP/Defence/Shields/ShipShield.gdshader"
 		);
 	}
 

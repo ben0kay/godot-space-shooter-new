@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="FactionDoctrine" format=3 uid="uid://b1jva6clx8lmg"]
 
-[ext_resource type="Script" uid="uid://ceovtc5b6xjil" path="res://ENEMIES/CORE/Doctrine/FactionDoctrine.cs" id="1_dfghm"]
+[ext_resource type="Script" uid="uid://ceovtc5b6xjil" path="res://FACTIONS/Doctrine/FactionDoctrine.cs" id="1_dfghm"]
 
 [resource]
 script = ExtResource("1_dfghm")

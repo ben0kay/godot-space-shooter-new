@@ -2,8 +2,8 @@
 
 [ext_resource type="Resource" uid="uid://dknpf6hm6nbgk" path="res://ENEMIES/SIMULANTS/Projectiles/SeekerCore/SimulantSeekerCore.tres" id="1_8yyiv"]
 [ext_resource type="Script" uid="uid://b3bup8dw5uhch" path="res://PROJECTILES/Guidance/ProjectileGuidanceSettings.cs" id="1_em4uo"]
-[ext_resource type="Script" uid="uid://dk13qlucl75kd" path="res://Weapon/WeaponDefinition.cs" id="1_uo0ix"]
-[ext_resource type="Script" uid="uid://6wveafw5dvgq" path="res://Weapon/ProjectileLaunchOverrides.cs" id="2_h5he1"]
+[ext_resource type="Script" uid="uid://dk13qlucl75kd" path="res://WEAPONS/Core/WeaponDefinition.cs" id="1_uo0ix"]
+[ext_resource type="Script" uid="uid://6wveafw5dvgq" path="res://WEAPONS/Core/ProjectileLaunchOverrides.cs" id="2_h5he1"]
 
 [sub_resource type="Resource" id="Resource_4bg0w"]
 script = ExtResource("1_em4uo")

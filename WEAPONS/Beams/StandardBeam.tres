@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="BeamDefinition" format=3 uid="uid://d23jj3j3xvtb"]
 
-[ext_resource type="Script" uid="uid://6moklghx6ebr" path="res://Weapon/BeamDefinition.cs" id="1_23swg"]
+[ext_resource type="Script" uid="uid://6moklghx6ebr" path="res://WEAPONS/Beams/BeamDefinition.cs" id="1_23swg"]
 
 [resource]
 script = ExtResource("1_23swg")

@@ -1,9 +1,9 @@
 [gd_resource type="Resource" script_class="WeaponDefinition" format=3 uid="uid://ddltmr4sb7kcb"]
 
-[ext_resource type="Script" uid="uid://mv26j0357h2" path="res://Weapon/WeaponEffectsProfile.cs" id="effects"]
-[ext_resource type="Script" uid="uid://6wveafw5dvgq" path="res://Weapon/ProjectileLaunchOverrides.cs" id="launch"]
+[ext_resource type="Script" uid="uid://mv26j0357h2" path="res://WEAPONS/Effects/WeaponEffectsProfile.cs" id="effects"]
+[ext_resource type="Script" uid="uid://6wveafw5dvgq" path="res://WEAPONS/Core/ProjectileLaunchOverrides.cs" id="launch"]
 [ext_resource type="Resource" uid="uid://cn1k7sereimla" path="res://ENEMIES/SIMULANTS/Projectiles/SimulantOrb/SimulantOrb.tres" id="orb"]
-[ext_resource type="Script" uid="uid://dk13qlucl75kd" path="res://Weapon/WeaponDefinition.cs" id="weapon"]
+[ext_resource type="Script" uid="uid://dk13qlucl75kd" path="res://WEAPONS/Core/WeaponDefinition.cs" id="weapon"]
 
 [sub_resource type="Resource" id="Launch"]
 script = ExtResource("launch")

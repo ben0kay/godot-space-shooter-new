@@ -1,10 +1,10 @@
 [gd_scene format=3 uid="uid://cqt3qu6fub14m"]
 
 [ext_resource type="Script" uid="uid://bbbhwq6t3wsf7" path="res://PLAYER/Flight/PlayerShip.cs" id="1_d2dyu"]
-[ext_resource type="Script" uid="uid://cmbhciihetpg7" path="res://Weapon/WeaponMount.cs" id="2_5lrhm"]
+[ext_resource type="Script" uid="uid://cmbhciihetpg7" path="res://WEAPONS/Core/WeaponMount.cs" id="2_5lrhm"]
 [ext_resource type="PackedScene" uid="uid://bp0y5uoerlo2o" path="res://PLAYER/Models/Cyan_Interceptor_Mk2.glb" id="2_u2noc"]
 [ext_resource type="Resource" uid="uid://b0tvflrqn1oho" path="res://PLAYER/PlayerShip.tres" id="2_vl8mf"]
-[ext_resource type="Resource" uid="uid://duk6me74e1i1y" path="res://Weapons/minigun.tres" id="3_faoyc"]
+[ext_resource type="Resource" uid="uid://duk6me74e1i1y" path="res://WEAPONS/Definitions/minigun.tres" id="3_faoyc"]
 [ext_resource type="Script" uid="uid://crafoydkr28bx" path="res://PLAYER/Weapons/PlayerWeaponInput.cs" id="4_faoyc"]
 [ext_resource type="Script" uid="uid://dicus7a88byl7" path="res://PLAYER/Effects/PlayerThrusters.cs" id="6_5rg74"]
 [ext_resource type="Script" uid="uid://c4dvf21ox7pnp" path="res://PLAYER/Effects/WingtipTrail.cs" id="8_crfyu"]
@@ -18,10 +18,10 @@
 [ext_resource type="Script" uid="uid://bm6wjsllgqnqj" path="res://PLAYER/Effects/PlayerBoostFlow.cs" id="boost_flow_script"]
 [ext_resource type="Resource" uid="uid://c4h5k4fek1lxa" path="res://PLAYER/PlayerCargo.tres" id="cargo_definition"]
 [ext_resource type="Script" uid="uid://dtsnv5knc0udm" path="res://INVENTORY/Cargo/CargoHold.cs" id="cargo_script"]
-[ext_resource type="Resource" uid="uid://cpkdcrv76wngi" path="res://Weapons/PlayerMiningBeam.tres" id="mining_weapon"]
+[ext_resource type="Resource" uid="uid://cpkdcrv76wngi" path="res://PLAYER/Weapons/PlayerMiningBeam.tres" id="mining_weapon"]
 [ext_resource type="Resource" uid="uid://b2s0fvtl00ei3" path="res://PLAYER/Weapons/PlayerRocketLauncher.tres" id="rocket_weapon"]
 [ext_resource type="Script" uid="uid://dacw0254ek4cf" path="res://ENVIRONMENT/SpaceTravelClouds.cs" id="travel_clouds_script"]
-[ext_resource type="Script" uid="uid://dk13qlucl75kd" path="res://Weapon/WeaponDefinition.cs" id="weapon_definition"]
+[ext_resource type="Script" uid="uid://dk13qlucl75kd" path="res://WEAPONS/Core/WeaponDefinition.cs" id="weapon_definition"]
 
 [node name="PlayerShip" type="CharacterBody3D" unique_id=1589947766]
 script = ExtResource("1_d2dyu")

@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="WeaponDefinition" format=3 uid="uid://du3lcxvj4rjsm"]
 
-[ext_resource type="Resource" uid="uid://d23jj3j3xvtb" path="res://BEAMS/StandardBeam.tres" id="1_kv4at"]
-[ext_resource type="Script" uid="uid://dk13qlucl75kd" path="res://Weapon/WeaponDefinition.cs" id="1_rayhw"]
+[ext_resource type="Resource" uid="uid://d23jj3j3xvtb" path="res://WEAPONS/Beams/StandardBeam.tres" id="1_kv4at"]
+[ext_resource type="Script" uid="uid://dk13qlucl75kd" path="res://WEAPONS/Core/WeaponDefinition.cs" id="1_rayhw"]
 
 [resource]
 script = ExtResource("1_rayhw")
