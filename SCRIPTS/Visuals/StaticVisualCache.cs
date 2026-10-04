@@ -127,9 +127,7 @@ public partial class StaticVisualCache : Node
 		{
 			for (int surface = 0; surface < source.Mesh.GetSurfaceCount(); surface++)
 			{
-				if (source.Mesh.SurfaceGetPrimitiveType(surface)
-					!= Mesh.PrimitiveType.Triangles)
-					continue;
+
 
 				Material material = source.GetActiveMaterial(surface);
 				ulong materialId = material == null ? 0UL : material.GetInstanceId();

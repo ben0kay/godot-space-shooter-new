@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cs4o21cfcqi2x"]
 
-[ext_resource type="Script" uid="uid://pccivx55timo" path="res://SCRIPTS/Sandbox.cs" id="1_h5ewn"]
+[ext_resource type="Script" uid="uid://pccivx55timo" path="res://WORLD/Sandbox/Sandbox.cs" id="1_h5ewn"]
 [ext_resource type="PackedScene" uid="uid://cqt3qu6fub14m" path="res://PLAYER/PlayerShip.tscn" id="2_bc7gk"]
 [ext_resource type="PackedScene" uid="uid://2pswi1yg6tyh" path="res://ASTEROIDS/Asteroid.tscn" id="2_owkoa"]
 [ext_resource type="PackedScene" uid="uid://jir05eflrfkg" path="res://ENEMIES/SIMULANTS/Ships/Dreadwing/SimulantDreadwing.tscn" id="3_b0b5h"]

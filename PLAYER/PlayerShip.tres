@@ -5,10 +5,10 @@
 [ext_resource type="Script" uid="uid://dtibfcg28auav" path="res://PLAYER/Stats/PlayerDefenceStats.cs" id="3_pacrg"]
 [ext_resource type="Script" uid="uid://1rfmty1btvsc" path="res://PLAYER/Stats/PlayerHandlingStats.cs" id="4_s6ljt"]
 [ext_resource type="Script" uid="uid://be3aa3yeyhjtn" path="res://PLAYER/Stats/PlayerResourceStats.cs" id="6_s6ljt"]
-[ext_resource type="Script" uid="uid://behnlerxjm7os" path="res://SHIP/ShipSystemsDefinition.cs" id="8_40qk6"]
+[ext_resource type="Script" uid="uid://behnlerxjm7os" path="res://SHIP/Systems/ShipSystemsDefinition.cs" id="8_40qk6"]
 [ext_resource type="Resource" uid="uid://c4h5k4fek1lxa" path="res://PLAYER/PlayerCargo.tres" id="cargo_definition"]
 [ext_resource type="Script" uid="uid://f6c21yq4g6oi" path="res://PLAYER/Scripts/PlayerShipDefinition.cs" id="definition"]
-[ext_resource type="Script" uid="uid://bi8qfjqnsarb5" path="res://SHIELDS/ShieldVisualSettings.cs" id="shield_script"]
+[ext_resource type="Script" uid="uid://bi8qfjqnsarb5" path="res://SHIP/Defence/Shields/ShieldVisualSettings.cs" id="shield_script"]
 
 [sub_resource type="Resource" id="Resource_40qk6"]
 script = ExtResource("1_0u2ma")
@@ -22,14 +22,14 @@ script = ExtResource("3_pacrg")
 [sub_resource type="Resource" id="Resource_uj27l"]
 script = ExtResource("4_s6ljt")
 
-[sub_resource type="Resource" id="Resource_xtiji"]
+[sub_resource type="Resource" id="Resource_s6ljt"]
 script = ExtResource("6_s6ljt")
 
 [sub_resource type="Resource" id="ShieldVisuals"]
 script = ExtResource("shield_script")
 Spherical = true
 
-[sub_resource type="Resource" id="Resource_f2c14"]
+[sub_resource type="Resource" id="Resource_xtiji"]
 script = ExtResource("8_40qk6")
 
 [resource]

@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://boxiwr5hfj6c" path="res://ENEMIES/CORE/Registry/EnemyCatalog.cs" id="catalog"]
 [ext_resource type="Resource" uid="uid://tkfi5asftg5d" path="res://ENEMIES/SIMULANTS/Ships/Dreadwing/SimulantDreadwing.tres" id="dreadwing_definition"]
 [ext_resource type="PackedScene" uid="uid://jir05eflrfkg" path="res://ENEMIES/SIMULANTS/Ships/Dreadwing/SimulantDreadwing.tscn" id="dreadwing_scene"]
-[ext_resource type="Resource" path="res://ENEMIES/REBELS/Ships/Gunship/RebelGunship.tres" id="gunship_definition"]
+[ext_resource type="Resource" uid="uid://mk7abtvarpde" path="res://ENEMIES/REBELS/Ships/Gunship/RebelGunship.tres" id="gunship_definition"]
 [ext_resource type="PackedScene" path="res://ENEMIES/REBELS/Ships/Gunship/RebelGunship.tscn" id="gunship_scene"]
 [ext_resource type="Resource" uid="uid://ys24jjv64k4v" path="res://ENEMIES/SIMULANTS/Ships/Harrower/SimulantHarrower.tres" id="harrower_definition"]
 [ext_resource type="PackedScene" path="res://ENEMIES/SIMULANTS/Ships/Harrower/SimulantHarrower.tscn" id="harrower_scene"]
