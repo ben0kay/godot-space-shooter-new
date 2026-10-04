@@ -63,7 +63,7 @@ float layered_noise(vec3 p)
 }
 
 // =========================================================
-// Draws faint continuous nebula wisps with smoothly fading coverage.
+// Draws surrounding faint nebulae with several stronger cloud regions.
 vec3 draw_nebula(vec3 ray)
 {
 	vec3 p = ray * vec3(2.5, 3.5, 2.5);
@@ -75,25 +75,35 @@ vec3 draw_nebula(vec3 ray)
 	) - vec3(0.5);
 
 	vec3 cloud_point = p + warp * 0.7;
-
-	float formations = layered_noise(
-		cloud_point + vec3(19.0)
-	);
-
-	float wisps = layered_noise(
-		cloud_point * 2.0 + vec3(43.0)
-	);
+	float formations = layered_noise(cloud_point + vec3(19.0));
+	float wisps = layered_noise(cloud_point * 2.0 + vec3(43.0));
 
 	float coverage = smoothstep(0.25, 0.80, formations);
 	float detail = mix(0.75, 1.0, wisps);
 
-	float alignment = dot(
-		ray,
-		normalize(nebula_direction)
+	// Broad formations distributed around different parts of the sky.
+	float primary = smoothstep(
+		-0.25, 0.95,
+		dot(ray, normalize(nebula_direction))
 	);
 
-	float region = smoothstep(-0.25, 0.95, alignment);
-	region *= region;
+	float opposite = smoothstep(
+		-0.20, 0.95,
+		dot(ray, normalize(vec3(0.65, -0.10, 1.0)))
+	);
+
+	float upper = smoothstep(
+		0.0, 0.95,
+		dot(ray, normalize(vec3(-0.75, 0.65, 0.35)))
+	);
+
+	// A faint baseline prevents the opposite hemisphere becoming empty.
+	float region = 0.22
+		+ primary * primary * 0.78
+		+ opposite * opposite * 0.65
+		+ upper * upper * 0.35;
+
+	region = min(region, 1.0);
 
 	vec3 tint = mix(
 		vec3(0.025, 0.045, 0.075),
@@ -101,8 +111,7 @@ vec3 draw_nebula(vec3 ray)
 		smoothstep(0.30, 0.75, formations)
 	);
 
-	return tint * coverage * detail
-		* region * nebula_strength;
+	return tint * coverage * detail * region * nebula_strength;
 }
 
 // =========================================================

@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://daovfp0cngp6i" path="res://ENEMIES/CORE/EnemyHandlingStats.cs" id="handling"]
 [ext_resource type="PackedScene" uid="uid://df3088rujgyds" path="res://ENEMIES/SIMULANTS/Ships/Dreadwing/SimulantDreadwingMovement.tscn" id="movement"]
 [ext_resource type="Script" uid="uid://ccwbsekbqw5ln" path="res://ENEMIES/CORE/EnemyRangeStats.cs" id="ranges"]
+[ext_resource type="Script" uid="uid://bkpnj1d4ys55a" path="res://ENEMIES/CORE/Rewards/EnemyRewardStats.cs" id="reward_script"]
 [ext_resource type="Script" uid="uid://bi8qfjqnsarb5" path="res://SHIELDS/ShieldVisualSettings.cs" id="shield"]
 [ext_resource type="PackedScene" path="res://ENEMIES/SIMULANTS/Ships/Harrower/SimulantHarrowerVisual.tscn" id="visual"]
 
@@ -31,6 +32,9 @@ Detection = 350.0
 Combat = 190.0
 BackAway = 75.0
 Forget = 450.0
+
+[sub_resource type="Resource" id="Resource_cb8nc"]
+script = ExtResource("reward_script")
 
 [sub_resource type="Resource" id="ShieldVisuals"]
 script = ExtResource("shield")

@@ -63,12 +63,12 @@ void vertex()
 }
 
 // =========================================================
-// Shades softer rock detail, fades tiny features and preserves damage feedback.
+// Shades varied rocky surfaces while preserving cracks and impact flashes.
 void fragment()
 {
 	vec3 p = local_position * surface_scale + pattern_offset;
 
-	// Fade detail once its noise cells become too small on screen.
+	// Fade small features when they become too tiny on screen.
 	float footprint = max(length(dFdx(p)), length(dFdy(p)));
 	float medium_visibility = 1.0 - smoothstep(0.25, 0.9, footprint);
 	float fine_visibility = 1.0 - smoothstep(0.08, 0.3, footprint);
@@ -76,10 +76,12 @@ void fragment()
 	float broad = rock_noise(p * 0.24);
 	float medium = mix(0.5, rock_noise(p), medium_visibility);
 	float fine = mix(0.5, rock_noise(p * 2.1), fine_visibility);
-	float height = medium * 0.9 + fine * 0.1;
+	float height = medium * 0.8 + fine * 0.2;
 
-	vec3 stone = rock_color.rgb * mix(0.82, 1.20, broad);
-	stone *= mix(0.92, 1.06, height);
+	// Broad darker mineral patches and lighter exposed rock.
+	float patches = smoothstep(0.25, 0.75, broad);
+	vec3 stone = rock_color.rgb * mix(0.60, 1.25, patches);
+	stone *= mix(0.82, 1.12, height);
 
 	float damage = clamp(damage_amount, 0.0, 1.0);
 	float cracks = 0.0;
@@ -102,7 +104,10 @@ void fragment()
 			cell_edge.x, max(cell_edge.y, cell_edge.z)
 		);
 
-		float width = max(0.001, crack_width * mix(0.2, 1.0, damage));
+		float width = max(
+			0.001, crack_width * mix(0.2, 1.0, damage)
+		);
+
 		float threshold = mix(
 			0.08, 0.65, hash_value(floor(crack_point))
 		);
@@ -112,7 +117,7 @@ void fragment()
 	}
 
 	ALBEDO = mix(stone, crack_color.rgb, cracks);
-	ROUGHNESS = mix(0.93, 1.0, fine);
+	ROUGHNESS = mix(0.90, 1.0, fine);
 	SPECULAR = 0.18;
 
 	vec3 dpdx = dFdx(view_position);
@@ -121,10 +126,10 @@ void fragment()
 	vec3 r2 = cross(NORMAL, dpdx);
 	float determinant = dot(dpdx, r1);
 
-	// Calculate derivatives before the conditional normal adjustment.
+	// Evaluate derivatives outside conditional branches.
 	vec3 gradient = (
 		dFdx(height) * r1 + dFdy(height) * r2
-	) * bump_strength * 0.4 * medium_visibility;
+	) * bump_strength * medium_visibility;
 
 	if (abs(determinant) > 0.000001)
 	{

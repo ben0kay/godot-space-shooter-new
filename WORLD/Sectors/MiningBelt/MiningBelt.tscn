@@ -14,10 +14,10 @@
 script = ExtResource("1_ttpmw")
 
 [node name="SpaceEnvironment" parent="." unique_id=1122803755 instance=ExtResource("3_x0hnd")]
-AmbientEnergy = 0.75
+AmbientEnergy = 0.55
 SunEnergy = 1.8
 SunAngularSizeDegrees = 2.0
-NebulaStrength = 0.2
+NebulaStrength = 0.3
 StarBrightness = 0.75
 
 [node name="Arrivals" type="Node3D" parent="." unique_id=1309684115]

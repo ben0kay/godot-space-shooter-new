@@ -28,6 +28,11 @@ public partial class SectorManager : Node
 	[Export] public bool EnableDebugTravel = true;
 	[Export] public Key DebugTravelKey = Key.J;
 
+	[ExportGroup("Jump Requirements")]
+
+[Export(PropertyHint.Range, "0,1,0.01")]
+public float JumpFuelFraction = 0.10f;
+
 	#endregion
 
 	#region Public State
@@ -76,6 +81,8 @@ public partial class SectorManager : Node
 
 	private bool _hasFocus = true;
 	private bool _travelSucceeded;
+private float _reservedJumpFuel;
+
 
 	#endregion
 
@@ -223,38 +230,107 @@ public partial class SectorManager : Node
 	#region Travel Requests
 
 	// =========================================================
-	// Checks whether a destination is connected to the currently loaded sector.
-	public bool CanTravelTo(string destinationKey)
+// Calculates jump fuel from the player's current maximum capacity.
+public float GetJumpFuelCost()
+{
+	return Player?.Resources == null ? 0.0f
+		: Player.Resources.MaximumFuel
+			* Mathf.Clamp(JumpFuelFraction, 0.0f, 1.0f);
+}
+
+// =========================================================
+// Validates the route, ship and jump requirements with a readable reason.
+public bool CheckTravelTo(string destinationKey, out string reason)
+{
+	reason = "";
+
+	if (IsTravelling)
+		reason = "Jump already in progress.";
+	else if (!GodotObject.IsInstanceValid(Player)
+		|| !Player.IsCombatTargetable)
+		reason = "Ship unavailable.";
+	else if (CurrentDefinition == null)
+		reason = "No current sector.";
+	else if (string.IsNullOrWhiteSpace(destinationKey)
+		|| destinationKey == CurrentDefinition.Key
+		|| !CurrentDefinition.Connections.Contains(destinationKey)
+		|| !_definitions.ContainsKey(destinationKey))
+		reason = "Destination is not connected.";
+	else if (Player.Resources == null)
+		reason = "Ship resources unavailable.";
+	else if (Player.Resources.MaximumFuel <= 0.0f)
+		reason = "Ship has no fuel capacity.";
+	else if (IsJumpBlockedByCombat())
+		reason = "Cannot jump during combat.";
+	else if (IsJumpBlockedByExclusionZone())
+		reason = "Leave the jump exclusion zone.";
+	else if (Player.Resources.Fuel < GetJumpFuelCost())
+		reason = "Insufficient fuel.";
+
+	return reason.Length == 0;
+}
+
+// =========================================================
+// Checks travel eligibility for existing callers.
+public bool CanTravelTo(string destinationKey)
+{
+	return CheckTravelTo(destinationKey, out _);
+}
+
+// =========================================================
+// Reserves fuel once and starts travel through a valid connection.
+public bool TravelTo(string destinationKey, string arrivalKey = "")
+{
+	if (!CheckTravelTo(destinationKey, out string reason))
 	{
-		return !IsTravelling
-			&& Player.IsCombatTargetable
-			&& CurrentDefinition != null
-			&& destinationKey != CurrentDefinition.Key
-			&& CurrentDefinition.Connections.Contains(destinationKey)
-			&& _definitions.ContainsKey(destinationKey);
+		GD.PushWarning(reason);
+		return false;
 	}
 
-	// =========================================================
-	// Requests travel through a valid connection with an optional arrival override.
-	public bool TravelTo(
-		string destinationKey,
-		string arrivalKey = ""
-	)
-	{
-		if (!CanTravelTo(destinationKey))
-		{
-			GD.PushWarning(
-				$"Cannot currently travel to '{destinationKey}'."
-			);
+	float cost = GetJumpFuelCost();
 
-			return false;
-		}
+	if (!Player.Resources.TrySpendFuel(cost))
+		return false;
 
-		return BeginTravel(
-			_definitions[destinationKey],
-			arrivalKey
-		);
-	}
+	_reservedJumpFuel = cost;
+
+	if (BeginTravel(_definitions[destinationKey], arrivalKey))
+		return true;
+
+	RefundJumpFuel();
+	return false;
+}
+
+// =========================================================
+// Placeholder for the future combat lockout system.
+private bool IsJumpBlockedByCombat()
+{
+	return false;
+}
+
+// =========================================================
+// Placeholder for future structure exclusion zones.
+private bool IsJumpBlockedByExclusionZone()
+{
+	return false;
+}
+
+// =========================================================
+// Returns reserved fuel when departure fails.
+private void RefundJumpFuel()
+{
+	Player?.Resources?.AddFuel(_reservedJumpFuel);
+	_reservedJumpFuel = 0.0f;
+}
+
+// =========================================================
+// Resolves a registered sector without loading its scene.
+public SectorDefinition FindDefinition(string key)
+{
+	return !string.IsNullOrWhiteSpace(key)
+		&& _definitions.TryGetValue(key, out SectorDefinition definition)
+			? definition : null;
+}
 
 	// =========================================================
 	// Starts background loading and temporarily suspends flight and sector updates.
@@ -478,6 +554,7 @@ public partial class SectorManager : Node
 		Player.ResetPhysicsInterpolation();
 
 		_travelSucceeded = true;
+		_reservedJumpFuel = 0.0f;
 		_settleFrames = 2;
 		_phase = TravelPhase.Settling;
 	}
@@ -515,22 +592,23 @@ public partial class SectorManager : Node
 		}
 	}
 
-	// =========================================================
-	// Returns to the existing sector when loading or validation fails.
-	private void TravelFailed(string message)
+// =========================================================
+// Refunds fuel and returns to the existing sector after a failed transition.
+private void TravelFailed(string message)
+{
+	GD.PushError(message);
+	RefundJumpFuel();
+
+	if (CurrentSector == null)
 	{
-		GD.PushError(message);
-
-		if (CurrentSector == null)
-		{
-			_phase = TravelPhase.Idle;
-			StartupFailed(message);
-			return;
-		}
-
-		_travelLabel.Text = "TRAVEL FAILED — RETURNING";
-		_phase = TravelPhase.FadingIn;
+		_phase = TravelPhase.Idle;
+		StartupFailed(message);
+		return;
 	}
+
+	_travelLabel.Text = "TRAVEL FAILED — RETURNING";
+	_phase = TravelPhase.FadingIn;
+}
 
 	// =========================================================
 	// Applies the fade without rebuilding the overlay.
@@ -543,33 +621,6 @@ public partial class SectorManager : Node
 	#endregion
 
 	#region Input
-
-	// =========================================================
-	// Uses a temporary key to test travel through the first available connection.
-	public override void _Input(InputEvent inputEvent)
-	{
-		if (!EnableDebugTravel
-			|| !_hasFocus
-			|| IsTravelling
-			|| CurrentDefinition == null
-			|| inputEvent is not InputEventKey key
-			|| !key.Pressed
-			|| key.Echo
-			|| key.PhysicalKeycode != DebugTravelKey)
-		{
-			return;
-		}
-
-		foreach (string connection in CurrentDefinition.Connections)
-		{
-			if (CanTravelTo(connection))
-			{
-				TravelTo(connection);
-				GetViewport().SetInputAsHandled();
-				return;
-			}
-		}
-	}
 
 	// =========================================================
 	// Prevents travel completion from capturing the pointer while unfocused.

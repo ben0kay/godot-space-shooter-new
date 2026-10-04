@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://bohf7i01xknix" path="res://ENEMIES/SIMULANTS/Ships/Dreadwing/SimulantDreadwingVisual.tscn" id="6_j7elm"]
 [ext_resource type="Script" uid="uid://bxv2gm5hx3d6i" path="res://ENEMIES/CORE/EnemyDefinition.cs" id="7_y5ihi"]
 [ext_resource type="Script" uid="uid://cdmpdcwofk7h" path="res://ENEMIES/CORE/EnemyDefenceStats.cs" id="defence_script"]
+[ext_resource type="Script" uid="uid://bkpnj1d4ys55a" path="res://ENEMIES/CORE/Rewards/EnemyRewardStats.cs" id="reward_script"]
 
 [sub_resource type="Resource" id="DreadwingDefence"]
 script = ExtResource("defence_script")
@@ -32,6 +33,9 @@ Combat = 200.0
 BackAway = 50.0
 Forget = 400.0
 metadata/_custom_type_script = "uid://ccwbsekbqw5ln"
+
+[sub_resource type="Resource" id="Resource_cb8nc"]
+script = ExtResource("reward_script")
 
 [sub_resource type="Resource" id="Resource_tp0rx"]
 script = ExtResource("6_40ml7")
