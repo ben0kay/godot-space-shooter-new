@@ -1,6 +1,13 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://ENEMIES/REBELS/Ships/Gunship/RebelGunshipVisual.cs" id="visual"]
+[ext_resource type="Script" path="res://SCRIPTS/Visuals/StaticVisualCache.cs" id="cache"]
 
 [node name="RebelGunshipVisual" type="Node3D"]
+scale = Vector3(1.5, 2, 1.5)
 script = ExtResource("visual")
+
+[node name="StaticVisualCache" type="Node" parent="."]
+script = ExtResource("cache")
+CacheKey = "rebel_gunship_hull"
+GeometryPath = NodePath("../Geometry")

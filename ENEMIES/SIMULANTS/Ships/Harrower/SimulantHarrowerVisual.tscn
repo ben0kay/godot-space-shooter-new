@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://ENEMIES/CORE/Hardpoints/EnemyHardpoint.cs" id="hardpoint"]
 [ext_resource type="Script" path="res://ENEMIES/CORE/Hardpoints/HardpointRotationStats.cs" id="rotation"]
+[ext_resource type="Script" path="res://SCRIPTS/Visuals/StaticVisualCache.cs" id="cache"]
 
 [sub_resource type="StandardMaterial3D" id="HullMaterial"]
 albedo_color = Color(0.035, 0.025, 0.055, 1)
@@ -219,3 +220,8 @@ cast_shadow = 0
 
 [node name="Muzzle" type="Marker3D" parent="Hardpoints/OrbEmitter"]
 position = Vector3(0, 0, -0.4)
+
+[node name="StaticVisualCache" type="Node" parent="."]
+script = ExtResource("cache")
+CacheKey = "simulant_harrower_hull"
+GeometryPath = NodePath("..")

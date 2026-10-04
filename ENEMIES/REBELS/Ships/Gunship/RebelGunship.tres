@@ -17,12 +17,12 @@ MaxHull = 130.0
 
 [sub_resource type="Resource" id="Handling"]
 script = ExtResource("handling")
-MaxSpeed = 65.0
-Acceleration = 45.0
-Braking = 25.0
-TurnSpeedDegrees = 110.0
-MaxBankDegrees = 35.0
-BankResponse = 5.0
+MaxSpeed = 45.0
+Acceleration = 28.0
+Braking = 22.0
+TurnSpeedDegrees = 85.0
+MaxBankDegrees = 25.0
+BankResponse = 3.5
 
 [sub_resource type="Resource" id="Ranges"]
 script = ExtResource("ranges")
