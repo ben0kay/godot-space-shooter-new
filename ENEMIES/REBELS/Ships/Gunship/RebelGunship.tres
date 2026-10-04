@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3 uid="uid://mk7abtvarpde"]
+
+[ext_resource type="Script" uid="uid://bu8ndi4ho15n3" path="res://ENEMIES/CORE/Hardpoints/HardpointDefinition.cs" id="4_6b32i"]
+[ext_resource type="Resource" uid="uid://cvwniei0x3w1e" path="res://ENEMIES/REBELS/Ships/Gunship/RebelGunshipAttacks.tres" id="attacks"]
+[ext_resource type="Script" uid="uid://cdmpdcwofk7h" path="res://ENEMIES/CORE/EnemyDefenceStats.cs" id="defence"]
+[ext_resource type="Script" uid="uid://bxv2gm5hx3d6i" path="res://ENEMIES/CORE/EnemyDefinition.cs" id="definition"]
+[ext_resource type="Script" uid="uid://daovfp0cngp6i" path="res://ENEMIES/CORE/EnemyHandlingStats.cs" id="handling"]
+[ext_resource type="PackedScene" path="res://ENEMIES/REBELS/Ships/Gunship/RebelGunshipMovement.tscn" id="movement"]
+[ext_resource type="Script" uid="uid://ccwbsekbqw5ln" path="res://ENEMIES/CORE/EnemyRangeStats.cs" id="ranges"]
+[ext_resource type="Script" uid="uid://bkpnj1d4ys55a" path="res://ENEMIES/CORE/Rewards/EnemyRewardStats.cs" id="reward"]
+[ext_resource type="PackedScene" path="res://ENEMIES/REBELS/Ships/Gunship/RebelGunshipVisual.tscn" id="visual"]
+
+[sub_resource type="Resource" id="Defence"]
+script = ExtResource("defence")
+MaxArmour = 280.0
+MaxHull = 130.0
+
+[sub_resource type="Resource" id="Handling"]
+script = ExtResource("handling")
+MaxSpeed = 65.0
+Acceleration = 45.0
+Braking = 25.0
+TurnSpeedDegrees = 110.0
+MaxBankDegrees = 35.0
+BankResponse = 5.0
+
+[sub_resource type="Resource" id="Ranges"]
+script = ExtResource("ranges")
+Detection = 450.0
+Combat = 180.0
+BackAway = 0.0
+Forget = 750.0
+
+[sub_resource type="Resource" id="Reward"]
+script = ExtResource("reward")
+Credits = 55
+
+[resource]
+script = ExtResource("definition")
+DisplayName = "Rebel Flyby Gunship"
+Faction = 2
+Class = 2
+Defence = SubResource("Defence")
+Handling = SubResource("Handling")
+Ranges = SubResource("Ranges")
+MovementControllerScene = ExtResource("movement")
+AsteroidResponse = 1
+AttackController = ExtResource("attacks")
+VisualScene = ExtResource("visual")
+CollisionSize = Vector3(6.4, 2, 7.2)
+Reward = SubResource("Reward")

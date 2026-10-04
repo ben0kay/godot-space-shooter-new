@@ -1,0 +1,12 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ENEMIES/CORE/Movement/EnemyFlybyMovement.cs" id="movement"]
+
+[node name="RebelGunshipMovement" type="Node"]
+script = ExtResource("movement")
+PassOffsetRange = Vector2(18, 32)
+ExitDistance = 120.0
+ArrivalRadius = 16.0
+TurnaroundSeconds = 0.4
+MaximumRunSeconds = 12.0
+AlternateSide = true

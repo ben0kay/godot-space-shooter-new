@@ -206,7 +206,7 @@ public void Initialize(EnemyShip ship)
 
 	#region Asteroid Avoidance
 
-	private Vector3 ApplyAsteroidResponse(Vector3 desiredVelocity, float seconds)
+	protected Vector3 ApplyAsteroidResponse(Vector3 desiredVelocity, float seconds)
 	{
 		if (Ship.Definition.AsteroidResponse != AsteroidResponse.Avoid
 			|| desiredVelocity.LengthSquared() < 0.001f)
