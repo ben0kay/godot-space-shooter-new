@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://PLAYER/Interior/ShipInteriorRoom.cs" id="room"]
+[ext_resource type="Script" path="res://PLAYER/Interior/InteriorWalker.cs" id="walker"]
+
+[node name="ShipInterior" type="Node3D"]
+visible = false
+script = ExtResource("room")
+
+[node name="Walker" type="Node3D" parent="."]
+script = ExtResource("walker")

@@ -115,6 +115,15 @@ public partial class PlayerDash : Node
 		}
 	}
 
+	// =========================================================
+// Clears pilot requests without resetting the existing dash cooldown.
+public void ClearInputRequests()
+{
+	_startRequested = false;
+	_tapRemaining = 0.0f;
+	EndDash();
+}
+
 	#endregion
 
 	#region Dash State
@@ -208,6 +217,8 @@ private void BeginDash()
 			);
 		}
 	}
+
+
 
 	#endregion
 }

@@ -22,6 +22,9 @@
 [ext_resource type="Resource" uid="uid://b2s0fvtl00ei3" path="res://PLAYER/Weapons/PlayerRocketLauncher.tres" id="rocket_weapon"]
 [ext_resource type="Script" uid="uid://dacw0254ek4cf" path="res://ENVIRONMENT/SpaceTravelClouds.cs" id="travel_clouds_script"]
 [ext_resource type="Script" uid="uid://dk13qlucl75kd" path="res://WEAPONS/Core/WeaponDefinition.cs" id="weapon_definition"]
+[ext_resource type="Script" path="res://PLAYER/Flight/PlayerFlightInput.cs" id="flight_input"]
+[ext_resource type="Script" path="res://PLAYER/Interior/PlayerInteriorSession.cs" id="interior_session"]
+[ext_resource type="PackedScene" path="res://PLAYER/Interior/ShipInterior.tscn" id="ship_interior"]
 
 [node name="PlayerShip" type="CharacterBody3D" unique_id=1589947766]
 script = ExtResource("1_d2dyu")
@@ -138,3 +141,10 @@ script = ExtResource("travel_clouds_script")
 
 [node name="BoostFlow" type="Node3D" parent="Effects" unique_id=1778966255]
 script = ExtResource("boost_flow_script")
+
+[node name="FlightInput" type="Node" parent="."]
+script = ExtResource("flight_input")
+
+[node name="InteriorSession" type="Node" parent="."]
+script = ExtResource("interior_session")
+InteriorScene = ExtResource("ship_interior")

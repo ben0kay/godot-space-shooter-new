@@ -239,16 +239,17 @@ public float GetJumpFuelCost()
 }
 
 // =========================================================
-// Validates the route, ship and jump requirements with a readable reason.
+// Validates pilot control, route and jump requirements with a readable reason.
 public bool CheckTravelTo(string destinationKey, out string reason)
 {
 	reason = "";
 
 	if (IsTravelling)
 		reason = "Jump already in progress.";
-	else if (!GodotObject.IsInstanceValid(Player)
-		|| !Player.IsCombatTargetable)
+	else if (!GodotObject.IsInstanceValid(Player) || !Player.IsCombatTargetable)
 		reason = "Ship unavailable.";
+	else if (Player.FlightInput?.Enabled != true)
+		reason = "Pilot controls are unattended.";
 	else if (CurrentDefinition == null)
 		reason = "No current sector.";
 	else if (string.IsNullOrWhiteSpace(destinationKey)
