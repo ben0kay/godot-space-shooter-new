@@ -201,7 +201,7 @@ public partial class SustainedBeam : Node3D
 
 		if (_flowShader == null)
 		{
-			GD.PushError("Could not load BEAMS/FlowingBeam.gdshader.");
+			GD.PushError("Could not load WEAPONS/Beams/FlowingBeam.gdshader.");
 			return;
 		}
 

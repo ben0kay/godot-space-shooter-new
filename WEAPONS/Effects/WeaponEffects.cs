@@ -127,7 +127,7 @@ public static class WeaponEffects
 			if (_glowTrailShader == null)
 			{
 				_glowTrailShader = GD.Load<Shader>(
-					"res://Weapon/ProjectileGlowTrail.gdshader"
+					"res://WEAPONS/Effects/ProjectileGlowTrail.gdshader"
 				);
 			}
 
